@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAccount } from 'wagmi'
 import { TransactionRow } from '../components/TransactionRow'
+import { ConnectWalletPrompt } from '../components/ConnectWalletPrompt'
 import type { HistoricalTransaction } from '../types'
 
 const mockTransactions: HistoricalTransaction[] = [
@@ -111,13 +112,7 @@ export function History() {
           </div>
         )
       ) : (
-        <div className="bg-cyber-surface-dark  p-12 text-center border border-cyber-border-glow/30 shadow-lg">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-cyber-surface-light flex items-center justify-center">
-            <span className="material-symbols-outlined text-3xl text-cyber-text-secondary">lock</span>
-          </div>
-          <h2 className="text-xl font-semibold text-cyber-text-primary mb-2">Connect Your Wallet</h2>
-          <p className="text-cyber-text-secondary">Connect your wallet to view transaction history</p>
-        </div>
+        <ConnectWalletPrompt description="Connect your wallet to view transaction history." />
       )}
     </div>
   )
