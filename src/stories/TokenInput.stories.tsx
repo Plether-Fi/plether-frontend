@@ -27,6 +27,10 @@ const meta: Meta<typeof TokenInput> = {
       control: 'text',
       description: 'User balance (as bigint string)',
     },
+    balanceLabel: {
+      control: 'text',
+      description: 'Label for balance display (default: "Balance:")',
+    },
   },
 }
 
@@ -85,6 +89,16 @@ export const Disabled: Story = {
     token: { symbol: 'USDC', decimals: 6 },
     balance: 1000000000n,
     disabled: true,
+  },
+  render: (args) => <TokenInputWithState {...args} />,
+}
+
+export const CustomBalanceLabel: Story = {
+  args: {
+    label: 'Amount to redeem',
+    token: { symbol: 'PAIR', decimals: 18 },
+    balance: 500000000000000000000n,
+    balanceLabel: 'Max:',
   },
   render: (args) => <TokenInputWithState {...args} />,
 }

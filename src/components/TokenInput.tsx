@@ -9,6 +9,7 @@ interface TokenInputProps {
     decimals: number
   }
   balance?: bigint
+  balanceLabel?: string
   label?: string
   disabled?: boolean
   error?: string
@@ -19,6 +20,7 @@ export function TokenInput({
   onChange,
   token,
   balance,
+  balanceLabel = 'Balance:',
   label,
   disabled,
   error,
@@ -77,7 +79,7 @@ export function TokenInput({
 
       {balance !== undefined && (
         <div className="flex justify-between mt-2 text-sm">
-          <span className="text-cyber-text-secondary">Balance:</span>
+          <span className="text-cyber-text-secondary">{balanceLabel}</span>
           <span className="text-cyber-text-primary">
             {formatAmount(balance, token.decimals)} {token.symbol}
           </span>

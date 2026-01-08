@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useAccount } from 'wagmi'
 import { formatAmount } from '../utils/formatters'
 import { Alert, TokenIcon } from '../components/ui'
+import { TokenInput } from '../components/TokenInput'
 
 type MintMode = 'mint' | 'redeem'
 
@@ -67,33 +68,13 @@ export function Mint() {
                 You'll receive both tokens in a 1:1 ratio.
               </Alert>
 
-              {/* Input */}
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-cyber-text-secondary">USDC to deposit</span>
-                  <span className="text-cyber-text-secondary">
-                    Balance: <span className="text-cyber-text-primary">{formatAmount(usdcBalance, 6)}</span>
-                  </span>
-                </div>
-                <div className="relative">
-                  <input
-                    type="number"
-                    value={inputAmount}
-                    onChange={(e) => setInputAmount(e.target.value)}
-                    placeholder="0.00"
-                    className="w-full bg-cyber-surface-light border border-cyber-border-glow/30  py-4 pl-4 pr-28 text-xl font-medium text-cyber-text-primary focus:ring-1 focus:ring-cyber-bright-blue focus:border-cyber-bright-blue outline-none"
-                  />
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                    <button
-                      onClick={() => setInputAmount((Number(usdcBalance) / 1e6).toString())}
-                      className="text-xs font-semibold text-cyber-neon-green hover:opacity-80 px-2 py-1 bg-cyber-neon-green/10"
-                    >
-                      MAX
-                    </button>
-                    <span className="font-medium text-cyber-text-secondary">USDC</span>
-                  </div>
-                </div>
-              </div>
+              <TokenInput
+                label="USDC to deposit"
+                value={inputAmount}
+                onChange={setInputAmount}
+                token={{ symbol: 'USDC', decimals: 6 }}
+                balance={usdcBalance}
+              />
 
               {/* Arrow */}
               <div className="flex justify-center -my-2 z-10 relative">
@@ -165,33 +146,14 @@ export function Mint() {
                 </div>
               </div>
 
-              {/* Input */}
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-cyber-text-secondary">Amount to redeem (of each token)</span>
-                  <span className="text-cyber-text-secondary">
-                    Max: <span className="text-cyber-text-primary">{formatAmount(minBalance, 18)}</span>
-                  </span>
-                </div>
-                <div className="relative">
-                  <input
-                    type="number"
-                    value={inputAmount}
-                    onChange={(e) => setInputAmount(e.target.value)}
-                    placeholder="0.00"
-                    className="w-full bg-cyber-surface-light border border-cyber-border-glow/30  py-4 pl-4 pr-28 text-xl font-medium text-cyber-text-primary focus:ring-1 focus:ring-cyber-bright-blue focus:border-cyber-bright-blue outline-none"
-                  />
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                    <button
-                      onClick={() => setInputAmount((Number(minBalance) / 1e18).toString())}
-                      className="text-xs font-semibold text-cyber-electric-fuchsia hover:opacity-80 px-2 py-1 bg-cyber-electric-fuchsia/10"
-                    >
-                      MAX
-                    </button>
-                    <span className="font-medium text-cyber-text-secondary">PAIR</span>
-                  </div>
-                </div>
-              </div>
+              <TokenInput
+                label="Amount to redeem (of each token)"
+                value={inputAmount}
+                onChange={setInputAmount}
+                token={{ symbol: 'PAIR', decimals: 18 }}
+                balance={minBalance}
+                balanceLabel="Max:"
+              />
 
               {/* Arrow */}
               <div className="flex justify-center -my-2 z-10 relative">
