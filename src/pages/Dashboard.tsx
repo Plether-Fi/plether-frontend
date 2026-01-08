@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useAccount } from 'wagmi'
-import { InfoTooltip } from '../components/ui'
+import { Alert, InfoTooltip } from '../components/ui'
 import { PortfolioCard } from '../components/PortfolioCard'
 import { PositionCard } from '../components/PositionCard'
 import { AdjustPositionModal } from '../components/AdjustPositionModal'
@@ -168,15 +168,9 @@ export function Dashboard() {
               <h2 className="text-xl font-semibold text-cyber-text-primary mb-4">Open Positions</h2>
 
               {hasLowHealth && (
-                <div className="mb-6 bg-cyber-warning-bg border border-cyber-warning-text/40  p-4 flex items-start gap-3 shadow-lg shadow-cyber-warning-text/10">
-                  <span className="material-symbols-outlined text-cyber-warning-text mt-0.5">warning</span>
-                  <div>
-                    <h3 className="font-medium text-cyber-warning-text text-sm">Low Health Factor Warning</h3>
-                    <p className="text-sm text-cyber-warning-text/80 mt-1">
-                      One or more positions have low health factors and may be at risk of liquidation.
-                    </p>
-                  </div>
-                </div>
+                <Alert variant="warning" title="Low Health Factor Warning" className="mb-6 shadow-lg shadow-cyber-warning-text/10">
+                  One or more positions have low health factors and may be at risk of liquidation.
+                </Alert>
               )}
 
               <div className="space-y-4">

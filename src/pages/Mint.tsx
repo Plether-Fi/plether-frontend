@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAccount } from 'wagmi'
 import { formatAmount } from '../utils/formatters'
-import { TokenIcon } from '../components/ui'
+import { Alert, TokenIcon } from '../components/ui'
 
 type MintMode = 'mint' | 'redeem'
 
@@ -62,14 +62,10 @@ export function Mint() {
         <div className="p-6 md:p-8 space-y-6">
           {mode === 'mint' ? (
             <>
-              {/* Info box */}
-              <div className="bg-cyber-bright-blue/10 border border-cyber-bright-blue/30  p-4 flex items-start gap-3">
-                <span className="material-symbols-outlined text-cyber-bright-blue mt-0.5">info</span>
-                <p className="text-sm text-cyber-bright-blue">
-                  Mint equal amounts of DXY-BEAR and DXY-BULL from USDC.
-                  You'll receive both tokens in a 1:1 ratio.
-                </p>
-              </div>
+              <Alert variant="info">
+                Mint equal amounts of DXY-BEAR and DXY-BULL from USDC.
+                You'll receive both tokens in a 1:1 ratio.
+              </Alert>
 
               {/* Input */}
               <div className="space-y-2">
@@ -145,14 +141,10 @@ export function Mint() {
             </>
           ) : (
             <>
-              {/* Info box */}
-              <div className="bg-cyber-warning-bg border border-cyber-warning-text/30  p-4 flex items-start gap-3">
-                <span className="material-symbols-outlined text-cyber-warning-text mt-0.5">info</span>
-                <p className="text-sm text-cyber-warning-text">
-                  Redeem equal amounts of DXY-BEAR and DXY-BULL to get back USDC.
-                  You need equal amounts of both tokens.
-                </p>
-              </div>
+              <Alert variant="warning" icon="info">
+                Redeem equal amounts of DXY-BEAR and DXY-BULL to get back USDC.
+                You need equal amounts of both tokens.
+              </Alert>
 
               {/* Your balances */}
               <div className="bg-cyber-surface-light  p-4 space-y-3 border border-cyber-border-glow/30">
