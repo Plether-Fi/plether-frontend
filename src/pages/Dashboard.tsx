@@ -289,29 +289,23 @@ export function Dashboard() {
                         onClick={() => setSelectedToken('BEAR')}
                         className={`relative p-4 rounded-xl text-center transition-all ${
                           selectedToken === 'BEAR'
-                            ? 'border-2 border-cyber-bright-blue bg-cyber-bright-blue/10 shadow-md shadow-cyber-bright-blue/20'
-                            : 'border border-cyber-border-glow/30 bg-cyber-surface-dark hover:border-cyber-bright-blue/50 opacity-60 hover:opacity-100'
+                            ? 'border-2 border-cyber-electric-fuchsia bg-cyber-electric-fuchsia/10 shadow-md shadow-cyber-electric-fuchsia/20'
+                            : 'border border-cyber-border-glow/30 bg-cyber-surface-dark hover:border-cyber-electric-fuchsia/50 opacity-60 hover:opacity-100'
                         }`}
                       >
-                        <div className={`font-semibold ${selectedToken === 'BEAR' ? 'text-cyber-bright-blue' : 'text-cyber-text-primary'}`}>DXY-BEAR</div>
-                        <div className={`text-xs mt-1 ${selectedToken === 'BEAR' ? 'text-cyber-bright-blue/70' : 'text-cyber-text-secondary'}`}>Bearish on USD</div>
-                        {selectedToken === 'BEAR' && (
-                          <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-cyber-neon-green shadow-md shadow-cyber-neon-green/50" />
-                        )}
+                        <div className={`font-semibold ${selectedToken === 'BEAR' ? 'text-cyber-electric-fuchsia' : 'text-cyber-text-primary'}`}>DXY-BEAR</div>
+                        <div className={`text-xs mt-1 ${selectedToken === 'BEAR' ? 'text-cyber-electric-fuchsia/70' : 'text-cyber-text-secondary'}`}>Bearish on USD</div>
                       </button>
                       <button
                         onClick={() => setSelectedToken('BULL')}
                         className={`relative p-4 rounded-xl text-center transition-all ${
                           selectedToken === 'BULL'
-                            ? 'border-2 border-cyber-bright-blue bg-cyber-bright-blue/10 shadow-md shadow-cyber-bright-blue/20'
-                            : 'border border-cyber-border-glow/30 bg-cyber-surface-dark hover:border-cyber-bright-blue/50 opacity-60 hover:opacity-100'
+                            ? 'border-2 border-cyber-neon-green bg-cyber-neon-green/10 shadow-md shadow-cyber-neon-green/20'
+                            : 'border border-cyber-border-glow/30 bg-cyber-surface-dark hover:border-cyber-neon-green/50 opacity-60 hover:opacity-100'
                         }`}
                       >
-                        <div className={`font-semibold ${selectedToken === 'BULL' ? 'text-cyber-bright-blue' : 'text-cyber-text-primary'}`}>DXY-BULL</div>
-                        <div className={`text-xs mt-1 ${selectedToken === 'BULL' ? 'text-cyber-bright-blue/70' : 'text-cyber-text-secondary'}`}>Bullish on USD</div>
-                        {selectedToken === 'BULL' && (
-                          <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-cyber-neon-green shadow-md shadow-cyber-neon-green/50" />
-                        )}
+                        <div className={`font-semibold ${selectedToken === 'BULL' ? 'text-cyber-neon-green' : 'text-cyber-text-primary'}`}>DXY-BULL</div>
+                        <div className={`text-xs mt-1 ${selectedToken === 'BULL' ? 'text-cyber-neon-green/70' : 'text-cyber-text-secondary'}`}>Bullish on USD</div>
                       </button>
                     </div>
                   </div>
@@ -429,8 +423,8 @@ export function Dashboard() {
                             : 'border border-cyber-border-glow/30 bg-cyber-surface-dark hover:border-cyber-electric-fuchsia/50 opacity-60 hover:opacity-100'
                         }`}
                       >
-                        <div className={`font-semibold ${selectedSide === 'BEAR' ? 'text-cyber-electric-fuchsia' : 'text-cyber-text-primary'}`}>BEAR</div>
-                        <div className={`text-xs mt-1 ${selectedSide === 'BEAR' ? 'text-cyber-electric-fuchsia/70' : 'text-cyber-text-secondary'}`}>Short USD</div>
+                        <div className={`font-semibold ${selectedSide === 'BEAR' ? 'text-cyber-electric-fuchsia' : 'text-cyber-text-primary'}`}>DXY-BEAR</div>
+                        <div className={`text-xs mt-1 ${selectedSide === 'BEAR' ? 'text-cyber-electric-fuchsia/70' : 'text-cyber-text-secondary'}`}>Bearish on USD</div>
                       </button>
                       <button
                         onClick={() => setSelectedSide('BULL')}
@@ -440,8 +434,8 @@ export function Dashboard() {
                             : 'border border-cyber-border-glow/30 bg-cyber-surface-dark hover:border-cyber-neon-green/50 opacity-60 hover:opacity-100'
                         }`}
                       >
-                        <div className={`font-semibold ${selectedSide === 'BULL' ? 'text-cyber-neon-green' : 'text-cyber-text-primary'}`}>BULL</div>
-                        <div className={`text-xs mt-1 ${selectedSide === 'BULL' ? 'text-cyber-neon-green/70' : 'text-cyber-text-secondary'}`}>Long USD</div>
+                        <div className={`font-semibold ${selectedSide === 'BULL' ? 'text-cyber-neon-green' : 'text-cyber-text-primary'}`}>DXY-BULL</div>
+                        <div className={`text-xs mt-1 ${selectedSide === 'BULL' ? 'text-cyber-neon-green/70' : 'text-cyber-text-secondary'}`}>Bullish on USD</div>
                       </button>
                     </div>
                   </div>
