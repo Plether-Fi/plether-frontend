@@ -131,7 +131,7 @@ export function Dashboard() {
               description="USDC, DXY-BEAR, DXY-BULL"
               link="/"
               isLoading={isLoading}
-              colorClass="text-cyber-neon-green"
+              colorClass="text-cyber-bright-blue"
             />
             <PortfolioCard
               title="Staked"
@@ -139,7 +139,7 @@ export function Dashboard() {
               description="sDXY-BEAR, sDXY-BULL"
               link="/stake"
               isLoading={isLoading}
-              colorClass="text-cyber-electric-fuchsia"
+              colorClass="text-cyber-bright-blue"
             />
             <PortfolioCard
               title="Leverage"
@@ -147,7 +147,7 @@ export function Dashboard() {
               description="Open positions"
               link="/leverage"
               isLoading={isLoading}
-              colorClass="text-cyber-bright-blue"
+              colorClass="text-cyber-electric-fuchsia"
             />
             <PortfolioCard
               title="Lending"
