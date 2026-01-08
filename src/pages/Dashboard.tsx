@@ -194,11 +194,15 @@ export function Dashboard() {
           {/* Trade / Leverage / Yield widget */}
           <div className="bg-cyber-surface-dark border border-cyber-border-glow/30  overflow-hidden shadow-lg shadow-cyber-border-glow/10">
             {/* Folder tabs */}
-            <div className="flex flex-col sm:flex-row border-b border-cyber-border-glow/30">
+            <div className={`flex flex-col sm:flex-row border-b-2 ${
+              mainTab === 'trade' ? 'border-cyber-bright-blue' :
+              mainTab === 'leverage' ? 'border-cyber-electric-fuchsia' :
+              'border-cyber-neon-green'
+            }`}>
               <button
                 onClick={() => handleTabChange('trade')}
                 className={`
-                  flex-1 flex items-center gap-3 px-6 py-5 text-left transition-colors
+                  flex-1 flex items-center gap-3 px-6 py-5 text-left transition-colors -mb-[2px]
                   ${mainTab === 'trade'
                     ? 'bg-cyber-surface-light border-b-2 border-cyber-bright-blue shadow-md shadow-cyber-bright-blue/10'
                     : 'hover:bg-cyber-surface-light border-b-2 border-transparent opacity-60 hover:opacity-100 hover:border-cyber-bright-blue/50'
@@ -217,7 +221,7 @@ export function Dashboard() {
               <button
                 onClick={() => handleTabChange('leverage')}
                 className={`
-                  flex-1 flex items-center gap-3 px-6 py-5 text-left transition-colors
+                  flex-1 flex items-center gap-3 px-6 py-5 text-left transition-colors -mb-[2px]
                   ${mainTab === 'leverage'
                     ? 'bg-cyber-surface-light border-b-2 border-cyber-electric-fuchsia shadow-md shadow-cyber-electric-fuchsia/10'
                     : 'hover:bg-cyber-surface-light border-b-2 border-transparent opacity-60 hover:opacity-100 hover:border-cyber-electric-fuchsia/50'
@@ -236,7 +240,7 @@ export function Dashboard() {
               <button
                 onClick={() => handleTabChange('yield')}
                 className={`
-                  flex-1 flex items-center gap-3 px-6 py-5 text-left transition-colors
+                  flex-1 flex items-center gap-3 px-6 py-5 text-left transition-colors -mb-[2px]
                   ${mainTab === 'yield'
                     ? 'bg-cyber-surface-light border-b-2 border-cyber-neon-green shadow-md shadow-cyber-neon-green/10'
                     : 'hover:bg-cyber-surface-light border-b-2 border-transparent opacity-60 hover:opacity-100 hover:border-cyber-neon-green/50'
