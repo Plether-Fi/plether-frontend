@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useAccount } from 'wagmi'
-import { SkeletonCard, InfoTooltip, Modal } from '../components/ui'
+import { SkeletonCard, InfoTooltip, Modal, TokenIcon } from '../components/ui'
 import { formatUsd, formatPercent } from '../utils/formatters'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { HEALTH_FACTOR_WARNING, HEALTH_FACTOR_DANGER } from '../config/constants'
@@ -730,8 +730,6 @@ interface PositionCardProps {
 
 function PositionCard({ position, onAdjust }: PositionCardProps) {
   const sideColor = position.side === 'BEAR' ? 'text-cyber-electric-fuchsia' : 'text-cyber-neon-green'
-  const sideBg = position.side === 'BEAR' ? 'bg-cyber-electric-fuchsia/20' : 'bg-cyber-neon-green/20'
-  const sideShadow = position.side === 'BEAR' ? 'shadow-cyber-electric-fuchsia/10' : 'shadow-cyber-neon-green/10'
   const pnlColor = position.pnl >= 0n ? 'text-cyber-neon-green' : 'text-cyber-electric-fuchsia'
   const healthColor = position.healthFactor >= HEALTH_FACTOR_WARNING
     ? 'text-cyber-neon-green'
@@ -743,9 +741,7 @@ function PositionCard({ position, onAdjust }: PositionCardProps) {
     <div className="bg-cyber-surface-dark rounded-lg p-4 border border-cyber-border-glow/30 hover:border-cyber-bright-blue/50 transition-all shadow-md">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className={`w-10 h-10 rounded ${sideBg} ${sideColor} flex items-center justify-center font-bold text-lg shadow-md ${sideShadow}`}>
-            {position.side[0]}
-          </div>
+          <TokenIcon side={position.side} />
           <div>
             <div className="flex items-center gap-2">
               <span className={`font-semibold ${sideColor}`}>DXY-{position.side}</span>

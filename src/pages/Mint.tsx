@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAccount } from 'wagmi'
 import { formatAmount } from '../utils/formatters'
+import { TokenIcon } from '../components/ui'
 
 type MintMode = 'mint' | 'redeem'
 
@@ -110,18 +111,14 @@ export function Mint() {
                 <p className="text-sm text-cyber-text-secondary">You will receive:</p>
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded bg-cyber-electric-fuchsia/20 flex items-center justify-center">
-                      <span className="text-cyber-electric-fuchsia font-bold text-sm">B</span>
-                    </div>
+                    <TokenIcon side="BEAR" size="sm" />
                     <span className="text-cyber-electric-fuchsia font-medium">DXY-BEAR</span>
                   </div>
                   <span className="text-cyber-text-primary font-semibold">{outputAmount}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded bg-cyber-neon-green/20 flex items-center justify-center">
-                      <span className="text-cyber-neon-green font-bold text-sm">B</span>
-                    </div>
+                    <TokenIcon side="BULL" size="sm" />
                     <span className="text-cyber-neon-green font-medium">DXY-BULL</span>
                   </div>
                   <span className="text-cyber-text-primary font-semibold">{outputAmount}</span>
@@ -162,18 +159,14 @@ export function Mint() {
                 <p className="text-sm text-cyber-text-secondary">Your balances:</p>
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded bg-cyber-electric-fuchsia/20 flex items-center justify-center">
-                      <span className="text-cyber-electric-fuchsia font-bold text-sm">B</span>
-                    </div>
+                    <TokenIcon side="BEAR" size="sm" />
                     <span className="text-cyber-electric-fuchsia font-medium">DXY-BEAR</span>
                   </div>
                   <span className="text-cyber-text-primary font-semibold">{formatAmount(bearBalance, 18)}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded bg-cyber-neon-green/20 flex items-center justify-center">
-                      <span className="text-cyber-neon-green font-bold text-sm">B</span>
-                    </div>
+                    <TokenIcon side="BULL" size="sm" />
                     <span className="text-cyber-neon-green font-medium">DXY-BULL</span>
                   </div>
                   <span className="text-cyber-text-primary font-semibold">{formatAmount(bullBalance, 18)}</span>

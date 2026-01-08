@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAccount } from 'wagmi'
 import { formatAmount } from '../utils/formatters'
+import { TokenIcon } from '../components/ui'
 
 type StakeMode = 'stake' | 'unstake'
 
@@ -69,9 +70,7 @@ function StakingCard({ side, tokenBalance, stakedBalance }: StakingCardProps) {
       {/* Header */}
       <div className={`px-6 py-4 border-b border-cyber-border-glow/30 ${isBear ? 'bg-cyber-electric-fuchsia/10' : 'bg-cyber-neon-green/10'}`}>
         <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-lg ${isBear ? 'bg-cyber-electric-fuchsia/20' : 'bg-cyber-neon-green/20'} flex items-center justify-center`}>
-            <span className={`font-bold text-lg ${textColor}`}>{side[0]}</span>
-          </div>
+          <TokenIcon side={side} />
           <div>
             <h3 className={`font-semibold ${textColor}`}>DXY-{side} Staking</h3>
             <p className="text-xs text-cyber-text-secondary">Stake to use as collateral</p>
