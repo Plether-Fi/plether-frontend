@@ -195,9 +195,9 @@ export function Dashboard() {
           <div className="bg-cyber-surface-dark border border-cyber-border-glow/30  overflow-hidden shadow-lg shadow-cyber-border-glow/10">
             {/* Folder tabs */}
             <div className={`flex flex-col sm:flex-row border-b-2 ${
-              mainTab === 'trade' ? 'border-cyber-bright-blue' :
-              mainTab === 'leverage' ? 'border-cyber-electric-fuchsia' :
-              'border-cyber-neon-green'
+              mainTab === 'trade' ? 'border-cyber-bright-blue shadow-[0_2px_10px_-2px] shadow-cyber-bright-blue/50' :
+              mainTab === 'leverage' ? 'border-cyber-electric-fuchsia shadow-[0_2px_10px_-2px] shadow-cyber-electric-fuchsia/50' :
+              'border-cyber-neon-green shadow-[0_2px_10px_-2px] shadow-cyber-neon-green/50'
             }`}>
               <button
                 onClick={() => handleTabChange('trade')}
