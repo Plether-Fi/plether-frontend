@@ -7,11 +7,10 @@ import { AdjustPositionModal } from '../components/AdjustPositionModal'
 import { TradeCard } from '../components/TradeCard'
 import { YieldCard } from '../components/YieldCard'
 import { LeverageCard } from '../components/LeverageCard'
+import { MainTabNav } from '../components/MainTabNav'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { HEALTH_FACTOR_WARNING } from '../config/constants'
 import type { LeveragePosition } from '../types'
-
-type MainTab = 'trade' | 'leverage' | 'yield'
 
 const mockPositions: LeveragePosition[] = [
   {
@@ -45,11 +44,13 @@ export function Dashboard() {
   const location = useLocation()
   const navigate = useNavigate()
 
+  type MainTab = 'trade' | 'leverage' | 'yield'
+
   const mainTab: MainTab =
     location.pathname === '/leverage' ? 'leverage' :
     location.pathname === '/yield' ? 'yield' : 'trade'
 
-  const handleTabChange = (tab: string) => {
+  const handleTabChange = (tab: MainTab) => {
     if (tab === 'leverage') navigate('/leverage')
     else if (tab === 'yield') navigate('/yield')
     else navigate('/')
@@ -143,70 +144,8 @@ export function Dashboard() {
           )}
 
           {/* Trade / Leverage / Yield widget */}
-          <div className="bg-cyber-surface-dark border border-cyber-border-glow/30  overflow-hidden shadow-lg shadow-cyber-border-glow/10">
-            {/* Folder tabs */}
-            <div className={`flex flex-col sm:flex-row border-b-2 ${
-              mainTab === 'trade' ? 'border-cyber-bright-blue shadow-[0_2px_10px_-2px] shadow-cyber-bright-blue/50' :
-              mainTab === 'leverage' ? 'border-cyber-electric-fuchsia shadow-[0_2px_10px_-2px] shadow-cyber-electric-fuchsia/50' :
-              'border-cyber-neon-green shadow-[0_2px_10px_-2px] shadow-cyber-neon-green/50'
-            }`}>
-              <button
-                onClick={() => handleTabChange('trade')}
-                className={`
-                  flex-1 flex items-center gap-3 px-6 py-5 text-left transition-colors -mb-[2px]
-                  ${mainTab === 'trade'
-                    ? 'bg-cyber-surface-light border-b-2 border-cyber-bright-blue shadow-md shadow-cyber-bright-blue/10'
-                    : 'hover:bg-cyber-surface-light border-b-2 border-transparent opacity-60 hover:opacity-100 hover:border-cyber-bright-blue/50'
-                  }
-                `}
-              >
-                <div className={`p-2  ${mainTab === 'trade' ? 'bg-cyber-bright-blue/20 text-cyber-bright-blue' : 'bg-cyber-text-secondary/20 text-cyber-text-secondary'}`}>
-                  <span className="material-symbols-outlined text-xl">security</span>
-                </div>
-                <div>
-                  <div className={`font-semibold ${mainTab === 'trade' ? 'text-cyber-bright-blue' : 'text-cyber-text-primary'}`}>Dollar Hedge</div>
-                  <div className={`text-xs ${mainTab === 'trade' ? 'text-cyber-bright-blue/70' : 'text-cyber-text-secondary'}`}>Spot trading</div>
-                </div>
-              </button>
-
-              <button
-                onClick={() => handleTabChange('leverage')}
-                className={`
-                  flex-1 flex items-center gap-3 px-6 py-5 text-left transition-colors -mb-[2px]
-                  ${mainTab === 'leverage'
-                    ? 'bg-cyber-surface-light border-b-2 border-cyber-electric-fuchsia shadow-md shadow-cyber-electric-fuchsia/10'
-                    : 'hover:bg-cyber-surface-light border-b-2 border-transparent opacity-60 hover:opacity-100 hover:border-cyber-electric-fuchsia/50'
-                  }
-                `}
-              >
-                <div className={`p-2  ${mainTab === 'leverage' ? 'bg-cyber-electric-fuchsia/20 text-cyber-electric-fuchsia' : 'bg-cyber-text-secondary/20 text-cyber-text-secondary'}`}>
-                  <span className="material-symbols-outlined text-xl">trending_up</span>
-                </div>
-                <div>
-                  <div className={`font-semibold ${mainTab === 'leverage' ? 'text-cyber-electric-fuchsia' : 'text-cyber-text-primary'}`}>Leverage</div>
-                  <div className={`text-xs ${mainTab === 'leverage' ? 'text-cyber-electric-fuchsia/70' : 'text-cyber-text-secondary'}`}>Margin trading</div>
-                </div>
-              </button>
-
-              <button
-                onClick={() => handleTabChange('yield')}
-                className={`
-                  flex-1 flex items-center gap-3 px-6 py-5 text-left transition-colors -mb-[2px]
-                  ${mainTab === 'yield'
-                    ? 'bg-cyber-surface-light border-b-2 border-cyber-neon-green shadow-md shadow-cyber-neon-green/10'
-                    : 'hover:bg-cyber-surface-light border-b-2 border-transparent opacity-60 hover:opacity-100 hover:border-cyber-neon-green/50'
-                  }
-                `}
-              >
-                <div className={`p-2  ${mainTab === 'yield' ? 'bg-cyber-neon-green/20 text-cyber-neon-green' : 'bg-cyber-text-secondary/20 text-cyber-text-secondary'}`}>
-                  <span className="material-symbols-outlined text-xl">grass</span>
-                </div>
-                <div>
-                  <div className={`font-semibold ${mainTab === 'yield' ? 'text-cyber-neon-green' : 'text-cyber-text-primary'}`}>Yield</div>
-                  <div className={`text-xs ${mainTab === 'yield' ? 'text-cyber-neon-green/70' : 'text-cyber-text-secondary'}`}>Liquidity providing</div>
-                </div>
-              </button>
-            </div>
+          <div className="bg-cyber-surface-dark border border-cyber-border-glow/30 overflow-hidden shadow-lg shadow-cyber-border-glow/10">
+            <MainTabNav activeTab={mainTab} onTabChange={handleTabChange} />
 
             {/* Tab content */}
             <div className="p-6 md:p-8 lg:p-12">
