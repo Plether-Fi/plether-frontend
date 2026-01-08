@@ -1,7 +1,5 @@
 import { useState } from 'react'
 import { useAccount } from 'wagmi'
-import { Card, CardHeader, Button, Tabs } from '../components/ui'
-import { TokenInput } from '../components/TokenInput'
 import { formatAmount } from '../utils/formatters'
 
 type StakeMode = 'stake' | 'unstake'
@@ -10,29 +8,36 @@ export function Stake() {
   const { isConnected } = useAccount()
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Stake</h1>
-        <p className="text-gray-400">Stake your tokens to use as collateral</p>
+    <div className="space-y-10">
+      <div className="mb-8">
+        <h1 className="text-3xl font-semibold text-cyber-text-primary mb-1">Stake</h1>
+        <p className="text-cyber-text-secondary font-light">Stake your tokens to use as collateral</p>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
-        {/* BEAR Staking */}
-        <StakingCard
-          side="BEAR"
-          tokenBalance={500n * 10n ** 18n}
-          stakedBalance={200n * 10n ** 18n}
-          isConnected={isConnected}
-        />
-
-        {/* BULL Staking */}
-        <StakingCard
-          side="BULL"
-          tokenBalance={500n * 10n ** 18n}
-          stakedBalance={150n * 10n ** 18n}
-          isConnected={isConnected}
-        />
-      </div>
+      {isConnected ? (
+        <div className="grid md:grid-cols-2 gap-6">
+          <StakingCard
+            side="BEAR"
+            tokenBalance={500n * 10n ** 18n}
+            stakedBalance={200n * 10n ** 18n}
+          />
+          <StakingCard
+            side="BULL"
+            tokenBalance={500n * 10n ** 18n}
+            stakedBalance={150n * 10n ** 18n}
+          />
+        </div>
+      ) : (
+        <div className="bg-cyber-surface-dark rounded-xl p-12 text-center border border-cyber-border-glow/30 shadow-lg">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-cyber-surface-light flex items-center justify-center">
+            <span className="material-symbols-outlined text-3xl text-cyber-text-secondary">lock</span>
+          </div>
+          <h2 className="text-xl font-semibold text-cyber-text-primary mb-2">Connect Your Wallet</h2>
+          <p className="text-cyber-text-secondary mb-6 max-w-md mx-auto">
+            Connect your wallet to stake DXY-BEAR and DXY-BULL tokens.
+          </p>
+        </div>
+      )}
     </div>
   )
 }
@@ -41,86 +46,112 @@ interface StakingCardProps {
   side: 'BEAR' | 'BULL'
   tokenBalance: bigint
   stakedBalance: bigint
-  isConnected: boolean
 }
 
-function StakingCard({
-  side,
-  tokenBalance,
-  stakedBalance,
-  isConnected,
-}: StakingCardProps) {
+function StakingCard({ side, tokenBalance, stakedBalance }: StakingCardProps) {
   const [mode, setMode] = useState<StakeMode>('stake')
   const [amount, setAmount] = useState('')
 
-  const colorClass = side === 'BEAR' ? 'text-bear' : 'text-bull'
-  const bgClass = side === 'BEAR' ? 'bg-bear/10' : 'bg-bull/10'
-  const borderClass = side === 'BEAR' ? 'border-bear/30' : 'border-bull/30'
+  const isBear = side === 'BEAR'
+  const textColor = isBear ? 'text-cyber-electric-fuchsia' : 'text-cyber-neon-green'
+  const bgColor = isBear ? 'bg-cyber-electric-fuchsia' : 'bg-cyber-neon-green'
+  const borderColor = isBear ? 'border-cyber-electric-fuchsia' : 'border-cyber-neon-green'
+  const shadowColor = isBear ? 'shadow-cyber-electric-fuchsia' : 'shadow-cyber-neon-green'
 
-  const handleStake = async () => {
-    console.log('Stake:', { side, amount })
+  const handleAction = async () => {
+    console.log(`${mode}:`, { side, amount })
   }
 
-  const handleUnstake = async () => {
-    console.log('Unstake:', { side, amount })
-  }
+  const balance = mode === 'stake' ? tokenBalance : stakedBalance
 
   return (
-    <Card>
-      <CardHeader
-        title={`DXY-${side} Staking`}
-        subtitle={`Stake DXY-${side} to use as collateral`}
-      />
-
-      {/* Staking stats */}
-      <div className={`${bgClass} ${borderClass} border rounded-lg p-4 mb-4`}>
-        <div className="flex justify-between">
-          <span className="text-gray-400 text-sm">Staked Balance</span>
-          <span className={`${colorClass} font-medium`}>
-            {formatAmount(stakedBalance, 18)} sDXY-{side}
-          </span>
+    <div className="bg-cyber-surface-dark rounded-xl border border-cyber-border-glow/30 shadow-lg overflow-hidden">
+      {/* Header */}
+      <div className={`px-6 py-4 border-b border-cyber-border-glow/30 ${isBear ? 'bg-cyber-electric-fuchsia/10' : 'bg-cyber-neon-green/10'}`}>
+        <div className="flex items-center gap-3">
+          <div className={`w-10 h-10 rounded-lg ${isBear ? 'bg-cyber-electric-fuchsia/20' : 'bg-cyber-neon-green/20'} flex items-center justify-center`}>
+            <span className={`font-bold text-lg ${textColor}`}>{side[0]}</span>
+          </div>
+          <div>
+            <h3 className={`font-semibold ${textColor}`}>DXY-{side} Staking</h3>
+            <p className="text-xs text-cyber-text-secondary">Stake to use as collateral</p>
+          </div>
         </div>
       </div>
 
-      {/* Stake/Unstake tabs */}
-      <Tabs
-        tabs={[
-          { id: 'stake', label: 'Stake' },
-          { id: 'unstake', label: 'Unstake' },
-        ]}
-        activeTab={mode}
-        onChange={(id) => {
-          setMode(id as StakeMode)
-          setAmount('')
-        }}
-      />
+      <div className="p-6 space-y-6">
+        {/* Staked balance */}
+        <div className={`bg-cyber-surface-light rounded-lg p-4 border ${isBear ? 'border-cyber-electric-fuchsia/30' : 'border-cyber-neon-green/30'}`}>
+          <div className="flex justify-between items-center">
+            <span className="text-cyber-text-secondary text-sm">Staked Balance</span>
+            <span className={`${textColor} font-semibold`}>
+              {formatAmount(stakedBalance, 18)} sDXY-{side}
+            </span>
+          </div>
+        </div>
 
-      <div className="mt-4 space-y-4">
-        <TokenInput
-          value={amount}
-          onChange={setAmount}
-          token={{
-            symbol: mode === 'stake' ? `DXY-${side}` : `sDXY-${side}`,
-            decimals: 18,
-          }}
-          balance={isConnected ? (mode === 'stake' ? tokenBalance : stakedBalance) : undefined}
-        />
-
-        {isConnected ? (
-          <Button
-            variant="primary"
-            className="w-full"
-            disabled={!amount || parseFloat(amount) <= 0}
-            onClick={mode === 'stake' ? handleStake : handleUnstake}
+        {/* Stake/Unstake tabs */}
+        <div className="bg-cyber-surface-light p-1 rounded-lg flex text-sm font-medium border border-cyber-border-glow/30">
+          <button
+            onClick={() => { setMode('stake'); setAmount('') }}
+            className={`flex-1 py-2 px-4 rounded-md transition-all ${
+              mode === 'stake'
+                ? `bg-cyber-surface-dark ${textColor} shadow-sm ${shadowColor}/10 border ${borderColor}/50`
+                : 'text-cyber-text-secondary hover:text-cyber-bright-blue'
+            }`}
           >
-            {mode === 'stake' ? 'Stake' : 'Unstake'} DXY-{side}
-          </Button>
-        ) : (
-          <Button variant="secondary" className="w-full" disabled>
-            Connect Wallet
-          </Button>
-        )}
+            Stake
+          </button>
+          <button
+            onClick={() => { setMode('unstake'); setAmount('') }}
+            className={`flex-1 py-2 px-4 rounded-md transition-all ${
+              mode === 'unstake'
+                ? `bg-cyber-surface-dark ${textColor} shadow-sm ${shadowColor}/10 border ${borderColor}/50`
+                : 'text-cyber-text-secondary hover:text-cyber-bright-blue'
+            }`}
+          >
+            Unstake
+          </button>
+        </div>
+
+        {/* Input */}
+        <div className="space-y-2">
+          <div className="flex justify-between text-sm">
+            <span className="text-cyber-text-secondary">
+              {mode === 'stake' ? `DXY-${side} to stake` : `sDXY-${side} to unstake`}
+            </span>
+            <span className="text-cyber-text-secondary">
+              Balance: <span className="text-cyber-text-primary">{formatAmount(balance, 18)}</span>
+            </span>
+          </div>
+          <div className="relative">
+            <input
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="0.00"
+              className="w-full bg-cyber-surface-light border border-cyber-border-glow/30 rounded-xl py-4 pl-4 pr-24 text-xl font-medium text-cyber-text-primary focus:ring-1 focus:ring-cyber-bright-blue focus:border-cyber-bright-blue outline-none transition-shadow shadow-sm shadow-cyber-border-glow/10"
+            />
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+              <button
+                onClick={() => setAmount((Number(balance) / 1e18).toString())}
+                className={`text-xs font-semibold ${textColor} hover:opacity-80 px-2 py-1 rounded ${isBear ? 'bg-cyber-electric-fuchsia/10' : 'bg-cyber-neon-green/10'}`}
+              >
+                MAX
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Action button */}
+        <button
+          onClick={handleAction}
+          disabled={!amount || parseFloat(amount) <= 0}
+          className={`w-full ${bgColor} hover:opacity-90 ${isBear ? 'text-cyber-text-primary' : 'text-cyber-bg'} font-semibold py-4 px-6 rounded-xl shadow-lg ${shadowColor}/40 transition-all transform hover:-translate-y-0.5 active:translate-y-0 text-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none`}
+        >
+          {mode === 'stake' ? 'Stake' : 'Unstake'} DXY-{side}
+        </button>
       </div>
-    </Card>
+    </div>
   )
 }

@@ -1,34 +1,45 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
 
 @theme {
-  /* Primary brand colors - Blue */
-  --color-primary-50: #eff6ff;
-  --color-primary-100: #dbeafe;
-  --color-primary-200: #bfdbfe;
-  --color-primary-300: #93c5fd;
-  --color-primary-400: #60a5fa;
-  --color-primary-500: #3b82f6;
-  --color-primary-600: #2563eb;
-  --color-primary-700: #1d4ed8;
-  --color-primary-800: #1e40af;
-  --color-primary-900: #1e3a8a;
+  /* Cyberpunk Neon Nights Palette */
+  --color-cyber-bg: #0D0A1C;
+  --color-cyber-surface-dark: #1C153A;
+  --color-cyber-surface-light: #2F255A;
+  --color-cyber-text-primary: #E0E0FF;
+  --color-cyber-text-secondary: #A6B3D9;
+  --color-cyber-neon-green: #00FF99;
+  --color-cyber-electric-fuchsia: #FF00CC;
+  --color-cyber-bright-blue: #00CCFF;
+  --color-cyber-warning-bg: #3A2000;
+  --color-cyber-warning-text: #FFD700;
+  --color-cyber-border-glow: #4A00FF;
 
-  /* Accent for BEAR (bearish/red) */
-  --color-bear: #ef4444;
-  --color-bear-light: #fca5a5;
-  --color-bear-dark: #b91c1c;
+  /* Accent for BEAR (bearish/red) - use fuchsia for cyberpunk */
+  --color-bear: #FF00CC;
+  --color-bear-light: #FF66DD;
+  --color-bear-dark: #CC00AA;
 
-  /* Accent for BULL (bullish/green) */
-  --color-bull: #22c55e;
-  --color-bull-light: #86efac;
-  --color-bull-dark: #15803d;
+  /* Accent for BULL (bullish/green) - use neon green for cyberpunk */
+  --color-bull: #00FF99;
+  --color-bull-light: #66FFBB;
+  --color-bull-dark: #00CC77;
 
-  /* Dark navy theme surface colors */
-  --color-surface: #0f172a;
-  --color-surface-50: #1e293b;
-  --color-surface-100: #172033;
-  --color-surface-200: #0f172a;
-  --color-surface-300: #0a101e;
+  /* Primary - neon green */
+  --color-primary-500: #00FF99;
+  --color-primary-600: #00DD88;
+  --color-primary-400: #33FFAA;
+
+  /* Surface colors mapped to cyber */
+  --color-surface: #0D0A1C;
+  --color-surface-50: #2F255A;
+  --color-surface-100: #1C153A;
+  --color-surface-200: #1C153A;
+  --color-surface-300: #0D0A1C;
+
+  /* Font family */
+  --font-family-sans: 'Rajdhani', sans-serif;
 }
 
 :root {
@@ -39,14 +50,14 @@
 }
 
 html {
-  background-color: #000;
-  color: white;
+  background-color: #0D0A1C;
+  color: #E0E0FF;
 }
 
 body {
   min-height: 100vh;
-  background: linear-gradient(180deg, #000000 0%, #070b14 50%, #0c1524 100%);
-  background-attachment: fixed;
+  background-color: #0D0A1C;
+  font-family: 'Rajdhani', sans-serif;
 }
 
 #root {
@@ -56,4 +67,27 @@ body {
 /* Safe area for mobile bottom nav */
 .safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1C153A;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #00CCFF;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #00E5FF;
+}
+
+/* Material Symbols styling */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }

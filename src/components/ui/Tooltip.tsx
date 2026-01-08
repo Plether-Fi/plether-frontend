@@ -26,8 +26,8 @@ export function Tooltip({ content, children, position = 'top' }: TooltipProps) {
       {isVisible && (
         <div
           className={`
-            absolute z-50 px-3 py-2 text-sm text-white bg-gray-900
-            border border-gray-700 rounded-lg shadow-lg whitespace-nowrap
+            absolute z-50 px-3 py-2 text-sm text-cyber-text-primary bg-cyber-surface-dark
+            border border-cyber-border-glow/50 rounded-lg shadow-lg shadow-cyber-border-glow/20 whitespace-nowrap
             ${positionStyles[position]}
           `}
         >
@@ -38,7 +38,6 @@ export function Tooltip({ content, children, position = 'top' }: TooltipProps) {
   )
 }
 
-// Info icon with tooltip
 interface InfoTooltipProps {
   content: ReactNode
 }
@@ -46,8 +45,8 @@ interface InfoTooltipProps {
 export function InfoTooltip({ content }: InfoTooltipProps) {
   return (
     <Tooltip content={content}>
-      <span className="inline-flex items-center justify-center w-4 h-4 text-xs text-gray-400 border border-gray-600 rounded-full cursor-help">
-        ?
+      <span className="inline-flex items-center justify-center w-4 h-4 text-cyber-text-secondary hover:text-cyber-bright-blue cursor-help transition-colors">
+        <span className="material-symbols-outlined text-sm">help</span>
       </span>
     </Tooltip>
   )

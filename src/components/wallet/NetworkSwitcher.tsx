@@ -1,6 +1,6 @@
 import { useSwitchChain, useChainId } from 'wagmi'
 import { mainnet, sepolia } from 'wagmi/chains'
-import { Button, Modal } from '../ui'
+import { Modal } from '../ui'
 
 interface NetworkSwitcherProps {
   isOpen: boolean
@@ -12,8 +12,8 @@ export function NetworkSwitcher({ isOpen, onClose }: NetworkSwitcherProps) {
   const { switchChain, isPending } = useSwitchChain()
 
   const networks = [
-    { chain: mainnet, name: 'Ethereum Mainnet', icon: '🔷' },
-    { chain: sepolia, name: 'Sepolia Testnet', icon: '🔶' },
+    { chain: mainnet, name: 'Ethereum Mainnet', icon: 'diamond' },
+    { chain: sepolia, name: 'Sepolia Testnet', icon: 'science' },
   ]
 
   const handleSwitch = async (targetChainId: typeof mainnet.id | typeof sepolia.id) => {
@@ -24,44 +24,42 @@ export function NetworkSwitcher({ isOpen, onClose }: NetworkSwitcherProps) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Select Network" size="sm">
       <div className="space-y-2">
-        {networks.map(({ chain, name, icon }) => (
-          <button
-            key={chain.id}
-            onClick={() => handleSwitch(chain.id)}
-            disabled={isPending}
-            className={`
-              w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors
-              ${
-                chainId === chain.id
-                  ? 'bg-primary-600/20 border border-primary-600'
-                  : 'bg-surface-200 hover:bg-surface-50 border border-transparent'
-              }
-            `}
-          >
-            <span className="text-2xl">{icon}</span>
-            <div className="text-left">
-              <p className="text-white font-medium">{name}</p>
-              <p className="text-sm text-gray-400">Chain ID: {chain.id}</p>
-            </div>
-            {chainId === chain.id && (
-              <span className="ml-auto text-primary-500">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    fillRule="evenodd"
-                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </span>
-            )}
-          </button>
-        ))}
+        {networks.map(({ chain, name, icon }) => {
+          const isActive = chainId === chain.id
+          return (
+            <button
+              key={chain.id}
+              onClick={() => handleSwitch(chain.id)}
+              disabled={isPending}
+              className={`
+                w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all
+                ${isActive
+                  ? 'bg-cyber-neon-green/20 border border-cyber-neon-green/50 shadow-sm shadow-cyber-neon-green/20'
+                  : 'bg-cyber-surface-light border border-cyber-border-glow/30 hover:border-cyber-bright-blue/50 hover:bg-cyber-surface-light/80'
+                }
+                disabled:opacity-50 disabled:cursor-not-allowed
+              `}
+            >
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isActive ? 'bg-cyber-neon-green/20' : 'bg-cyber-surface-dark'}`}>
+                <span className={`material-symbols-outlined text-xl ${isActive ? 'text-cyber-neon-green' : 'text-cyber-text-secondary'}`}>
+                  {icon}
+                </span>
+              </div>
+              <div className="text-left flex-1">
+                <p className={`font-medium ${isActive ? 'text-cyber-neon-green' : 'text-cyber-text-primary'}`}>{name}</p>
+                <p className="text-sm text-cyber-text-secondary">Chain ID: {chain.id}</p>
+              </div>
+              {isActive && (
+                <span className="material-symbols-outlined text-cyber-neon-green">check_circle</span>
+              )}
+            </button>
+          )
+        })}
       </div>
     </Modal>
   )
 }
 
-// Component to show when on wrong network
 export function WrongNetworkBanner() {
   const chainId = useChainId()
   const { switchChain, isPending } = useSwitchChain()
@@ -71,19 +69,33 @@ export function WrongNetworkBanner() {
   if (!isWrongNetwork) return null
 
   return (
-    <div className="bg-red-900/50 border-b border-red-800 px-4 py-3">
-      <div className="max-w-7xl mx-auto flex items-center justify-between">
-        <p className="text-red-200">
-          Please connect to Ethereum Mainnet or Sepolia to use Plether.
-        </p>
-        <Button
-          variant="danger"
-          size="sm"
-          isLoading={isPending}
+    <div className="bg-cyber-electric-fuchsia/20 border-b border-cyber-electric-fuchsia/50 px-4 py-3">
+      <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <span className="material-symbols-outlined text-cyber-electric-fuchsia">warning</span>
+          <p className="text-cyber-electric-fuchsia text-sm">
+            Please connect to Ethereum Mainnet or Sepolia to use Plether.
+          </p>
+        </div>
+        <button
           onClick={() => switchChain({ chainId: mainnet.id })}
+          disabled={isPending}
+          className="flex items-center gap-2 px-4 py-2 bg-cyber-electric-fuchsia hover:bg-cyber-electric-fuchsia/80 text-cyber-text-primary rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-cyber-electric-fuchsia/20"
         >
-          Switch to Mainnet
-        </Button>
+          {isPending ? (
+            <>
+              <div className="w-4 h-4 relative">
+                <div className="absolute inset-0 rounded-full border-2 border-cyber-text-primary/30 border-t-cyber-text-primary animate-spin" />
+              </div>
+              Switching...
+            </>
+          ) : (
+            <>
+              <span className="material-symbols-outlined text-lg">swap_horiz</span>
+              Switch to Mainnet
+            </>
+          )}
+        </button>
       </div>
     </div>
   )

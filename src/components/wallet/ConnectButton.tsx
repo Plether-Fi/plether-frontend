@@ -1,7 +1,6 @@
 import { useAccount, useDisconnect, useChainId } from 'wagmi'
 import { useWeb3Modal } from '@web3modal/wagmi/react'
 import { mainnet, sepolia } from 'wagmi/chains'
-import { Button, Badge } from '../ui'
 import { formatAddress } from '../../utils/formatters'
 
 export function ConnectButton() {
@@ -25,26 +24,38 @@ export function ConnectButton() {
 
   if (!isConnected) {
     return (
-      <Button variant="primary" onClick={() => open()}>
+      <button
+        onClick={() => open()}
+        className="flex items-center gap-2 bg-cyber-electric-fuchsia hover:bg-cyber-electric-fuchsia/80 text-cyber-text-primary rounded-lg px-4 py-2 transition-colors border border-transparent shadow-lg shadow-cyber-electric-fuchsia/20 font-medium text-sm"
+      >
+        <span className="material-symbols-outlined text-lg">account_balance_wallet</span>
         Connect Wallet
-      </Button>
+      </button>
     )
   }
 
   return (
     <div className="flex items-center gap-2">
       {/* Network badge */}
-      <Badge variant={isWrongNetwork ? 'danger' : chainId === sepolia.id ? 'warning' : 'success'}>
+      <span className={`
+        px-2 py-0.5 rounded text-xs font-medium border
+        ${isWrongNetwork
+          ? 'bg-cyber-electric-fuchsia/20 text-cyber-electric-fuchsia border-cyber-electric-fuchsia/30'
+          : chainId === sepolia.id
+            ? 'bg-cyber-warning-bg text-cyber-warning-text border-cyber-warning-text/30'
+            : 'bg-cyber-surface-light text-cyber-text-secondary border-cyber-border-glow/30'
+        }
+      `}>
         {isWrongNetwork ? 'Wrong Network' : getNetworkName()}
-      </Badge>
+      </span>
 
       {/* Account button */}
       <button
         onClick={() => open({ view: 'Account' })}
-        className="flex items-center gap-2 px-3 py-2 bg-surface-50 hover:bg-surface-100 rounded-lg border border-gray-700 transition-colors"
+        className="flex items-center gap-2 bg-cyber-electric-fuchsia hover:bg-cyber-electric-fuchsia/80 text-cyber-text-primary rounded-lg px-4 py-2 transition-colors border border-transparent shadow-lg shadow-cyber-electric-fuchsia/20 group"
       >
-        <div className="w-6 h-6 rounded-full bg-gradient-to-r from-primary-500 to-blue-500" />
-        <span className="text-sm text-white font-medium">
+        <div className="w-2 h-2 rounded-full bg-cyber-neon-green shadow-md shadow-cyber-neon-green/50" />
+        <span className="font-medium text-xs sm:text-sm">
           {formatAddress(address || '')}
         </span>
       </button>
@@ -52,17 +63,10 @@ export function ConnectButton() {
       {/* Disconnect button */}
       <button
         onClick={() => disconnect()}
-        className="p-2 text-gray-400 hover:text-white transition-colors"
+        className="p-2 text-cyber-text-secondary hover:text-cyber-bright-blue transition-colors"
         title="Disconnect"
       >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-          />
-        </svg>
+        <span className="material-symbols-outlined text-xl">logout</span>
       </button>
     </div>
   )

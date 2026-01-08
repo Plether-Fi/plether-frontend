@@ -1,5 +1,4 @@
 import { useTransactionStore } from '../stores/transactionStore'
-import { Spinner } from './ui'
 
 export function PendingTxBadge() {
   const { pendingTransactions } = useTransactionStore()
@@ -8,9 +7,11 @@ export function PendingTxBadge() {
   if (count === 0) return null
 
   return (
-    <div className="flex items-center gap-2 px-3 py-1.5 bg-yellow-900/30 border border-yellow-800 rounded-full">
-      <Spinner size="sm" className="text-yellow-500" />
-      <span className="text-sm text-yellow-500 font-medium">
+    <div className="flex items-center gap-2 px-3 py-1.5 bg-cyber-bright-blue/20 border border-cyber-bright-blue/50 rounded-full shadow-sm shadow-cyber-bright-blue/20">
+      <div className="w-4 h-4 relative">
+        <div className="absolute inset-0 rounded-full border-2 border-cyber-bright-blue/30 border-t-cyber-bright-blue animate-spin" />
+      </div>
+      <span className="text-sm text-cyber-bright-blue font-medium">
         {count} pending
       </span>
     </div>

@@ -1,4 +1,4 @@
-import { Badge, Skeleton } from './ui'
+import { Skeleton } from './ui'
 import type { ProtocolStatus } from '../config/constants'
 
 interface PriceDisplayProps {
@@ -8,7 +8,6 @@ interface PriceDisplayProps {
   variant?: 'compact' | 'detailed'
 }
 
-// Mock data - replace with actual hook
 const mockPrice = 103.45
 const mockStatus: ProtocolStatus = 'Active'
 
@@ -16,49 +15,54 @@ export function PriceDisplay({
   isLoading = false,
   variant = 'compact',
 }: PriceDisplayProps) {
-  // TODO: Replace with actual useDXYPrice() and useProtocolStatus() hooks
   const price = mockPrice
   const status = mockStatus
 
-  const statusVariant = {
-    Active: 'success',
-    Paused: 'warning',
-    Settled: 'info',
-  } as const
+  const getStatusStyles = (s: ProtocolStatus) => {
+    switch (s) {
+      case 'Active':
+        return 'bg-cyber-neon-green/20 text-cyber-neon-green border-cyber-neon-green/30 shadow-cyber-neon-green/10'
+      case 'Paused':
+        return 'bg-cyber-warning-bg text-cyber-warning-text border-cyber-warning-text/30 shadow-cyber-warning-text/10'
+      case 'Settled':
+        return 'bg-cyber-bright-blue/20 text-cyber-bright-blue border-cyber-bright-blue/30 shadow-cyber-bright-blue/10'
+    }
+  }
 
   if (variant === 'compact') {
     return (
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-400">DXY</span>
+          <span className="text-cyber-text-secondary text-sm">DXY</span>
           {isLoading ? (
             <Skeleton width={60} height={20} />
           ) : (
-            <span className="text-white font-semibold">${price.toFixed(2)}</span>
+            <span className="text-cyber-text-primary font-semibold">${price.toFixed(2)}</span>
           )}
         </div>
-        <Badge variant={statusVariant[status]}>{status}</Badge>
+        <span className={`px-2 py-0.5 rounded text-xs font-medium border shadow-sm ${getStatusStyles(status)}`}>
+          {status}
+        </span>
       </div>
     )
   }
 
-  // Detailed variant for dashboard
   return (
-    <div className="bg-surface-100 rounded-xl border border-gray-800 p-4">
+    <div className="bg-cyber-surface-dark rounded-xl border border-cyber-border-glow/30 p-4 shadow-lg shadow-cyber-border-glow/10">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-gray-400 text-sm">DXY Index Price</h3>
-        <Badge variant={statusVariant[status]}>{status}</Badge>
+        <h3 className="text-cyber-text-secondary text-sm">DXY Index Price</h3>
+        <span className={`px-2 py-0.5 rounded text-xs font-medium border shadow-sm ${getStatusStyles(status)}`}>
+          {status}
+        </span>
       </div>
       {isLoading ? (
         <Skeleton width={120} height={36} />
       ) : (
         <div className="flex items-baseline gap-2">
-          <span className="text-3xl font-bold text-white">${price.toFixed(2)}</span>
-          {/* TODO: Add 24h change */}
-          {/* <span className="text-green-500 text-sm">+0.5%</span> */}
+          <span className="text-3xl font-bold text-cyber-text-primary">${price.toFixed(2)}</span>
         </div>
       )}
-      <p className="text-xs text-gray-500 mt-2">
+      <p className="text-xs text-cyber-text-secondary mt-2">
         Updated from BasketOracle
       </p>
     </div>

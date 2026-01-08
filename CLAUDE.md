@@ -5,11 +5,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-npm run dev      # Start dev server (http://localhost:5173)
 npm run build    # TypeScript check + production build
 npm run lint     # ESLint
-npm run preview  # Preview production build
 ```
+
+Dev server is always running at http://localhost:5173.
 
 ## Architecture
 
@@ -21,9 +21,11 @@ Plether is a DeFi frontend for trading DXY-BEAR and DXY-BULL tokens on Ethereum.
 - **Styling**: Tailwind CSS v4 (CSS-first config in `src/index.css`)
 - **State**: Zustand for local state, TanStack Query for server state
 - **Routing**: React Router
+- **Icons**: Material Symbols (loaded via Google Fonts)
+- **Font**: Rajdhani (cyberpunk theme)
 
 ### Key Directories
-- `src/pages/` - Route components (Dashboard, Trade, Mint, Stake, Leverage, Positions, Lend, History)
+- `src/pages/` - Route components (Dashboard with Hedge/Leverage/Yield tabs, Mint, Stake, History)
 - `src/components/ui/` - Reusable UI primitives (Button, Card, Modal, etc.)
 - `src/components/layout/` - Header, MobileNav, Layout wrapper
 - `src/components/wallet/` - ConnectButton, NetworkSwitcher
@@ -39,12 +41,17 @@ Plether is a DeFi frontend for trading DXY-BEAR and DXY-BULL tokens on Ethereum.
 - **Slippage**: Max 1% (protocol limit), stored in settingsStore
 - **Networks**: Mainnet (chainId 1) and Sepolia (chainId 11155111)
 
-### Custom Theme Colors
+### Cyberpunk Theme Colors
 Defined in `src/index.css` via `@theme`:
-- `primary-*` - Green accent (buttons, active states)
-- `bear` - Red for DXY-BEAR elements
-- `bull` - Green for DXY-BULL elements
-- `surface-*` - Dark grays for backgrounds
+- `cyber-bg` (#0D0A1C) - Main background
+- `cyber-surface-dark` / `cyber-surface-light` - Card backgrounds
+- `cyber-neon-green` (#00FF99) - Primary accent, success states
+- `cyber-electric-fuchsia` (#FF00CC) - BEAR token, warnings, secondary actions
+- `cyber-bright-blue` (#00CCFF) - Links, hover states
+- `cyber-warning-text` (#FFD700) - Warning text
+- `cyber-border-glow` (#4A00FF) - Subtle borders
+- `bear` - Alias for fuchsia (DXY-BEAR elements)
+- `bull` - Alias for neon green (DXY-BULL elements)
 
 ### Adding Contract Integration
 1. Add ABI to `src/contracts/abis/`

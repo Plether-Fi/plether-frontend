@@ -1,167 +1,249 @@
 import { useState } from 'react'
 import { useAccount } from 'wagmi'
-import { Card, Button, Tabs, TabPanel, InfoTooltip } from '../components/ui'
-import { TokenInput } from '../components/TokenInput'
 import { formatAmount } from '../utils/formatters'
 
-type MintMode = 'mint' | 'burn'
+type MintMode = 'mint' | 'redeem'
 
 export function Mint() {
   const { isConnected } = useAccount()
   const [mode, setMode] = useState<MintMode>('mint')
   const [inputAmount, setInputAmount] = useState('')
 
-  // Mock balances
   const usdcBalance = 10000n * 10n ** 6n
   const bearBalance = 500n * 10n ** 18n
   const bullBalance = 500n * 10n ** 18n
 
-  // Mock output calculation
   const outputAmount = inputAmount ? parseFloat(inputAmount).toFixed(4) : '0'
+  const minBalance = bearBalance < bullBalance ? bearBalance : bullBalance
 
   const handleMint = async () => {
     console.log('Mint:', { amount: inputAmount })
   }
 
-  const handleBurn = async () => {
-    console.log('Burn:', { amount: inputAmount })
+  const handleRedeem = async () => {
+    console.log('Redeem:', { amount: inputAmount })
   }
 
   return (
-    <div className="space-y-6 max-w-lg mx-auto">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Mint & Redeem</h1>
-        <p className="text-gray-400">Create or redeem DXY-BEAR + DXY-BULL pairs</p>
+    <div className="space-y-10 max-w-xl mx-auto">
+      <div className="mb-8">
+        <h1 className="text-3xl font-semibold text-cyber-text-primary mb-1">Mint & Redeem</h1>
+        <p className="text-cyber-text-secondary font-light">Create or redeem DXY-BEAR + DXY-BULL pairs</p>
       </div>
 
-      <Card>
-        {/* Mint/Burn tabs */}
-        <Tabs
-          tabs={[
-            { id: 'mint', label: 'Mint Pairs' },
-            { id: 'burn', label: 'Redeem' },
-          ]}
-          activeTab={mode}
-          onChange={(id) => {
-            setMode(id as MintMode)
-            setInputAmount('')
-          }}
-        />
+      <div className="bg-cyber-surface-dark rounded-xl border border-cyber-border-glow/30 shadow-lg shadow-cyber-border-glow/10 overflow-hidden">
+        {/* Tabs */}
+        <div className="flex border-b border-cyber-border-glow/30">
+          <button
+            onClick={() => { setMode('mint'); setInputAmount('') }}
+            className={`flex-1 flex items-center justify-center gap-2 px-6 py-4 text-sm font-semibold transition-colors ${
+              mode === 'mint'
+                ? 'bg-cyber-surface-light text-cyber-neon-green border-b-2 border-cyber-neon-green'
+                : 'text-cyber-text-secondary hover:text-cyber-bright-blue border-b-2 border-transparent'
+            }`}
+          >
+            <span className="material-symbols-outlined text-xl">add_circle</span>
+            Mint Pairs
+          </button>
+          <button
+            onClick={() => { setMode('redeem'); setInputAmount('') }}
+            className={`flex-1 flex items-center justify-center gap-2 px-6 py-4 text-sm font-semibold transition-colors ${
+              mode === 'redeem'
+                ? 'bg-cyber-surface-light text-cyber-electric-fuchsia border-b-2 border-cyber-electric-fuchsia'
+                : 'text-cyber-text-secondary hover:text-cyber-bright-blue border-b-2 border-transparent'
+            }`}
+          >
+            <span className="material-symbols-outlined text-xl">swap_horiz</span>
+            Redeem
+          </button>
+        </div>
 
-        <TabPanel isActive={mode === 'mint'}>
-          <div className="mt-6 space-y-4">
-            {/* Info box */}
-            <div className="bg-blue-900/20 border border-blue-800 rounded-lg p-4">
-              <div className="flex items-start gap-2">
-                <InfoTooltip content="Minting creates equal amounts of DXY-BEAR and DXY-BULL tokens from your USDC" />
-                <p className="text-sm text-blue-300">
+        <div className="p-6 md:p-8 space-y-6">
+          {mode === 'mint' ? (
+            <>
+              {/* Info box */}
+              <div className="bg-cyber-bright-blue/10 border border-cyber-bright-blue/30 rounded-lg p-4 flex items-start gap-3">
+                <span className="material-symbols-outlined text-cyber-bright-blue mt-0.5">info</span>
+                <p className="text-sm text-cyber-bright-blue">
                   Mint equal amounts of DXY-BEAR and DXY-BULL from USDC.
                   You'll receive both tokens in a 1:1 ratio.
                 </p>
               </div>
-            </div>
 
-            {/* Input */}
-            <TokenInput
-              label="USDC to deposit"
-              value={inputAmount}
-              onChange={setInputAmount}
-              token={{ symbol: 'USDC', decimals: 6 }}
-              balance={isConnected ? usdcBalance : undefined}
-            />
-
-            {/* Output preview */}
-            <div className="bg-surface-200 rounded-lg p-4 space-y-3">
-              <p className="text-sm text-gray-400">You will receive:</p>
-              <div className="flex justify-between items-center">
-                <span className="text-bear">DXY-BEAR</span>
-                <span className="text-white font-medium">{outputAmount}</span>
+              {/* Input */}
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-cyber-text-secondary">USDC to deposit</span>
+                  <span className="text-cyber-text-secondary">
+                    Balance: <span className="text-cyber-text-primary">{formatAmount(usdcBalance, 6)}</span>
+                  </span>
+                </div>
+                <div className="relative">
+                  <input
+                    type="number"
+                    value={inputAmount}
+                    onChange={(e) => setInputAmount(e.target.value)}
+                    placeholder="0.00"
+                    className="w-full bg-cyber-surface-light border border-cyber-border-glow/30 rounded-xl py-4 pl-4 pr-28 text-xl font-medium text-cyber-text-primary focus:ring-1 focus:ring-cyber-bright-blue focus:border-cyber-bright-blue outline-none"
+                  />
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                    <button
+                      onClick={() => setInputAmount((Number(usdcBalance) / 1e6).toString())}
+                      className="text-xs font-semibold text-cyber-neon-green hover:opacity-80 px-2 py-1 rounded bg-cyber-neon-green/10"
+                    >
+                      MAX
+                    </button>
+                    <span className="font-medium text-cyber-text-secondary">USDC</span>
+                  </div>
+                </div>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-bull">DXY-BULL</span>
-                <span className="text-white font-medium">{outputAmount}</span>
+
+              {/* Arrow */}
+              <div className="flex justify-center -my-2 z-10 relative">
+                <div className="bg-cyber-surface-light p-2 rounded-full border border-cyber-border-glow/30">
+                  <span className="material-symbols-outlined text-cyber-bright-blue text-lg block">arrow_downward</span>
+                </div>
               </div>
-            </div>
 
-            {/* Action button */}
-            {isConnected ? (
-              <Button
-                variant="primary"
-                className="w-full"
-                disabled={!inputAmount || parseFloat(inputAmount) <= 0}
-                onClick={handleMint}
-              >
-                Mint Pairs
-              </Button>
-            ) : (
-              <Button variant="secondary" className="w-full" disabled>
-                Connect Wallet to Mint
-              </Button>
-            )}
-          </div>
-        </TabPanel>
+              {/* Output preview */}
+              <div className="bg-cyber-surface-light rounded-xl p-4 space-y-3 border border-cyber-border-glow/30">
+                <p className="text-sm text-cyber-text-secondary">You will receive:</p>
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded bg-cyber-electric-fuchsia/20 flex items-center justify-center">
+                      <span className="text-cyber-electric-fuchsia font-bold text-sm">B</span>
+                    </div>
+                    <span className="text-cyber-electric-fuchsia font-medium">DXY-BEAR</span>
+                  </div>
+                  <span className="text-cyber-text-primary font-semibold">{outputAmount}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded bg-cyber-neon-green/20 flex items-center justify-center">
+                      <span className="text-cyber-neon-green font-bold text-sm">B</span>
+                    </div>
+                    <span className="text-cyber-neon-green font-medium">DXY-BULL</span>
+                  </div>
+                  <span className="text-cyber-text-primary font-semibold">{outputAmount}</span>
+                </div>
+              </div>
 
-        <TabPanel isActive={mode === 'burn'}>
-          <div className="mt-6 space-y-4">
-            {/* Info box */}
-            <div className="bg-yellow-900/20 border border-yellow-800 rounded-lg p-4">
-              <div className="flex items-start gap-2">
-                <InfoTooltip content="Redeeming burns equal amounts of DXY-BEAR and DXY-BULL to get back USDC" />
-                <p className="text-sm text-yellow-300">
+              {/* Action button */}
+              {isConnected ? (
+                <button
+                  onClick={handleMint}
+                  disabled={!inputAmount || parseFloat(inputAmount) <= 0}
+                  className="w-full bg-cyber-neon-green hover:bg-cyber-neon-green/90 text-cyber-bg font-semibold py-4 px-6 rounded-xl shadow-lg shadow-cyber-neon-green/40 transition-all transform hover:-translate-y-0.5 active:translate-y-0 text-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
+                >
+                  Mint Pairs
+                </button>
+              ) : (
+                <button
+                  disabled
+                  className="w-full bg-cyber-surface-light text-cyber-text-secondary font-semibold py-4 px-6 rounded-xl cursor-not-allowed"
+                >
+                  Connect Wallet to Mint
+                </button>
+              )}
+            </>
+          ) : (
+            <>
+              {/* Info box */}
+              <div className="bg-cyber-warning-bg border border-cyber-warning-text/30 rounded-lg p-4 flex items-start gap-3">
+                <span className="material-symbols-outlined text-cyber-warning-text mt-0.5">info</span>
+                <p className="text-sm text-cyber-warning-text">
                   Redeem equal amounts of DXY-BEAR and DXY-BULL to get back USDC.
                   You need equal amounts of both tokens.
                 </p>
               </div>
-            </div>
 
-            {/* Your balances */}
-            <div className="bg-surface-200 rounded-lg p-4 space-y-2">
-              <p className="text-sm text-gray-400">Your balances:</p>
-              <div className="flex justify-between">
-                <span className="text-bear">DXY-BEAR</span>
-                <span className="text-white">{formatAmount(bearBalance, 18)}</span>
+              {/* Your balances */}
+              <div className="bg-cyber-surface-light rounded-xl p-4 space-y-3 border border-cyber-border-glow/30">
+                <p className="text-sm text-cyber-text-secondary">Your balances:</p>
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded bg-cyber-electric-fuchsia/20 flex items-center justify-center">
+                      <span className="text-cyber-electric-fuchsia font-bold text-sm">B</span>
+                    </div>
+                    <span className="text-cyber-electric-fuchsia font-medium">DXY-BEAR</span>
+                  </div>
+                  <span className="text-cyber-text-primary font-semibold">{formatAmount(bearBalance, 18)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded bg-cyber-neon-green/20 flex items-center justify-center">
+                      <span className="text-cyber-neon-green font-bold text-sm">B</span>
+                    </div>
+                    <span className="text-cyber-neon-green font-medium">DXY-BULL</span>
+                  </div>
+                  <span className="text-cyber-text-primary font-semibold">{formatAmount(bullBalance, 18)}</span>
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span className="text-bull">DXY-BULL</span>
-                <span className="text-white">{formatAmount(bullBalance, 18)}</span>
+
+              {/* Input */}
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-cyber-text-secondary">Amount to redeem (of each token)</span>
+                  <span className="text-cyber-text-secondary">
+                    Max: <span className="text-cyber-text-primary">{formatAmount(minBalance, 18)}</span>
+                  </span>
+                </div>
+                <div className="relative">
+                  <input
+                    type="number"
+                    value={inputAmount}
+                    onChange={(e) => setInputAmount(e.target.value)}
+                    placeholder="0.00"
+                    className="w-full bg-cyber-surface-light border border-cyber-border-glow/30 rounded-xl py-4 pl-4 pr-28 text-xl font-medium text-cyber-text-primary focus:ring-1 focus:ring-cyber-bright-blue focus:border-cyber-bright-blue outline-none"
+                  />
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                    <button
+                      onClick={() => setInputAmount((Number(minBalance) / 1e18).toString())}
+                      className="text-xs font-semibold text-cyber-electric-fuchsia hover:opacity-80 px-2 py-1 rounded bg-cyber-electric-fuchsia/10"
+                    >
+                      MAX
+                    </button>
+                    <span className="font-medium text-cyber-text-secondary">PAIR</span>
+                  </div>
+                </div>
               </div>
-            </div>
 
-            {/* Input */}
-            <TokenInput
-              label="Amount to redeem (of each token)"
-              value={inputAmount}
-              onChange={setInputAmount}
-              token={{ symbol: 'PAIR', decimals: 18 }}
-              balance={isConnected ? (bearBalance < bullBalance ? bearBalance : bullBalance) : undefined}
-            />
-
-            {/* Output preview */}
-            <div className="bg-surface-200 rounded-lg p-4">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-400">You will receive</span>
-                <span className="text-white font-medium">{outputAmount} USDC</span>
+              {/* Arrow */}
+              <div className="flex justify-center -my-2 z-10 relative">
+                <div className="bg-cyber-surface-light p-2 rounded-full border border-cyber-border-glow/30">
+                  <span className="material-symbols-outlined text-cyber-bright-blue text-lg block">arrow_downward</span>
+                </div>
               </div>
-            </div>
 
-            {/* Action button */}
-            {isConnected ? (
-              <Button
-                variant="primary"
-                className="w-full"
-                disabled={!inputAmount || parseFloat(inputAmount) <= 0}
-                onClick={handleBurn}
-              >
-                Redeem for USDC
-              </Button>
-            ) : (
-              <Button variant="secondary" className="w-full" disabled>
-                Connect Wallet to Redeem
-              </Button>
-            )}
-          </div>
-        </TabPanel>
-      </Card>
+              {/* Output preview */}
+              <div className="bg-cyber-surface-light rounded-xl p-4 border border-cyber-border-glow/30">
+                <div className="flex justify-between items-center">
+                  <span className="text-cyber-text-secondary">You will receive</span>
+                  <span className="text-cyber-text-primary font-semibold text-lg">{outputAmount} USDC</span>
+                </div>
+              </div>
+
+              {/* Action button */}
+              {isConnected ? (
+                <button
+                  onClick={handleRedeem}
+                  disabled={!inputAmount || parseFloat(inputAmount) <= 0}
+                  className="w-full bg-cyber-electric-fuchsia hover:bg-cyber-electric-fuchsia/90 text-cyber-text-primary font-semibold py-4 px-6 rounded-xl shadow-lg shadow-cyber-electric-fuchsia/40 transition-all transform hover:-translate-y-0.5 active:translate-y-0 text-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
+                >
+                  Redeem for USDC
+                </button>
+              ) : (
+                <button
+                  disabled
+                  className="w-full bg-cyber-surface-light text-cyber-text-secondary font-semibold py-4 px-6 rounded-xl cursor-not-allowed"
+                >
+                  Connect Wallet to Redeem
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      </div>
     </div>
   )
 }

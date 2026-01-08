@@ -9,11 +9,11 @@ interface BadgeProps {
 }
 
 const variantStyles: Record<BadgeVariant, string> = {
-  default: 'bg-gray-700 text-gray-200',
-  success: 'bg-green-900/50 text-green-400 border border-green-800',
-  warning: 'bg-yellow-900/50 text-yellow-400 border border-yellow-800',
-  danger: 'bg-red-900/50 text-red-400 border border-red-800',
-  info: 'bg-blue-900/50 text-blue-400 border border-blue-800',
+  default: 'bg-cyber-surface-light text-cyber-text-secondary border border-cyber-border-glow/30',
+  success: 'bg-cyber-neon-green/20 text-cyber-neon-green border border-cyber-neon-green/30 shadow-sm shadow-cyber-neon-green/10',
+  warning: 'bg-cyber-warning-bg text-cyber-warning-text border border-cyber-warning-text/30 shadow-sm shadow-cyber-warning-text/10',
+  danger: 'bg-cyber-electric-fuchsia/20 text-cyber-electric-fuchsia border border-cyber-electric-fuchsia/30 shadow-sm shadow-cyber-electric-fuchsia/10',
+  info: 'bg-cyber-bright-blue/20 text-cyber-bright-blue border border-cyber-bright-blue/30 shadow-sm shadow-cyber-bright-blue/10',
 }
 
 const sizeStyles = {

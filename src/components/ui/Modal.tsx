@@ -49,7 +49,7 @@ export function Modal({
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-cyber-bg/80 backdrop-blur-sm"
         onClick={onClose}
       />
 
@@ -57,31 +57,19 @@ export function Modal({
       <div
         className={`
           relative w-full ${sizeStyles[size]} mx-4
-          bg-surface-100 rounded-xl border border-gray-800
-          shadow-2xl animate-in fade-in zoom-in-95 duration-200
+          bg-cyber-surface-dark rounded-xl border border-cyber-border-glow/50
+          shadow-2xl shadow-cyber-border-glow/20 animate-in fade-in zoom-in-95 duration-200
         `}
       >
         {/* Header */}
         {title && (
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
-            <h2 className="text-lg font-semibold text-white">{title}</h2>
+          <div className="flex items-center justify-between px-6 py-4 border-b border-cyber-border-glow/30">
+            <h2 className="text-lg font-semibold text-cyber-text-primary">{title}</h2>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-white transition-colors"
+              className="text-cyber-text-secondary hover:text-cyber-bright-blue transition-colors"
             >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
+              <span className="material-symbols-outlined">close</span>
             </button>
           </div>
         )}

@@ -1,9 +1,7 @@
 import { useState } from 'react'
 import { useAccount } from 'wagmi'
-import { Card, Button, SkeletonCard, Tabs, InfoTooltip, Badge, Modal } from '../components/ui'
-import { TokenInput } from '../components/TokenInput'
-import { SlippageSelector } from '../components/SlippageSelector'
-import { formatUsd, formatPercent, getHealthFactorColor } from '../utils/formatters'
+import { SkeletonCard, InfoTooltip, Modal } from '../components/ui'
+import { formatUsd, formatPercent } from '../utils/formatters'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { HEALTH_FACTOR_WARNING, HEALTH_FACTOR_DANGER } from '../config/constants'
 import type { LeveragePosition } from '../types'
@@ -54,42 +52,35 @@ export function Dashboard() {
     else navigate('/')
   }
 
-  // Trade state
   const [mode, setMode] = useState<TradeMode>('buy')
   const [selectedToken, setSelectedToken] = useState<TokenSide>('BEAR')
   const [inputAmount, setInputAmount] = useState('')
   const [showDetails, setShowDetails] = useState(false)
 
-  // Leverage state
   const [selectedSide, setSelectedSide] = useState<TokenSide>('BEAR')
   const [collateralAmount, setCollateralAmount] = useState('')
   const [leverage, setLeverage] = useState(2)
 
-  // Yield state
   const [supplyMode, setSupplyMode] = useState<'supply' | 'withdraw'>('supply')
   const [borrowMode, setBorrowMode] = useState<'borrow' | 'repay'>('borrow')
   const [supplyAmount, setSupplyAmount] = useState('')
   const [borrowAmount, setBorrowAmount] = useState('')
 
-  // Mock yield data
   const suppliedAmount = 5000n * 10n ** 6n
   const borrowedAmount = 1000n * 10n ** 6n
   const supplyApy = 3.5
   const borrowApy = 5.2
   const availableToBorrow = 3000n * 10n ** 6n
 
-  // Positions state
   const [selectedPosition, setSelectedPosition] = useState<LeveragePosition | null>(null)
   const [adjustModalOpen, setAdjustModalOpen] = useState(false)
   const positions = mockPositions
   const hasLowHealth = positions.some((p) => p.healthFactor < HEALTH_FACTOR_WARNING)
 
-  // Mock balances - replace with actual hooks
   const usdcBalance = 10000n * 10n ** 6n
   const bearBalance = 500n * 10n ** 18n
   const bullBalance = 500n * 10n ** 18n
 
-  // Trade calculations
   const inputToken = mode === 'buy'
     ? { symbol: 'USDC', decimals: 6 }
     : { symbol: `DXY-${selectedToken}`, decimals: 18 }
@@ -104,7 +95,6 @@ export function Dashboard() {
 
   const outputAmount = inputAmount ? (parseFloat(inputAmount) * 0.98).toFixed(4) : '0'
 
-  // Leverage calculations
   const collateralNum = parseFloat(collateralAmount) || 0
   const positionSize = collateralNum * leverage
   const liquidationPrice = collateralNum > 0 ? (103.45 * (1 - 1 / leverage)).toFixed(2) : '0.00'
@@ -117,7 +107,6 @@ export function Dashboard() {
     console.log('Open position:', { selectedSide, collateralAmount, leverage })
   }
 
-  // TODO: Replace with actual hooks
   const isLoading = false
   const spotValue = 5000n * 10n ** 6n
   const stakedValue = 3000n * 10n ** 6n
@@ -125,24 +114,24 @@ export function Dashboard() {
   const lendingValue = 500n * 10n ** 6n
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-10">
       {/* Page title */}
-      <div>
-        <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-        <p className="text-gray-400">Your portfolio overview</p>
+      <div className="mb-8">
+        <h1 className="text-3xl font-semibold text-cyber-text-primary mb-1">Dashboard</h1>
+        <p className="text-cyber-text-secondary font-light">Your portfolio overview</p>
       </div>
 
-      {/* Portfolio overview */}
       {isConnected ? (
         <>
           {/* Portfolio breakdown */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
             <PortfolioCard
               title="Spot Holdings"
               value={spotValue}
               description="USDC, DXY-BEAR, DXY-BULL"
               link="/trade"
               isLoading={isLoading}
+              colorClass="text-cyber-neon-green"
             />
             <PortfolioCard
               title="Staked"
@@ -150,6 +139,7 @@ export function Dashboard() {
               description="sDXY-BEAR, sDXY-BULL"
               link="/stake"
               isLoading={isLoading}
+              colorClass="text-cyber-electric-fuchsia"
             />
             <PortfolioCard
               title="Leverage"
@@ -157,6 +147,7 @@ export function Dashboard() {
               description="Open positions"
               link="/leverage"
               isLoading={isLoading}
+              colorClass="text-cyber-bright-blue"
             />
             <PortfolioCard
               title="Lending"
@@ -164,31 +155,28 @@ export function Dashboard() {
               description="Morpho supplied"
               link="/yield"
               isLoading={isLoading}
+              colorClass="text-cyber-neon-green"
             />
           </div>
 
           {/* Positions section */}
           {positions.length > 0 && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-white">Open Positions</h2>
-              </div>
+            <div className="mb-12">
+              <h2 className="text-xl font-semibold text-cyber-text-primary mb-4">Open Positions</h2>
 
               {hasLowHealth && (
-                <div className="bg-yellow-900/30 border border-yellow-800 rounded-lg p-4 flex items-center gap-3">
-                  <svg className="w-6 h-6 text-yellow-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
+                <div className="mb-6 bg-cyber-warning-bg border border-cyber-warning-text/40 rounded-lg p-4 flex items-start gap-3 shadow-lg shadow-cyber-warning-text/10">
+                  <span className="material-symbols-outlined text-cyber-warning-text mt-0.5">warning</span>
                   <div>
-                    <p className="text-yellow-400 font-medium">Low Health Factor Warning</p>
-                    <p className="text-yellow-300/70 text-sm">
+                    <h3 className="font-medium text-cyber-warning-text text-sm">Low Health Factor Warning</h3>
+                    <p className="text-sm text-cyber-warning-text/80 mt-1">
                       One or more positions have low health factors and may be at risk of liquidation.
                     </p>
                   </div>
                 </div>
               )}
 
-              <div className="grid gap-4">
+              <div className="space-y-4">
                 {positions.map((position) => (
                   <PositionCard
                     key={position.id}
@@ -203,451 +191,489 @@ export function Dashboard() {
             </div>
           )}
 
-          {/* Trade / Leverage / Yield widget with folder tabs */}
-          <div>
+          {/* Trade / Leverage / Yield widget */}
+          <div className="bg-cyber-surface-dark border border-cyber-border-glow/30 rounded-xl overflow-hidden shadow-lg shadow-cyber-border-glow/10">
             {/* Folder tabs */}
-            <div className="inline-flex">
+            <div className="flex flex-col sm:flex-row border-b border-cyber-border-glow/30">
               <button
                 onClick={() => handleTabChange('trade')}
                 className={`
-                  w-80 px-4 py-4 rounded-t-xl transition-all relative text-left
+                  flex-1 flex items-center gap-3 px-6 py-5 text-left transition-colors
                   ${mainTab === 'trade'
-                    ? 'bg-blue-900 text-blue-300 border-t border-l border-r border-blue-700'
-                    : 'bg-blue-950 text-blue-400 hover:text-blue-300 hover:bg-blue-900 border-t border-l border-r border-transparent'
+                    ? 'bg-cyber-surface-light border-b-2 border-cyber-neon-green shadow-md shadow-cyber-neon-green/10'
+                    : 'hover:bg-cyber-surface-light border-b-2 border-transparent opacity-60 hover:opacity-100 hover:border-cyber-bright-blue/50'
                   }
                 `}
               >
-                <div className="flex items-center gap-3">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                  </svg>
-                  <div>
-                    <span className="block text-xl font-semibold">Dollar Hedge</span>
-                    <span className="block text-xs text-blue-400">Spot trading</span>
-                  </div>
+                <div className={`p-2 rounded-lg ${mainTab === 'trade' ? 'bg-cyber-neon-green/20 text-cyber-neon-green' : 'bg-cyber-text-secondary/20 text-cyber-text-secondary'}`}>
+                  <span className="material-symbols-outlined text-xl">security</span>
+                </div>
+                <div>
+                  <div className={`font-semibold ${mainTab === 'trade' ? 'text-cyber-neon-green' : 'text-cyber-text-primary'}`}>Hedge</div>
+                  <div className={`text-xs ${mainTab === 'trade' ? 'text-cyber-neon-green/70' : 'text-cyber-text-secondary'}`}>Spot trading</div>
                 </div>
               </button>
+
               <button
                 onClick={() => handleTabChange('leverage')}
                 className={`
-                  w-80 px-4 py-4 rounded-t-xl transition-all relative text-left
+                  flex-1 flex items-center gap-3 px-6 py-5 text-left transition-colors
                   ${mainTab === 'leverage'
-                    ? 'bg-orange-900 text-orange-300 border-t border-l border-r border-orange-700'
-                    : 'bg-orange-950 text-orange-400 hover:text-orange-300 hover:bg-orange-900 border-t border-l border-r border-transparent'
+                    ? 'bg-cyber-surface-light border-b-2 border-cyber-bright-blue shadow-md shadow-cyber-bright-blue/10'
+                    : 'hover:bg-cyber-surface-light border-b-2 border-transparent opacity-60 hover:opacity-100 hover:border-cyber-bright-blue/50'
                   }
                 `}
               >
-                <div className="flex items-center gap-3">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                  </svg>
-                  <div>
-                    <span className="block text-xl font-semibold">Leverage</span>
-                    <span className="block text-xs text-orange-400">Margin trading</span>
-                  </div>
+                <div className={`p-2 rounded-lg ${mainTab === 'leverage' ? 'bg-cyber-bright-blue/20 text-cyber-bright-blue' : 'bg-cyber-text-secondary/20 text-cyber-text-secondary'}`}>
+                  <span className="material-symbols-outlined text-xl">trending_up</span>
+                </div>
+                <div>
+                  <div className={`font-semibold ${mainTab === 'leverage' ? 'text-cyber-bright-blue' : 'text-cyber-text-primary'}`}>Leverage</div>
+                  <div className={`text-xs ${mainTab === 'leverage' ? 'text-cyber-bright-blue/70' : 'text-cyber-text-secondary'}`}>Margin trading</div>
                 </div>
               </button>
+
               <button
                 onClick={() => handleTabChange('yield')}
                 className={`
-                  w-80 px-4 py-4 rounded-t-xl transition-all relative text-left
+                  flex-1 flex items-center gap-3 px-6 py-5 text-left transition-colors
                   ${mainTab === 'yield'
-                    ? 'bg-green-900 text-green-300 border-t border-l border-r border-green-700'
-                    : 'bg-green-950 text-green-400 hover:text-green-300 hover:bg-green-900 border-t border-l border-r border-transparent'
+                    ? 'bg-cyber-surface-light border-b-2 border-cyber-electric-fuchsia shadow-md shadow-cyber-electric-fuchsia/10'
+                    : 'hover:bg-cyber-surface-light border-b-2 border-transparent opacity-60 hover:opacity-100 hover:border-cyber-bright-blue/50'
                   }
                 `}
               >
-                <div className="flex items-center gap-3">
-                  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2c-1.5 2-2.5 4-2.5 6 0 2.5 1.5 4 2.5 5.5 1-1.5 2.5-3 2.5-5.5 0-2-1-4-2.5-6zm-4 8c-1 1.5-1.5 3-1.5 4.5 0 2 1 3.5 2 4.5.5-1 1.5-2 1.5-4 0-1.5-.5-3-2-5zm8 0c-1.5 2-2 3.5-2 5 0 2 1 3 1.5 4 1-1 2-2.5 2-4.5 0-1.5-.5-3-1.5-4.5zM12 15c-1 1.5-1.5 3-1.5 4.5 0 1.5.5 2.5 1.5 3.5 1-1 1.5-2 1.5-3.5 0-1.5-.5-3-1.5-4.5z" />
-                  </svg>
-                  <div>
-                    <span className="block text-xl font-semibold">Yield</span>
-                    <span className="block text-xs text-green-400">Liquidity providing</span>
-                  </div>
+                <div className={`p-2 rounded-lg ${mainTab === 'yield' ? 'bg-cyber-electric-fuchsia/20 text-cyber-electric-fuchsia' : 'bg-cyber-text-secondary/20 text-cyber-text-secondary'}`}>
+                  <span className="material-symbols-outlined text-xl">grass</span>
+                </div>
+                <div>
+                  <div className={`font-semibold ${mainTab === 'yield' ? 'text-cyber-electric-fuchsia' : 'text-cyber-text-primary'}`}>Yield</div>
+                  <div className={`text-xs ${mainTab === 'yield' ? 'text-cyber-electric-fuchsia/70' : 'text-cyber-text-secondary'}`}>Liquidity providing</div>
                 </div>
               </button>
             </div>
 
             {/* Tab content */}
-            <div className={`
-              rounded-b-xl rounded-tr-xl p-6 border
-              ${mainTab === 'trade' ? 'bg-gradient-to-b from-blue-900 to-blue-950 border-blue-700' : ''}
-              ${mainTab === 'leverage' ? 'bg-gradient-to-b from-orange-900 to-orange-950 border-orange-700' : ''}
-              ${mainTab === 'yield' ? 'bg-gradient-to-b from-green-900 to-green-950 border-green-700' : ''}
-            `}>
-              {/* Trade content */}
+            <div className="p-6 md:p-8 lg:p-12">
               {mainTab === 'trade' && (
-                <div className="max-w-md mx-auto">
-                {/* Buy/Sell tabs */}
-                <Tabs
-                  tabs={[
-                    { id: 'buy', label: 'Buy' },
-                    { id: 'sell', label: 'Sell' },
-                  ]}
-                  activeTab={mode}
-                  onChange={(id) => setMode(id as TradeMode)}
-                />
+                <div className="max-w-xl mx-auto space-y-6">
+                  {/* Buy/Sell tabs */}
+                  <div className="bg-cyber-surface-light p-1 rounded-lg flex text-sm font-medium mb-8 border border-cyber-border-glow/30">
+                    <button
+                      onClick={() => setMode('buy')}
+                      className={`flex-1 py-2 px-4 rounded-md transition-all ${
+                        mode === 'buy'
+                          ? 'bg-cyber-surface-dark text-cyber-neon-green shadow-sm shadow-cyber-neon-green/10 border border-cyber-neon-green/50'
+                          : 'text-cyber-text-secondary hover:text-cyber-bright-blue'
+                      }`}
+                    >
+                      Buy
+                    </button>
+                    <button
+                      onClick={() => setMode('sell')}
+                      className={`flex-1 py-2 px-4 rounded-md transition-all ${
+                        mode === 'sell'
+                          ? 'bg-cyber-surface-dark text-cyber-neon-green shadow-sm shadow-cyber-neon-green/10 border border-cyber-neon-green/50'
+                          : 'text-cyber-text-secondary hover:text-cyber-bright-blue'
+                      }`}
+                    >
+                      Sell
+                    </button>
+                  </div>
 
-                <div className="mt-6 space-y-4">
                   {/* Token selector */}
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-2">Select Token</label>
-                    <div className="flex gap-2">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-cyber-text-secondary">Select Token</label>
+                    <div className="grid grid-cols-2 gap-4">
                       <button
                         onClick={() => setSelectedToken('BEAR')}
-                        className={`flex-1 px-4 py-3 rounded-lg border transition-colors ${
+                        className={`relative p-4 rounded-xl text-center transition-all ${
                           selectedToken === 'BEAR'
-                            ? 'bg-bear/10 border-bear text-bear'
-                            : 'bg-surface-200 border-gray-700 text-gray-300 hover:border-gray-600'
+                            ? 'border-2 border-cyber-bright-blue bg-cyber-bright-blue/10 shadow-md shadow-cyber-bright-blue/20'
+                            : 'border border-cyber-border-glow/30 bg-cyber-surface-dark hover:border-cyber-bright-blue/50 opacity-60 hover:opacity-100'
                         }`}
                       >
-                        <span className="font-medium">DXY-BEAR</span>
-                        <span className="block text-xs opacity-70">Bearish on USD</span>
+                        <div className={`font-semibold ${selectedToken === 'BEAR' ? 'text-cyber-bright-blue' : 'text-cyber-text-primary'}`}>DXY-BEAR</div>
+                        <div className={`text-xs mt-1 ${selectedToken === 'BEAR' ? 'text-cyber-bright-blue/70' : 'text-cyber-text-secondary'}`}>Bearish on USD</div>
+                        {selectedToken === 'BEAR' && (
+                          <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-cyber-neon-green shadow-md shadow-cyber-neon-green/50" />
+                        )}
                       </button>
                       <button
                         onClick={() => setSelectedToken('BULL')}
-                        className={`flex-1 px-4 py-3 rounded-lg border transition-colors ${
+                        className={`relative p-4 rounded-xl text-center transition-all ${
                           selectedToken === 'BULL'
-                            ? 'bg-bull/10 border-bull text-bull'
-                            : 'bg-surface-200 border-gray-700 text-gray-300 hover:border-gray-600'
+                            ? 'border-2 border-cyber-bright-blue bg-cyber-bright-blue/10 shadow-md shadow-cyber-bright-blue/20'
+                            : 'border border-cyber-border-glow/30 bg-cyber-surface-dark hover:border-cyber-bright-blue/50 opacity-60 hover:opacity-100'
                         }`}
                       >
-                        <span className="font-medium">DXY-BULL</span>
-                        <span className="block text-xs opacity-70">Bullish on USD</span>
+                        <div className={`font-semibold ${selectedToken === 'BULL' ? 'text-cyber-bright-blue' : 'text-cyber-text-primary'}`}>DXY-BULL</div>
+                        <div className={`text-xs mt-1 ${selectedToken === 'BULL' ? 'text-cyber-bright-blue/70' : 'text-cyber-text-secondary'}`}>Bullish on USD</div>
+                        {selectedToken === 'BULL' && (
+                          <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-cyber-neon-green shadow-md shadow-cyber-neon-green/50" />
+                        )}
                       </button>
                     </div>
                   </div>
 
                   {/* Input amount */}
-                  <TokenInput
-                    label={mode === 'buy' ? 'You pay' : 'You sell'}
-                    value={inputAmount}
-                    onChange={setInputAmount}
-                    token={inputToken}
-                    balance={isConnected ? inputBalance : undefined}
-                  />
-
-                  {/* Arrow divider */}
-                  <div className="flex justify-center">
-                    <div className="w-10 h-10 rounded-full bg-surface-200 flex items-center justify-center">
-                      <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                      </svg>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-cyber-text-secondary">{mode === 'buy' ? 'You pay' : 'You sell'}</span>
+                        <span className="text-cyber-text-secondary">
+                          Balance: <span className="text-cyber-text-primary">{formatUsd(inputBalance)}</span>
+                        </span>
+                      </div>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          value={inputAmount}
+                          onChange={(e) => setInputAmount(e.target.value)}
+                          placeholder="0.00"
+                          className="w-full bg-cyber-surface-light border border-cyber-border-glow/30 rounded-xl py-4 pl-4 pr-24 text-xl font-medium text-cyber-text-primary focus:ring-1 focus:ring-cyber-bright-blue focus:border-cyber-bright-blue outline-none transition-shadow shadow-sm shadow-cyber-border-glow/10"
+                        />
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                          <button
+                            onClick={() => setInputAmount((Number(inputBalance) / 1e6).toString())}
+                            className="text-xs font-semibold text-cyber-neon-green hover:text-cyber-neon-green/80 px-2 py-1 rounded bg-cyber-neon-green/10 shadow-sm shadow-cyber-neon-green/10"
+                          >
+                            MAX
+                          </button>
+                          <span className="font-medium text-cyber-text-secondary">{inputToken.symbol}</span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Output display */}
-                  <div className="bg-surface-200 rounded-lg p-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-400">You receive</span>
-                      <span className="text-gray-400">{outputToken.symbol}</span>
+                    {/* Arrow divider */}
+                    <div className="flex justify-center -my-2 z-10 relative">
+                      <div className="bg-cyber-surface-light p-2 rounded-full border border-cyber-border-glow/30 shadow-sm shadow-cyber-border-glow/10">
+                        <span className="material-symbols-outlined text-cyber-bright-blue text-lg block">arrow_downward</span>
+                      </div>
                     </div>
-                    <p className="text-2xl font-semibold text-white mt-1">
-                      {outputAmount}
-                    </p>
+
+                    {/* Output display */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-cyber-text-secondary">You receive</span>
+                      </div>
+                      <div className="relative">
+                        <div className="w-full bg-cyber-surface-dark border border-cyber-border-glow/30 rounded-xl py-4 pl-4 pr-24 text-xl font-medium text-cyber-text-primary flex items-center h-[62px] shadow-sm shadow-cyber-border-glow/10">
+                          {outputAmount}
+                        </div>
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                          <span className="font-medium text-cyber-text-secondary">{outputToken.symbol}</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Slippage settings */}
-                  <div className="flex justify-end">
-                    <SlippageSelector />
+                  <div className="flex items-center justify-end gap-2 text-xs text-cyber-text-secondary">
+                    <span className="material-symbols-outlined text-[14px]">settings</span>
+                    <span>1% slippage</span>
                   </div>
 
-                  {/* Swap details (collapsible) */}
-                  <button
-                    onClick={() => setShowDetails(!showDetails)}
-                    className="w-full flex items-center justify-between text-sm text-gray-400 hover:text-white transition-colors"
-                  >
-                    <span>Swap details</span>
-                    <svg
-                      className={`w-4 h-4 transition-transform ${showDetails ? 'rotate-180' : ''}`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+                  {/* Swap details */}
+                  <div className="border-t border-cyber-border-glow/30 pt-4">
+                    <button
+                      onClick={() => setShowDetails(!showDetails)}
+                      className="w-full flex justify-between items-center text-sm text-cyber-text-secondary hover:text-cyber-bright-blue"
                     >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
+                      <span>Swap details</span>
+                      <span className="material-symbols-outlined text-lg">{showDetails ? 'expand_less' : 'expand_more'}</span>
+                    </button>
+                  </div>
 
                   {showDetails && (
-                    <div className="bg-surface-200 rounded-lg p-3 space-y-2 text-sm">
+                    <div className="bg-cyber-surface-light rounded-lg p-3 space-y-2 text-sm border border-cyber-border-glow/30">
                       <div className="flex justify-between">
-                        <span className="text-gray-400">Route</span>
-                        <span className="text-white">
-                          {selectedToken === 'BEAR'
-                            ? 'USDC → Curve → DXY-BEAR'
-                            : 'USDC → ZapRouter → DXY-BULL'}
+                        <span className="text-cyber-text-secondary">Route</span>
+                        <span className="text-cyber-text-primary">
+                          {selectedToken === 'BEAR' ? 'USDC → Curve → DXY-BEAR' : 'USDC → ZapRouter → DXY-BULL'}
                         </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-400">Price Impact</span>
-                        <span className="text-white">~0.1%</span>
+                        <span className="text-cyber-text-secondary">Price Impact</span>
+                        <span className="text-cyber-text-primary">~0.1%</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-400">Estimated Gas</span>
-                        <span className="text-white">~$2.50</span>
+                        <span className="text-cyber-text-secondary">Estimated Gas</span>
+                        <span className="text-cyber-text-primary">~$2.50</span>
                       </div>
                     </div>
                   )}
 
                   {/* Action button */}
-                  {isConnected ? (
-                    <Button
-                      variant="primary"
-                      className="w-full"
-                      disabled={!inputAmount || parseFloat(inputAmount) <= 0}
-                      onClick={handleSwap}
-                    >
-                      {mode === 'buy' ? 'Buy' : 'Sell'} DXY-{selectedToken}
-                    </Button>
-                  ) : (
-                    <Button variant="secondary" className="w-full" disabled>
-                      Connect Wallet to Trade
-                    </Button>
-                  )}
+                  <button
+                    onClick={handleSwap}
+                    disabled={!inputAmount || parseFloat(inputAmount) <= 0}
+                    className="w-full bg-cyber-neon-green hover:bg-cyber-neon-green/90 text-cyber-bg font-semibold py-4 px-6 rounded-xl shadow-lg shadow-cyber-neon-green/40 transition-all transform hover:-translate-y-0.5 active:translate-y-0 text-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
+                  >
+                    {mode === 'buy' ? 'Buy' : 'Sell'} DXY-{selectedToken}
+                  </button>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Leverage content */}
-            {mainTab === 'leverage' && (
-              <div className="max-w-md mx-auto space-y-4">
-                {/* Side selector */}
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">Position Side</label>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setSelectedSide('BEAR')}
-                      className={`flex-1 px-4 py-3 rounded-lg border transition-colors ${
-                        selectedSide === 'BEAR'
-                          ? 'bg-bear/10 border-bear text-bear'
-                          : 'bg-surface-200 border-gray-700 text-gray-300 hover:border-gray-600'
-                      }`}
-                    >
-                      <span className="font-medium">BEAR</span>
-                      <span className="block text-xs opacity-70">Short USD</span>
-                    </button>
-                    <button
-                      onClick={() => setSelectedSide('BULL')}
-                      className={`flex-1 px-4 py-3 rounded-lg border transition-colors ${
-                        selectedSide === 'BULL'
-                          ? 'bg-bull/10 border-bull text-bull'
-                          : 'bg-surface-200 border-gray-700 text-gray-300 hover:border-gray-600'
-                      }`}
-                    >
-                      <span className="font-medium">BULL</span>
-                      <span className="block text-xs opacity-70">Long USD</span>
-                    </button>
+              {mainTab === 'leverage' && (
+                <div className="max-w-xl mx-auto space-y-6">
+                  {/* Side selector */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-cyber-text-secondary">Position Side</label>
+                    <div className="grid grid-cols-2 gap-4">
+                      <button
+                        onClick={() => setSelectedSide('BEAR')}
+                        className={`relative p-4 rounded-xl text-center transition-all ${
+                          selectedSide === 'BEAR'
+                            ? 'border-2 border-cyber-electric-fuchsia bg-cyber-electric-fuchsia/10 shadow-md shadow-cyber-electric-fuchsia/20'
+                            : 'border border-cyber-border-glow/30 bg-cyber-surface-dark hover:border-cyber-electric-fuchsia/50 opacity-60 hover:opacity-100'
+                        }`}
+                      >
+                        <div className={`font-semibold ${selectedSide === 'BEAR' ? 'text-cyber-electric-fuchsia' : 'text-cyber-text-primary'}`}>BEAR</div>
+                        <div className={`text-xs mt-1 ${selectedSide === 'BEAR' ? 'text-cyber-electric-fuchsia/70' : 'text-cyber-text-secondary'}`}>Short USD</div>
+                      </button>
+                      <button
+                        onClick={() => setSelectedSide('BULL')}
+                        className={`relative p-4 rounded-xl text-center transition-all ${
+                          selectedSide === 'BULL'
+                            ? 'border-2 border-cyber-neon-green bg-cyber-neon-green/10 shadow-md shadow-cyber-neon-green/20'
+                            : 'border border-cyber-border-glow/30 bg-cyber-surface-dark hover:border-cyber-neon-green/50 opacity-60 hover:opacity-100'
+                        }`}
+                      >
+                        <div className={`font-semibold ${selectedSide === 'BULL' ? 'text-cyber-neon-green' : 'text-cyber-text-primary'}`}>BULL</div>
+                        <div className={`text-xs mt-1 ${selectedSide === 'BULL' ? 'text-cyber-neon-green/70' : 'text-cyber-text-secondary'}`}>Long USD</div>
+                      </button>
+                    </div>
                   </div>
-                </div>
 
-                {/* Collateral input */}
-                <TokenInput
-                  label="Collateral (USDC)"
-                  value={collateralAmount}
-                  onChange={setCollateralAmount}
-                  token={{ symbol: 'USDC', decimals: 6 }}
-                  balance={isConnected ? usdcBalance : undefined}
-                />
+                  {/* Collateral input */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-cyber-text-secondary">Collateral (USDC)</span>
+                      <span className="text-cyber-text-secondary">
+                        Balance: <span className="text-cyber-text-primary">{formatUsd(usdcBalance)}</span>
+                      </span>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        value={collateralAmount}
+                        onChange={(e) => setCollateralAmount(e.target.value)}
+                        placeholder="0.00"
+                        className="w-full bg-cyber-surface-light border border-cyber-border-glow/30 rounded-xl py-4 pl-4 pr-24 text-xl font-medium text-cyber-text-primary focus:ring-1 focus:ring-cyber-bright-blue focus:border-cyber-bright-blue outline-none transition-shadow shadow-sm shadow-cyber-border-glow/10"
+                      />
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                        <button
+                          onClick={() => setCollateralAmount((Number(usdcBalance) / 1e6).toString())}
+                          className="text-xs font-semibold text-cyber-neon-green hover:text-cyber-neon-green/80 px-2 py-1 rounded bg-cyber-neon-green/10 shadow-sm shadow-cyber-neon-green/10"
+                        >
+                          MAX
+                        </button>
+                        <span className="font-medium text-cyber-text-secondary">USDC</span>
+                      </div>
+                    </div>
+                  </div>
 
-                {/* Leverage slider */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-sm text-gray-400 flex items-center gap-1">
-                      Leverage
-                      <InfoTooltip content="Higher leverage increases both potential profits and liquidation risk" />
-                    </label>
-                    <span className="text-white font-medium">{leverage}x</span>
+                  {/* Leverage slider */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-sm text-cyber-text-secondary flex items-center gap-1">
+                        Leverage
+                        <InfoTooltip content="Higher leverage increases both potential profits and liquidation risk" />
+                      </label>
+                      <span className="text-cyber-text-primary font-medium">{leverage}x</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="1.1"
+                      max="5"
+                      step="0.1"
+                      value={leverage}
+                      onChange={(e) => setLeverage(parseFloat(e.target.value))}
+                      className="w-full h-2 bg-cyber-surface-light rounded-lg appearance-none cursor-pointer accent-cyber-bright-blue"
+                    />
+                    <div className="flex justify-between text-xs text-cyber-text-secondary mt-1">
+                      <span>1.1x</span>
+                      <span>5x</span>
+                    </div>
                   </div>
-                  <input
-                    type="range"
-                    min="1.1"
-                    max="5"
-                    step="0.1"
-                    value={leverage}
-                    onChange={(e) => setLeverage(parseFloat(e.target.value))}
-                    className="w-full h-2 bg-surface-200 rounded-lg appearance-none cursor-pointer accent-primary-500"
-                  />
-                  <div className="flex justify-between text-xs text-gray-500 mt-1">
-                    <span>1.1x</span>
-                    <span>5x</span>
-                  </div>
-                </div>
 
-                {/* Position preview */}
-                <div className="bg-surface-200 rounded-lg p-4 space-y-3">
-                  <h4 className="text-sm font-medium text-gray-400">Position Preview</h4>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400 text-sm">Position Size</span>
-                    <span className="text-white">{formatUsd(BigInt(Math.floor(positionSize * 1e6)))}</span>
+                  {/* Position preview */}
+                  <div className="bg-cyber-surface-light rounded-lg p-4 space-y-3 border border-cyber-border-glow/30">
+                    <h4 className="text-sm font-medium text-cyber-text-secondary">Position Preview</h4>
+                    <div className="flex justify-between">
+                      <span className="text-cyber-text-secondary text-sm">Position Size</span>
+                      <span className="text-cyber-text-primary">{formatUsd(BigInt(Math.floor(positionSize * 1e6)))}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-cyber-text-secondary text-sm">Collateral</span>
+                      <span className="text-cyber-text-primary">{formatUsd(BigInt(Math.floor(collateralNum * 1e6)))}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-cyber-text-secondary text-sm flex items-center gap-1">
+                        Liquidation Price
+                        <InfoTooltip content="If DXY reaches this price, your position will be liquidated" />
+                      </span>
+                      <span className="text-cyber-warning-text">${liquidationPrice}</span>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400 text-sm">Collateral</span>
-                    <span className="text-white">{formatUsd(BigInt(Math.floor(collateralNum * 1e6)))}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400 text-sm flex items-center gap-1">
-                      Liquidation Price
-                      <InfoTooltip content="If DXY reaches this price, your position will be liquidated" />
-                    </span>
-                    <span className="text-yellow-500">${liquidationPrice}</span>
-                  </div>
-                </div>
 
-                {/* Slippage */}
-                <div className="flex justify-end">
-                  <SlippageSelector />
-                </div>
-
-                {/* Action button */}
-                {isConnected ? (
-                  <Button
-                    variant="primary"
-                    className="w-full"
-                    disabled={!collateralAmount || parseFloat(collateralAmount) <= 0}
+                  {/* Action button */}
+                  <button
                     onClick={handleOpenPosition}
+                    disabled={!collateralAmount || parseFloat(collateralAmount) <= 0}
+                    className="w-full bg-cyber-bright-blue hover:bg-cyber-bright-blue/90 text-cyber-bg font-semibold py-4 px-6 rounded-xl shadow-lg shadow-cyber-bright-blue/40 transition-all transform hover:-translate-y-0.5 active:translate-y-0 text-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
                   >
                     Open {selectedSide} Position
-                  </Button>
-                ) : (
-                  <Button variant="secondary" className="w-full" disabled>
-                    Connect Wallet to Trade
-                  </Button>
-                )}
+                  </button>
 
-                {/* Risk warning */}
-                <p className="text-xs text-gray-500 text-center">
-                  Leverage trading carries significant risk. You may lose your entire collateral.
-                </p>
-              </div>
-            )}
-
-            {/* Yield content */}
-            {mainTab === 'yield' && (
-              <div className="max-w-md mx-auto space-y-6">
-                {/* Overview stats */}
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="bg-surface-200 rounded-lg p-3">
-                    <p className="text-xs text-gray-400">Supplied</p>
-                    <p className="text-lg font-bold text-white">{formatUsd(suppliedAmount)}</p>
-                    <p className="text-xs text-green-500">+{formatPercent(supplyApy)} APY</p>
-                  </div>
-                  <div className="bg-surface-200 rounded-lg p-3">
-                    <p className="text-xs text-gray-400">Borrowed</p>
-                    <p className="text-lg font-bold text-white">{formatUsd(borrowedAmount)}</p>
-                    <p className="text-xs text-yellow-500">-{formatPercent(borrowApy)} APY</p>
-                  </div>
-                  <div className="bg-surface-200 rounded-lg p-3">
-                    <p className="text-xs text-gray-400">Available</p>
-                    <p className="text-lg font-bold text-white">{formatUsd(availableToBorrow)}</p>
-                    <p className="text-xs text-gray-500">to borrow</p>
-                  </div>
+                  <p className="text-xs text-cyber-text-secondary text-center">
+                    Leverage trading carries significant risk. You may lose your entire collateral.
+                  </p>
                 </div>
+              )}
 
-                {/* Supply section */}
-                <div className="bg-surface-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <h4 className="font-medium text-white">Supply USDC</h4>
-                    <span className="text-sm text-green-500">{formatPercent(supplyApy)} APY</span>
+              {mainTab === 'yield' && (
+                <div className="max-w-xl mx-auto space-y-6">
+                  {/* Overview stats */}
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="bg-cyber-surface-light rounded-lg p-3 border border-cyber-border-glow/30">
+                      <p className="text-xs text-cyber-text-secondary">Supplied</p>
+                      <p className="text-lg font-bold text-cyber-text-primary">{formatUsd(suppliedAmount)}</p>
+                      <p className="text-xs text-cyber-neon-green">+{formatPercent(supplyApy)} APY</p>
+                    </div>
+                    <div className="bg-cyber-surface-light rounded-lg p-3 border border-cyber-border-glow/30">
+                      <p className="text-xs text-cyber-text-secondary">Borrowed</p>
+                      <p className="text-lg font-bold text-cyber-text-primary">{formatUsd(borrowedAmount)}</p>
+                      <p className="text-xs text-cyber-warning-text">-{formatPercent(borrowApy)} APY</p>
+                    </div>
+                    <div className="bg-cyber-surface-light rounded-lg p-3 border border-cyber-border-glow/30">
+                      <p className="text-xs text-cyber-text-secondary">Available</p>
+                      <p className="text-lg font-bold text-cyber-text-primary">{formatUsd(availableToBorrow)}</p>
+                      <p className="text-xs text-cyber-text-secondary">to borrow</p>
+                    </div>
                   </div>
-                  <Tabs
-                    tabs={[
-                      { id: 'supply', label: 'Supply' },
-                      { id: 'withdraw', label: 'Withdraw' },
-                    ]}
-                    activeTab={supplyMode}
-                    onChange={(id) => {
-                      setSupplyMode(id as 'supply' | 'withdraw')
-                      setSupplyAmount('')
-                    }}
-                  />
-                  <div className="mt-4 space-y-4">
-                    <TokenInput
-                      value={supplyAmount}
-                      onChange={setSupplyAmount}
-                      token={{ symbol: 'USDC', decimals: 6 }}
-                      balance={isConnected ? (supplyMode === 'supply' ? usdcBalance : suppliedAmount) : undefined}
-                      label={supplyMode === 'supply' ? 'Amount to supply' : 'Amount to withdraw'}
-                    />
-                    {isConnected ? (
-                      <Button
-                        variant="primary"
-                        className="w-full"
+
+                  {/* Supply section */}
+                  <div className="bg-cyber-surface-light rounded-lg p-4 border border-cyber-border-glow/30">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="font-medium text-cyber-text-primary">Supply USDC</h4>
+                      <span className="text-sm text-cyber-neon-green">{formatPercent(supplyApy)} APY</span>
+                    </div>
+                    <div className="bg-cyber-surface-dark p-1 rounded-lg flex text-sm font-medium mb-4 border border-cyber-border-glow/30">
+                      <button
+                        onClick={() => { setSupplyMode('supply'); setSupplyAmount('') }}
+                        className={`flex-1 py-2 px-4 rounded-md transition-all ${
+                          supplyMode === 'supply'
+                            ? 'bg-cyber-surface-light text-cyber-neon-green shadow-sm shadow-cyber-neon-green/10 border border-cyber-neon-green/50'
+                            : 'text-cyber-text-secondary hover:text-cyber-bright-blue'
+                        }`}
+                      >
+                        Supply
+                      </button>
+                      <button
+                        onClick={() => { setSupplyMode('withdraw'); setSupplyAmount('') }}
+                        className={`flex-1 py-2 px-4 rounded-md transition-all ${
+                          supplyMode === 'withdraw'
+                            ? 'bg-cyber-surface-light text-cyber-neon-green shadow-sm shadow-cyber-neon-green/10 border border-cyber-neon-green/50'
+                            : 'text-cyber-text-secondary hover:text-cyber-bright-blue'
+                        }`}
+                      >
+                        Withdraw
+                      </button>
+                    </div>
+                    <div className="space-y-4">
+                      <div className="relative">
+                        <input
+                          type="number"
+                          value={supplyAmount}
+                          onChange={(e) => setSupplyAmount(e.target.value)}
+                          placeholder="0.00"
+                          className="w-full bg-cyber-surface-dark border border-cyber-border-glow/30 rounded-xl py-3 pl-4 pr-20 text-lg font-medium text-cyber-text-primary focus:ring-1 focus:ring-cyber-bright-blue focus:border-cyber-bright-blue outline-none"
+                        />
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                          <span className="font-medium text-cyber-text-secondary">USDC</span>
+                        </div>
+                      </div>
+                      <button
                         disabled={!supplyAmount || parseFloat(supplyAmount) <= 0}
-                        onClick={() => console.log(supplyMode, supplyAmount)}
+                        className="w-full bg-cyber-neon-green hover:bg-cyber-neon-green/90 text-cyber-bg font-semibold py-3 px-6 rounded-xl shadow-lg shadow-cyber-neon-green/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {supplyMode === 'supply' ? 'Supply' : 'Withdraw'} USDC
-                      </Button>
-                    ) : (
-                      <Button variant="secondary" className="w-full" disabled>
-                        Connect Wallet
-                      </Button>
-                    )}
+                      </button>
+                    </div>
                   </div>
-                </div>
 
-                {/* Borrow section */}
-                <div className="bg-surface-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <h4 className="font-medium text-white">Borrow USDC</h4>
-                    <span className="text-sm text-yellow-500">{formatPercent(borrowApy)} APY</span>
-                  </div>
-                  <Tabs
-                    tabs={[
-                      { id: 'borrow', label: 'Borrow' },
-                      { id: 'repay', label: 'Repay' },
-                    ]}
-                    activeTab={borrowMode}
-                    onChange={(id) => {
-                      setBorrowMode(id as 'borrow' | 'repay')
-                      setBorrowAmount('')
-                    }}
-                  />
-                  <div className="mt-4 space-y-4">
-                    <TokenInput
-                      value={borrowAmount}
-                      onChange={setBorrowAmount}
-                      token={{ symbol: 'USDC', decimals: 6 }}
-                      balance={isConnected ? (borrowMode === 'borrow' ? availableToBorrow : borrowedAmount) : undefined}
-                      label={borrowMode === 'borrow' ? 'Amount to borrow' : 'Amount to repay'}
-                    />
-                    {borrowMode === 'borrow' && (
-                      <p className="text-xs text-gray-500">
-                        Borrowing requires staked collateral (sDXY-BEAR or sDXY-BULL)
-                      </p>
-                    )}
-                    {isConnected ? (
-                      <Button
-                        variant="primary"
-                        className="w-full"
+                  {/* Borrow section */}
+                  <div className="bg-cyber-surface-light rounded-lg p-4 border border-cyber-border-glow/30">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="font-medium text-cyber-text-primary">Borrow USDC</h4>
+                      <span className="text-sm text-cyber-warning-text">{formatPercent(borrowApy)} APY</span>
+                    </div>
+                    <div className="bg-cyber-surface-dark p-1 rounded-lg flex text-sm font-medium mb-4 border border-cyber-border-glow/30">
+                      <button
+                        onClick={() => { setBorrowMode('borrow'); setBorrowAmount('') }}
+                        className={`flex-1 py-2 px-4 rounded-md transition-all ${
+                          borrowMode === 'borrow'
+                            ? 'bg-cyber-surface-light text-cyber-electric-fuchsia shadow-sm shadow-cyber-electric-fuchsia/10 border border-cyber-electric-fuchsia/50'
+                            : 'text-cyber-text-secondary hover:text-cyber-bright-blue'
+                        }`}
+                      >
+                        Borrow
+                      </button>
+                      <button
+                        onClick={() => { setBorrowMode('repay'); setBorrowAmount('') }}
+                        className={`flex-1 py-2 px-4 rounded-md transition-all ${
+                          borrowMode === 'repay'
+                            ? 'bg-cyber-surface-light text-cyber-electric-fuchsia shadow-sm shadow-cyber-electric-fuchsia/10 border border-cyber-electric-fuchsia/50'
+                            : 'text-cyber-text-secondary hover:text-cyber-bright-blue'
+                        }`}
+                      >
+                        Repay
+                      </button>
+                    </div>
+                    <div className="space-y-4">
+                      <div className="relative">
+                        <input
+                          type="number"
+                          value={borrowAmount}
+                          onChange={(e) => setBorrowAmount(e.target.value)}
+                          placeholder="0.00"
+                          className="w-full bg-cyber-surface-dark border border-cyber-border-glow/30 rounded-xl py-3 pl-4 pr-20 text-lg font-medium text-cyber-text-primary focus:ring-1 focus:ring-cyber-bright-blue focus:border-cyber-bright-blue outline-none"
+                        />
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                          <span className="font-medium text-cyber-text-secondary">USDC</span>
+                        </div>
+                      </div>
+                      {borrowMode === 'borrow' && (
+                        <p className="text-xs text-cyber-text-secondary">
+                          Borrowing requires staked collateral (sDXY-BEAR or sDXY-BULL)
+                        </p>
+                      )}
+                      <button
                         disabled={!borrowAmount || parseFloat(borrowAmount) <= 0}
-                        onClick={() => console.log(borrowMode, borrowAmount)}
+                        className="w-full bg-cyber-electric-fuchsia hover:bg-cyber-electric-fuchsia/90 text-cyber-text-primary font-semibold py-3 px-6 rounded-xl shadow-lg shadow-cyber-electric-fuchsia/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {borrowMode === 'borrow' ? 'Borrow' : 'Repay'} USDC
-                      </Button>
-                    ) : (
-                      <Button variant="secondary" className="w-full" disabled>
-                        Connect Wallet
-                      </Button>
-                    )}
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
             </div>
           </div>
 
           {/* Transaction History link */}
-          <div className="text-center">
+          <div className="mt-8 text-center pb-8">
             <Link
               to="/history"
-              className="text-primary-500 hover:text-primary-400 text-sm"
+              className="inline-flex items-center gap-2 text-cyber-electric-fuchsia hover:text-cyber-electric-fuchsia/80 font-medium text-sm transition-colors"
             >
-              View Transaction History →
+              View Transaction History
+              <span className="material-symbols-outlined text-sm">arrow_forward</span>
             </Link>
           </div>
 
-          {/* Adjust Position Modal */}
           {selectedPosition && (
             <AdjustPositionModal
               isOpen={adjustModalOpen}
@@ -660,22 +686,19 @@ export function Dashboard() {
           )}
         </>
       ) : (
-        /* Not connected state */
-        <Card className="text-center py-12">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-surface-50 flex items-center justify-center">
-            <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
+        <div className="bg-cyber-surface-dark rounded-xl p-12 text-center border border-cyber-border-glow/30 shadow-lg">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-cyber-surface-light flex items-center justify-center">
+            <span className="material-symbols-outlined text-3xl text-cyber-text-secondary">lock</span>
           </div>
-          <h2 className="text-xl font-semibold text-white mb-2">Connect Your Wallet</h2>
-          <p className="text-gray-400 mb-6 max-w-md mx-auto">
+          <h2 className="text-xl font-semibold text-cyber-text-primary mb-2">Connect Your Wallet</h2>
+          <p className="text-cyber-text-secondary mb-6 max-w-md mx-auto">
             Connect your wallet to view your portfolio, trade DXY-BEAR and DXY-BULL,
             and access all Plether features.
           </p>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-cyber-text-secondary">
             You can browse prices and protocol stats without connecting.
           </p>
-        </Card>
+        </div>
       )}
     </div>
   )
@@ -687,20 +710,21 @@ interface PortfolioCardProps {
   description: string
   link: string
   isLoading: boolean
+  colorClass: string
 }
 
-function PortfolioCard({ title, value, description, link, isLoading }: PortfolioCardProps) {
+function PortfolioCard({ title, value, description, link, isLoading, colorClass }: PortfolioCardProps) {
   if (isLoading) {
     return <SkeletonCard />
   }
 
   return (
     <Link to={link}>
-      <Card className="hover:border-gray-700 transition-colors cursor-pointer h-full">
-        <p className="text-sm text-gray-400 mb-1">{title}</p>
-        <p className="text-2xl font-bold text-white mb-2">{formatUsd(value)}</p>
-        <p className="text-xs text-gray-500">{description}</p>
-      </Card>
+      <div className="bg-cyber-surface-dark rounded-xl p-5 border border-cyber-border-glow/30 shadow-md hover:border-cyber-bright-blue/50 transition-colors cursor-pointer h-full">
+        <p className="text-xs text-cyber-text-secondary uppercase tracking-wider font-medium mb-2">{title}</p>
+        <div className={`text-2xl font-bold mb-1 ${colorClass}`}>{formatUsd(value)}</div>
+        <p className="text-xs text-cyber-text-secondary truncate">{description}</p>
+      </div>
     </Link>
   )
 }
@@ -711,62 +735,73 @@ interface PositionCardProps {
 }
 
 function PositionCard({ position, onAdjust }: PositionCardProps) {
-  const sideColor = position.side === 'BEAR' ? 'text-bear' : 'text-bull'
-  const sideBg = position.side === 'BEAR' ? 'bg-bear/10' : 'bg-bull/10'
-  const pnlColor = position.pnl >= 0n ? 'text-green-500' : 'text-red-500'
-  const healthColor = getHealthFactorColor(position.healthFactor)
-
-  const isWarning = position.healthFactor < HEALTH_FACTOR_WARNING
-  const isDanger = position.healthFactor < HEALTH_FACTOR_DANGER
+  const sideColor = position.side === 'BEAR' ? 'text-cyber-electric-fuchsia' : 'text-cyber-neon-green'
+  const sideBg = position.side === 'BEAR' ? 'bg-cyber-electric-fuchsia/20' : 'bg-cyber-neon-green/20'
+  const sideShadow = position.side === 'BEAR' ? 'shadow-cyber-electric-fuchsia/10' : 'shadow-cyber-neon-green/10'
+  const pnlColor = position.pnl >= 0n ? 'text-cyber-neon-green' : 'text-cyber-electric-fuchsia'
+  const healthColor = position.healthFactor >= HEALTH_FACTOR_WARNING
+    ? 'text-cyber-neon-green'
+    : position.healthFactor >= HEALTH_FACTOR_DANGER
+      ? 'text-cyber-warning-text'
+      : 'text-cyber-electric-fuchsia'
 
   return (
-    <Card className={isDanger ? 'border-red-800' : isWarning ? 'border-yellow-800' : ''}>
+    <div className="bg-cyber-surface-dark rounded-lg p-4 border border-cyber-border-glow/30 hover:border-cyber-bright-blue/50 transition-all shadow-md">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className={`w-12 h-12 rounded-lg ${sideBg} flex items-center justify-center`}>
-            <span className={`font-bold ${sideColor}`}>{position.side[0]}</span>
+          <div className={`w-10 h-10 rounded ${sideBg} ${sideColor} flex items-center justify-center font-bold text-lg shadow-md ${sideShadow}`}>
+            {position.side[0]}
           </div>
           <div>
             <div className="flex items-center gap-2">
               <span className={`font-semibold ${sideColor}`}>DXY-{position.side}</span>
-              <Badge variant="default">{position.leverage}x</Badge>
+              <span className="px-1.5 py-0.5 rounded bg-cyber-surface-light text-xs text-cyber-text-secondary font-medium border border-cyber-border-glow/30">
+                {position.leverage}x
+              </span>
             </div>
-            <p className="text-sm text-gray-400">
+            <div className="text-xs text-cyber-text-secondary mt-1">
               Size: {formatUsd(position.size)} | Collateral: {formatUsd(position.collateral)}
-            </p>
+            </div>
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-6 text-sm">
-          <div>
-            <p className="text-gray-400">PnL</p>
-            <p className={`font-medium ${pnlColor}`}>
+        <div className="flex flex-wrap items-center gap-6 lg:gap-12 flex-1 md:justify-end">
+          <div className="flex flex-col">
+            <span className="text-xs text-cyber-text-secondary mb-1">PnL</span>
+            <span className={`text-sm font-semibold ${pnlColor}`}>
               {formatUsd(position.pnl)} ({position.pnlPercentage > 0 ? '+' : ''}{formatPercent(position.pnlPercentage)})
-            </p>
+            </span>
           </div>
-          <div>
-            <p className="text-gray-400">Liq. Price</p>
-            <p className="text-white">${(Number(position.liquidationPrice) / 1e6).toFixed(2)}</p>
+          <div className="flex flex-col">
+            <span className="text-xs text-cyber-text-secondary mb-1">Liq. Price</span>
+            <span className="text-sm font-semibold text-cyber-text-primary">
+              ${(Number(position.liquidationPrice) / 1e6).toFixed(2)}
+            </span>
           </div>
-          <div>
-            <p className="text-gray-400 flex items-center gap-1">
+          <div className="flex flex-col">
+            <div className="flex items-center gap-1 text-xs text-cyber-text-secondary mb-1">
               Health
-              <InfoTooltip content="Health factor indicates position safety. Below 1.2 is high risk." />
-            </p>
-            <p className={`font-medium ${healthColor}`}>{position.healthFactor.toFixed(2)}</p>
+              <span className="material-symbols-outlined text-[10px] text-cyber-text-secondary">help</span>
+            </div>
+            <span className={`text-sm font-semibold ${healthColor}`}>
+              {position.healthFactor.toFixed(2)}
+            </span>
           </div>
-        </div>
 
-        <div className="flex gap-2">
-          <Button variant="secondary" size="sm" onClick={onAdjust}>
-            Adjust
-          </Button>
-          <Button variant="danger" size="sm">
-            Close
-          </Button>
+          <div className="flex items-center gap-2 mt-2 md:mt-0">
+            <button
+              onClick={onAdjust}
+              className="px-3 py-1.5 rounded text-sm border border-cyber-border-glow/30 text-cyber-text-secondary hover:bg-cyber-surface-light hover:text-cyber-bright-blue transition-colors"
+            >
+              Adjust
+            </button>
+            <button className="px-3 py-1.5 rounded text-sm bg-cyber-electric-fuchsia hover:bg-cyber-electric-fuchsia/80 text-cyber-text-primary transition-colors shadow-md shadow-cyber-electric-fuchsia/20">
+              Close
+            </button>
+          </div>
         </div>
       </div>
-    </Card>
+    </div>
   )
 }
 
@@ -784,75 +819,81 @@ function AdjustPositionModal({ isOpen, onClose, position }: AdjustPositionModalP
     <Modal isOpen={isOpen} onClose={onClose} title={`Adjust ${position.side} Position`}>
       <div className="space-y-4">
         <div className="flex gap-2">
-          <Button
-            variant={action === 'add' ? 'primary' : 'secondary'}
-            size="sm"
+          <button
             onClick={() => setAction('add')}
+            className={`flex-1 py-2 px-3 rounded text-sm font-medium transition-colors ${
+              action === 'add'
+                ? 'bg-cyber-neon-green/20 text-cyber-neon-green border border-cyber-neon-green/50'
+                : 'bg-cyber-surface-light text-cyber-text-secondary border border-cyber-border-glow/30 hover:text-cyber-bright-blue'
+            }`}
           >
             Add Collateral
-          </Button>
-          <Button
-            variant={action === 'remove' ? 'primary' : 'secondary'}
-            size="sm"
+          </button>
+          <button
             onClick={() => setAction('remove')}
+            className={`flex-1 py-2 px-3 rounded text-sm font-medium transition-colors ${
+              action === 'remove'
+                ? 'bg-cyber-electric-fuchsia/20 text-cyber-electric-fuchsia border border-cyber-electric-fuchsia/50'
+                : 'bg-cyber-surface-light text-cyber-text-secondary border border-cyber-border-glow/30 hover:text-cyber-bright-blue'
+            }`}
           >
-            Remove Collateral
-          </Button>
-          <Button
-            variant={action === 'adjust' ? 'primary' : 'secondary'}
-            size="sm"
+            Remove
+          </button>
+          <button
             onClick={() => setAction('adjust')}
+            className={`flex-1 py-2 px-3 rounded text-sm font-medium transition-colors ${
+              action === 'adjust'
+                ? 'bg-cyber-bright-blue/20 text-cyber-bright-blue border border-cyber-bright-blue/50'
+                : 'bg-cyber-surface-light text-cyber-text-secondary border border-cyber-border-glow/30 hover:text-cyber-bright-blue'
+            }`}
           >
             Adjust Leverage
-          </Button>
+          </button>
         </div>
 
-        {action === 'add' && (
-          <TokenInput
-            label="Add USDC Collateral"
-            value={amount}
-            onChange={setAmount}
-            token={{ symbol: 'USDC', decimals: 6 }}
-          />
-        )}
-
-        {action === 'remove' && (
-          <TokenInput
-            label="Remove USDC Collateral"
-            value={amount}
-            onChange={setAmount}
-            token={{ symbol: 'USDC', decimals: 6 }}
-          />
+        {(action === 'add' || action === 'remove') && (
+          <div className="relative">
+            <input
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="0.00"
+              className="w-full bg-cyber-surface-light border border-cyber-border-glow/30 rounded-xl py-3 pl-4 pr-20 text-lg font-medium text-cyber-text-primary focus:ring-1 focus:ring-cyber-bright-blue focus:border-cyber-bright-blue outline-none"
+            />
+            <div className="absolute right-4 top-1/2 -translate-y-1/2">
+              <span className="font-medium text-cyber-text-secondary">USDC</span>
+            </div>
+          </div>
         )}
 
         {action === 'adjust' && (
           <div>
-            <label className="block text-sm text-gray-400 mb-2">New Leverage</label>
+            <label className="block text-sm text-cyber-text-secondary mb-2">New Leverage</label>
             <input
               type="range"
               min="1.1"
               max="5"
               step="0.1"
               defaultValue={position.leverage}
-              className="w-full"
+              className="w-full h-2 bg-cyber-surface-light rounded-lg appearance-none cursor-pointer accent-cyber-bright-blue"
             />
           </div>
         )}
 
-        <div className="bg-surface-200 rounded-lg p-3 space-y-2 text-sm">
+        <div className="bg-cyber-surface-light rounded-lg p-3 space-y-2 text-sm border border-cyber-border-glow/30">
           <div className="flex justify-between">
-            <span className="text-gray-400">New Liquidation Price</span>
-            <span className="text-yellow-500">$92.50</span>
+            <span className="text-cyber-text-secondary">New Liquidation Price</span>
+            <span className="text-cyber-warning-text">$92.50</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-400">New Health Factor</span>
-            <span className="text-green-500">2.1</span>
+            <span className="text-cyber-text-secondary">New Health Factor</span>
+            <span className="text-cyber-neon-green">2.1</span>
           </div>
         </div>
 
-        <Button variant="primary" className="w-full">
+        <button className="w-full bg-cyber-neon-green hover:bg-cyber-neon-green/90 text-cyber-bg font-semibold py-3 px-6 rounded-xl shadow-lg shadow-cyber-neon-green/40 transition-all">
           Confirm {action === 'add' ? 'Add' : action === 'remove' ? 'Remove' : 'Adjust'}
-        </Button>
+        </button>
       </div>
     </Modal>
   )

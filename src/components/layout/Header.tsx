@@ -13,47 +13,46 @@ export function Header() {
   const location = useLocation()
 
   return (
-    <header className="sticky top-0 z-40 bg-black/60 backdrop-blur-lg border-b border-white/5">
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
-          {/* Left side: Logo + Navigation */}
-          <div className="flex items-center gap-6">
-            <Link to="/" className="flex items-center gap-2">
-              <img src="/icon.svg" alt="Plether" className="w-8 h-8" />
-              <span className="text-xl font-bold text-white hidden sm:block">Plether</span>
-            </Link>
-
-            <nav className="hidden lg:flex items-center gap-1">
-              {navLinks.map(({ path, label }) => {
-                const isActive = location.pathname === path
-                return (
-                  <Link
-                    key={path}
-                    to={path}
-                    className={`
-                      px-3 py-2 rounded-lg text-sm font-medium transition-colors
-                      ${
-                        isActive
-                          ? 'bg-surface-50 text-white'
-                          : 'text-gray-400 hover:text-white hover:bg-surface-50/50'
-                      }
-                    `}
-                  >
-                    {label}
-                  </Link>
-                )
-              })}
-            </nav>
-          </div>
-
-          {/* Right side: Price, Pending TX, Wallet */}
-          <div className="flex items-center gap-4">
-            <div className="hidden md:block">
-              <PriceDisplay variant="compact" />
+    <header className="border-b border-cyber-border-glow/30 bg-cyber-surface-dark py-4 sticky top-0 z-50 shadow-lg shadow-cyber-border-glow/10">
+      <div className="max-w-7xl mx-auto px-6 lg:px-8 flex items-center justify-between">
+        <div className="flex items-center gap-10">
+          <Link to="/" className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-cyber-bright-blue rounded-full flex items-center justify-center shadow-lg shadow-cyber-bright-blue/30">
+              <span className="material-symbols-outlined text-cyber-text-primary text-lg">token</span>
             </div>
-            <PendingTxBadge />
-            <ConnectButton />
+            <span className="text-xl font-semibold tracking-wide text-cyber-neon-green">Plether</span>
+          </Link>
+
+          <nav className="hidden md:flex items-center gap-1">
+            {navLinks.map(({ path, label }) => {
+              const isActive = location.pathname === path ||
+                (path === '/' && ['/', '/leverage', '/yield'].includes(location.pathname))
+              return (
+                <Link
+                  key={path}
+                  to={path}
+                  className={`
+                    px-4 py-2 rounded-lg text-sm font-semibold transition-colors
+                    ${
+                      isActive
+                        ? 'bg-cyber-surface-light text-cyber-neon-green border border-cyber-neon-green/50 shadow-md shadow-cyber-neon-green/10'
+                        : 'text-cyber-text-secondary hover:text-cyber-bright-blue'
+                    }
+                  `}
+                >
+                  {label}
+                </Link>
+              )
+            })}
+          </nav>
+        </div>
+
+        <div className="flex items-center gap-4 text-sm">
+          <div className="hidden lg:flex items-center gap-4 mr-4">
+            <PriceDisplay variant="compact" />
           </div>
+          <PendingTxBadge />
+          <ConnectButton />
         </div>
       </div>
     </header>
