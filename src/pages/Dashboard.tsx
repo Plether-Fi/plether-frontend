@@ -263,7 +263,7 @@ export function Dashboard() {
                       onClick={() => setMode('buy')}
                       className={`flex-1 py-2 px-4 rounded-md transition-all ${
                         mode === 'buy'
-                          ? 'bg-cyber-surface-dark text-cyber-neon-green shadow-sm shadow-cyber-neon-green/10 border border-cyber-neon-green/50'
+                          ? 'bg-cyber-surface-dark text-cyber-bright-blue shadow-sm shadow-cyber-bright-blue/10 border border-cyber-bright-blue/50'
                           : 'text-cyber-text-secondary hover:text-cyber-bright-blue'
                       }`}
                     >
@@ -273,7 +273,7 @@ export function Dashboard() {
                       onClick={() => setMode('sell')}
                       className={`flex-1 py-2 px-4 rounded-md transition-all ${
                         mode === 'sell'
-                          ? 'bg-cyber-surface-dark text-cyber-neon-green shadow-sm shadow-cyber-neon-green/10 border border-cyber-neon-green/50'
+                          ? 'bg-cyber-surface-dark text-cyber-bright-blue shadow-sm shadow-cyber-bright-blue/10 border border-cyber-bright-blue/50'
                           : 'text-cyber-text-secondary hover:text-cyber-bright-blue'
                       }`}
                     >
@@ -336,7 +336,7 @@ export function Dashboard() {
                         <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
                           <button
                             onClick={() => setInputAmount((Number(inputBalance) / 1e6).toString())}
-                            className="text-xs font-semibold text-cyber-neon-green hover:text-cyber-neon-green/80 px-2 py-1 rounded bg-cyber-neon-green/10 shadow-sm shadow-cyber-neon-green/10"
+                            className="text-xs font-semibold text-cyber-bright-blue hover:text-cyber-bright-blue/80 px-2 py-1 rounded bg-cyber-bright-blue/10 shadow-sm shadow-cyber-bright-blue/10"
                           >
                             MAX
                           </button>
@@ -408,7 +408,7 @@ export function Dashboard() {
                   <button
                     onClick={handleSwap}
                     disabled={!inputAmount || parseFloat(inputAmount) <= 0}
-                    className="w-full bg-cyber-neon-green hover:bg-cyber-neon-green/90 text-cyber-bg font-semibold py-4 px-6 rounded-xl shadow-lg shadow-cyber-neon-green/40 transition-all transform hover:-translate-y-0.5 active:translate-y-0 text-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
+                    className="w-full bg-cyber-bright-blue hover:bg-cyber-bright-blue/90 text-cyber-bg font-semibold py-4 px-6 rounded-xl shadow-lg shadow-cyber-bright-blue/40 transition-all transform hover:-translate-y-0.5 active:translate-y-0 text-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
                   >
                     {mode === 'buy' ? 'Buy' : 'Sell'} DXY-{selectedToken}
                   </button>
@@ -465,7 +465,7 @@ export function Dashboard() {
                       <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
                         <button
                           onClick={() => setCollateralAmount((Number(usdcBalance) / 1e6).toString())}
-                          className="text-xs font-semibold text-cyber-neon-green hover:text-cyber-neon-green/80 px-2 py-1 rounded bg-cyber-neon-green/10 shadow-sm shadow-cyber-neon-green/10"
+                          className="text-xs font-semibold text-cyber-electric-fuchsia hover:text-cyber-electric-fuchsia/80 px-2 py-1 rounded bg-cyber-electric-fuchsia/10 shadow-sm shadow-cyber-electric-fuchsia/10"
                         >
                           MAX
                         </button>
@@ -490,7 +490,7 @@ export function Dashboard() {
                       step="0.1"
                       value={leverage}
                       onChange={(e) => setLeverage(parseFloat(e.target.value))}
-                      className="w-full h-2 bg-cyber-surface-light rounded-lg appearance-none cursor-pointer accent-cyber-bright-blue"
+                      className="w-full h-2 bg-cyber-surface-light rounded-lg appearance-none cursor-pointer accent-cyber-electric-fuchsia"
                     />
                     <div className="flex justify-between text-xs text-cyber-text-secondary mt-1">
                       <span>1.1x</span>
@@ -522,7 +522,7 @@ export function Dashboard() {
                   <button
                     onClick={handleOpenPosition}
                     disabled={!collateralAmount || parseFloat(collateralAmount) <= 0}
-                    className="w-full bg-cyber-bright-blue hover:bg-cyber-bright-blue/90 text-cyber-bg font-semibold py-4 px-6 rounded-xl shadow-lg shadow-cyber-bright-blue/40 transition-all transform hover:-translate-y-0.5 active:translate-y-0 text-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
+                    className="w-full bg-cyber-electric-fuchsia hover:bg-cyber-electric-fuchsia/90 text-cyber-bg font-semibold py-4 px-6 rounded-xl shadow-lg shadow-cyber-electric-fuchsia/40 transition-all transform hover:-translate-y-0.5 active:translate-y-0 text-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
                   >
                     Open {selectedSide} Position
                   </button>
@@ -615,8 +615,8 @@ export function Dashboard() {
                         onClick={() => { setBorrowMode('borrow'); setBorrowAmount('') }}
                         className={`flex-1 py-2 px-4 rounded-md transition-all ${
                           borrowMode === 'borrow'
-                            ? 'bg-cyber-surface-light text-cyber-electric-fuchsia shadow-sm shadow-cyber-electric-fuchsia/10 border border-cyber-electric-fuchsia/50'
-                            : 'text-cyber-text-secondary hover:text-cyber-bright-blue'
+                            ? 'bg-cyber-surface-light text-cyber-neon-green shadow-sm shadow-cyber-neon-green/10 border border-cyber-neon-green/50'
+                            : 'text-cyber-text-secondary hover:text-cyber-neon-green'
                         }`}
                       >
                         Borrow
@@ -625,8 +625,8 @@ export function Dashboard() {
                         onClick={() => { setBorrowMode('repay'); setBorrowAmount('') }}
                         className={`flex-1 py-2 px-4 rounded-md transition-all ${
                           borrowMode === 'repay'
-                            ? 'bg-cyber-surface-light text-cyber-electric-fuchsia shadow-sm shadow-cyber-electric-fuchsia/10 border border-cyber-electric-fuchsia/50'
-                            : 'text-cyber-text-secondary hover:text-cyber-bright-blue'
+                            ? 'bg-cyber-surface-light text-cyber-neon-green shadow-sm shadow-cyber-neon-green/10 border border-cyber-neon-green/50'
+                            : 'text-cyber-text-secondary hover:text-cyber-neon-green'
                         }`}
                       >
                         Repay
@@ -652,7 +652,7 @@ export function Dashboard() {
                       )}
                       <button
                         disabled={!borrowAmount || parseFloat(borrowAmount) <= 0}
-                        className="w-full bg-cyber-electric-fuchsia hover:bg-cyber-electric-fuchsia/90 text-cyber-text-primary font-semibold py-3 px-6 rounded-xl shadow-lg shadow-cyber-electric-fuchsia/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full bg-cyber-neon-green hover:bg-cyber-neon-green/90 text-cyber-bg font-semibold py-3 px-6 rounded-xl shadow-lg shadow-cyber-neon-green/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {borrowMode === 'borrow' ? 'Borrow' : 'Repay'} USDC
                       </button>
