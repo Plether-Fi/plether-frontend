@@ -3,6 +3,7 @@ import { useRef, useEffect } from 'react'
 import { type Address } from 'viem'
 import { ERC20_ABI } from '../contracts/abis'
 import { useTransactionStore } from '../stores/transactionStore'
+import { parseTransactionError } from '../utils/errors'
 
 export function useApprove(tokenAddress: Address, spenderAddress: Address) {
   const addTransaction = useTransactionStore((s) => s.addTransaction)
@@ -11,7 +12,7 @@ export function useApprove(tokenAddress: Address, spenderAddress: Address) {
 
   const { writeContract, data: hash, isPending, error, reset } = useWriteContract()
 
-  const { isLoading: isConfirming, isSuccess, isError } = useWaitForTransactionReceipt({
+  const { isLoading: isConfirming, isSuccess, isError, error: receiptError } = useWaitForTransactionReceipt({
     hash,
   })
 
@@ -24,10 +25,13 @@ export function useApprove(tokenAddress: Address, spenderAddress: Address) {
 
   useEffect(() => {
     if (isError && txIdRef.current) {
-      updateTransaction(txIdRef.current, { status: 'failed' })
+      updateTransaction(txIdRef.current, {
+        status: 'failed',
+        errorMessage: parseTransactionError(receiptError),
+      })
       txIdRef.current = null
     }
-  }, [isError, updateTransaction])
+  }, [isError, receiptError, updateTransaction])
 
   const approve = async (amount: bigint) => {
     const txId = crypto.randomUUID()
@@ -52,14 +56,20 @@ export function useApprove(tokenAddress: Address, spenderAddress: Address) {
           onSuccess: (hash) => {
             updateTransaction(txId, { hash, status: 'confirming' })
           },
-          onError: () => {
-            updateTransaction(txId, { status: 'failed' })
+          onError: (err) => {
+            updateTransaction(txId, {
+              status: 'failed',
+              errorMessage: parseTransactionError(err),
+            })
             txIdRef.current = null
           },
         }
       )
-    } catch {
-      updateTransaction(txId, { status: 'failed' })
+    } catch (err) {
+      updateTransaction(txId, {
+        status: 'failed',
+        errorMessage: parseTransactionError(err),
+      })
       txIdRef.current = null
     }
   }

@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Layout } from './components/layout'
+import { TransactionNotifications } from './components/TransactionNotifications'
 import {
   Dashboard,
   Mint,
@@ -20,6 +21,7 @@ function App() {
           <Route path="/history" element={<History />} />
         </Routes>
       </Layout>
+      <TransactionNotifications />
     </BrowserRouter>
   )
 }

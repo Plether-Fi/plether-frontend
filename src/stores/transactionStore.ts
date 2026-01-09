@@ -13,6 +13,7 @@ export interface PendingTransaction {
   description: string
   timestamp: number
   chainId?: number
+  errorMessage?: string
 }
 
 interface TransactionState {

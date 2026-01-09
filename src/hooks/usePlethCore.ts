@@ -3,6 +3,7 @@ import { useRef, useEffect } from 'react'
 import { PLETH_CORE_ABI } from '../contracts/abis'
 import { getAddresses } from '../contracts/addresses'
 import { useTransactionStore } from '../stores/transactionStore'
+import { parseTransactionError } from '../utils/errors'
 
 export function usePlethCoreStatus() {
   const { chainId } = useAccount()
@@ -95,7 +96,7 @@ export function useMint() {
 
   const { writeContract, data: hash, isPending, error, reset } = useWriteContract()
 
-  const { isLoading: isConfirming, isSuccess, isError } = useWaitForTransactionReceipt({
+  const { isLoading: isConfirming, isSuccess, isError, error: receiptError } = useWaitForTransactionReceipt({
     hash,
   })
 
@@ -108,10 +109,13 @@ export function useMint() {
 
   useEffect(() => {
     if (isError && txIdRef.current) {
-      updateTransaction(txIdRef.current, { status: 'failed' })
+      updateTransaction(txIdRef.current, {
+        status: 'failed',
+        errorMessage: parseTransactionError(receiptError),
+      })
       txIdRef.current = null
     }
-  }, [isError, updateTransaction])
+  }, [isError, receiptError, updateTransaction])
 
   const mint = async (pairAmount: bigint) => {
     const txId = crypto.randomUUID()
@@ -136,14 +140,20 @@ export function useMint() {
           onSuccess: (hash) => {
             updateTransaction(txId, { hash, status: 'confirming' })
           },
-          onError: () => {
-            updateTransaction(txId, { status: 'failed' })
+          onError: (err) => {
+            updateTransaction(txId, {
+              status: 'failed',
+              errorMessage: parseTransactionError(err),
+            })
             txIdRef.current = null
           },
         }
       )
-    } catch {
-      updateTransaction(txId, { status: 'failed' })
+    } catch (err) {
+      updateTransaction(txId, {
+        status: 'failed',
+        errorMessage: parseTransactionError(err),
+      })
       txIdRef.current = null
     }
   }
@@ -168,7 +178,7 @@ export function useBurn() {
 
   const { writeContract, data: hash, isPending, error, reset } = useWriteContract()
 
-  const { isLoading: isConfirming, isSuccess, isError } = useWaitForTransactionReceipt({
+  const { isLoading: isConfirming, isSuccess, isError, error: receiptError } = useWaitForTransactionReceipt({
     hash,
   })
 
@@ -181,10 +191,13 @@ export function useBurn() {
 
   useEffect(() => {
     if (isError && txIdRef.current) {
-      updateTransaction(txIdRef.current, { status: 'failed' })
+      updateTransaction(txIdRef.current, {
+        status: 'failed',
+        errorMessage: parseTransactionError(receiptError),
+      })
       txIdRef.current = null
     }
-  }, [isError, updateTransaction])
+  }, [isError, receiptError, updateTransaction])
 
   const burn = async (pairAmount: bigint) => {
     const txId = crypto.randomUUID()
@@ -209,14 +222,20 @@ export function useBurn() {
           onSuccess: (hash) => {
             updateTransaction(txId, { hash, status: 'confirming' })
           },
-          onError: () => {
-            updateTransaction(txId, { status: 'failed' })
+          onError: (err) => {
+            updateTransaction(txId, {
+              status: 'failed',
+              errorMessage: parseTransactionError(err),
+            })
             txIdRef.current = null
           },
         }
       )
-    } catch {
-      updateTransaction(txId, { status: 'failed' })
+    } catch (err) {
+      updateTransaction(txId, {
+        status: 'failed',
+        errorMessage: parseTransactionError(err),
+      })
       txIdRef.current = null
     }
   }
