@@ -1,8 +1,9 @@
-import { type ReactNode } from 'react'
+import { type ReactNode, useEffect } from 'react'
 import { Header } from './Header'
 import { MobileNav } from './MobileNav'
 import { WrongNetworkBanner } from '../wallet/NetworkSwitcher'
 import { useAccount } from 'wagmi'
+import { useTransactionStore } from '../../stores/transactionStore'
 
 interface LayoutProps {
   children: ReactNode
@@ -10,6 +11,11 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const { isConnected } = useAccount()
+  const cleanupOldTransactions = useTransactionStore((s) => s.cleanupOldTransactions)
+
+  useEffect(() => {
+    cleanupOldTransactions()
+  }, [cleanupOldTransactions])
 
   return (
     <div className="min-h-screen flex flex-col bg-cyber-bg text-cyber-text-primary">

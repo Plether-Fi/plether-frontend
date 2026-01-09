@@ -21,6 +21,7 @@ interface TransactionState {
   updateTransaction: (id: string, update: Partial<PendingTransaction>) => void
   removeTransaction: (id: string) => void
   clearTransactions: () => void
+  cleanupOldTransactions: () => void
 }
 
 export const useTransactionStore = create<TransactionState>()(
@@ -51,6 +52,18 @@ export const useTransactionStore = create<TransactionState>()(
         })),
 
       clearTransactions: () => set({ pendingTransactions: [] }),
+
+      cleanupOldTransactions: () =>
+        set((state) => {
+          const oneHourAgo = Date.now() - 60 * 60 * 1000
+          return {
+            pendingTransactions: state.pendingTransactions.filter(
+              (tx) =>
+                (tx.status === 'pending' || tx.status === 'confirming') &&
+                tx.timestamp > oneHourAgo
+            ),
+          }
+        }),
     }),
     {
       name: STORAGE_KEYS.PENDING_TXS,
