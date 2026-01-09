@@ -1,35 +1,51 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { useAccount } from 'wagmi'
-import { parseUnits, formatUnits } from 'viem'
+import { parseUnits } from 'viem'
 import { formatAmount } from '../utils/formatters'
 import { Alert, TokenIcon } from '../components/ui'
 import { TokenInput } from '../components/TokenInput'
-import { useTokenBalances, usePreviewMint, usePreviewBurn, useMint, useBurn, useAllowance, useApprove } from '../hooks'
+import { useTokenBalances, useMint, useBurn, useAllowance, useApprove } from '../hooks'
 import { getAddresses } from '../contracts/addresses'
 
 type MintMode = 'mint' | 'redeem'
+type PendingAction = 'mint' | 'burn' | null
 
 export function Mint() {
   const { isConnected, chainId } = useAccount()
   const [mode, setMode] = useState<MintMode>('mint')
   const [inputAmount, setInputAmount] = useState('')
+  const [pendingAction, setPendingAction] = useState<PendingAction>(null)
+  const pendingAmountRef = useRef<bigint>(0n)
 
   const addresses = getAddresses(chainId ?? 1)
   const { usdcBalance, bearBalance, bullBalance, refetch: refetchBalances } = useTokenBalances()
 
-  const inputBigInt = useMemo(() => {
+  // For mint: user inputs USDC, convert to pair amount (18 decimals)
+  // For redeem: user inputs pair amount directly (18 decimals)
+  const pairAmountBigInt = useMemo(() => {
     if (!inputAmount || isNaN(parseFloat(inputAmount))) return 0n
     try {
-      return mode === 'mint'
-        ? parseUnits(inputAmount, 6)
-        : parseUnits(inputAmount, 18)
+      if (mode === 'mint') {
+        // 2 USDC = 1 pair, so divide by 2
+        const pairAmount = parseFloat(inputAmount) / 2
+        return parseUnits(pairAmount.toString(), 18)
+      } else {
+        return parseUnits(inputAmount, 18)
+      }
     } catch {
       return 0n
     }
   }, [inputAmount, mode])
 
-  const { pairAmount: mintOutput, isLoading: mintLoading } = usePreviewMint(inputBigInt)
-  const { usdcAmount: burnOutput, isLoading: burnLoading } = usePreviewBurn(inputBigInt)
+  // USDC amount for approvals (6 decimals)
+  const usdcAmountBigInt = useMemo(() => {
+    if (!inputAmount || isNaN(parseFloat(inputAmount))) return 0n
+    try {
+      return parseUnits(inputAmount, 6)
+    } catch {
+      return 0n
+    }
+  }, [inputAmount])
 
   const { allowance: usdcAllowance, refetch: refetchUsdcAllowance } = useAllowance(addresses.USDC, addresses.PLETH_CORE)
   const { allowance: bearAllowance, refetch: refetchBearAllowance } = useAllowance(addresses.DXY_BEAR, addresses.PLETH_CORE)
@@ -43,16 +59,30 @@ export function Mint() {
   const { burn, isPending: burnPending, isSuccess: burnSuccess } = useBurn()
 
   useEffect(() => {
-    if (usdcApproveSuccess) refetchUsdcAllowance()
-  }, [usdcApproveSuccess, refetchUsdcAllowance])
+    if (usdcApproveSuccess) {
+      refetchUsdcAllowance()
+      if (pendingAction === 'mint' && pendingAmountRef.current > 0n) {
+        mint(pendingAmountRef.current)
+        setPendingAction(null)
+      }
+    }
+  }, [usdcApproveSuccess, refetchUsdcAllowance, pendingAction, mint])
 
   useEffect(() => {
-    if (bearApproveSuccess) refetchBearAllowance()
+    if (bearApproveSuccess) {
+      refetchBearAllowance()
+    }
   }, [bearApproveSuccess, refetchBearAllowance])
 
   useEffect(() => {
-    if (bullApproveSuccess) refetchBullAllowance()
-  }, [bullApproveSuccess, refetchBullAllowance])
+    if (bullApproveSuccess) {
+      refetchBullAllowance()
+      if (pendingAction === 'burn' && pendingAmountRef.current > 0n) {
+        burn(pendingAmountRef.current)
+        setPendingAction(null)
+      }
+    }
+  }, [bullApproveSuccess, refetchBullAllowance, pendingAction, burn])
 
   useEffect(() => {
     if (mintSuccess || burnSuccess) {
@@ -61,38 +91,45 @@ export function Mint() {
     }
   }, [mintSuccess, burnSuccess, refetchBalances])
 
-  const needsUsdcApproval = mode === 'mint' && inputBigInt > 0n && usdcAllowance < inputBigInt
-  const needsBearApproval = mode === 'redeem' && inputBigInt > 0n && bearAllowance < inputBigInt
-  const needsBullApproval = mode === 'redeem' && inputBigInt > 0n && bullAllowance < inputBigInt
+  const needsUsdcApproval = mode === 'mint' && usdcAmountBigInt > 0n && usdcAllowance < usdcAmountBigInt
+  const needsBearApproval = mode === 'redeem' && pairAmountBigInt > 0n && bearAllowance < pairAmountBigInt
+  const needsBullApproval = mode === 'redeem' && pairAmountBigInt > 0n && bullAllowance < pairAmountBigInt
 
   const outputDisplay = useMemo(() => {
+    const inputNum = parseFloat(inputAmount) || 0
     if (mode === 'mint') {
-      return mintLoading ? '...' : formatUnits(mintOutput, 18)
+      // 2 USDC = 1 BEAR + 1 BULL
+      return (inputNum / 2).toFixed(4)
     } else {
-      return burnLoading ? '...' : formatUnits(burnOutput, 6)
+      // 1 pair (BEAR + BULL) = 2 USDC
+      return (inputNum * 2).toFixed(2)
     }
-  }, [mode, mintOutput, burnOutput, mintLoading, burnLoading])
+  }, [mode, inputAmount])
 
   const minBalance = bearBalance < bullBalance ? bearBalance : bullBalance
 
   const handleMint = async () => {
     if (needsUsdcApproval) {
-      await approveUsdc(inputBigInt)
+      pendingAmountRef.current = pairAmountBigInt
+      setPendingAction('mint')
+      await approveUsdc(usdcAmountBigInt)
       return
     }
-    await mint(inputBigInt)
+    await mint(pairAmountBigInt)
   }
 
   const handleRedeem = async () => {
     if (needsBearApproval) {
-      await approveBear(inputBigInt)
+      await approveBear(pairAmountBigInt)
       return
     }
     if (needsBullApproval) {
-      await approveBull(inputBigInt)
+      pendingAmountRef.current = pairAmountBigInt
+      setPendingAction('burn')
+      await approveBull(pairAmountBigInt)
       return
     }
-    await burn(inputBigInt)
+    await burn(pairAmountBigInt)
   }
 
   const getMintButtonText = () => {
