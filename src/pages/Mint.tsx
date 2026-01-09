@@ -157,6 +157,7 @@ export function Mint() {
   const getMintButtonText = () => {
     if (mintPending) return 'Minting...'
     if (usdcApprovePending) return 'Approving USDC...'
+    if (usdcAmountBigInt > usdcBalance) return 'Insufficient USDC'
     if (needsUsdcApproval) return 'Approve USDC'
     return 'Mint Pairs'
   }
@@ -165,13 +166,19 @@ export function Mint() {
     if (burnPending) return 'Redeeming...'
     if (bearApprovePending) return 'Approving DXY-BEAR...'
     if (bullApprovePending) return 'Approving DXY-BULL...'
+    if (pairAmountBigInt > minBalance) return 'Insufficient Balance'
     if (needsBearApproval) return 'Approve DXY-BEAR'
     if (needsBullApproval) return 'Approve DXY-BULL'
     return 'Redeem for USDC'
   }
 
+  const insufficientBalance = mode === 'mint'
+    ? usdcAmountBigInt > usdcBalance
+    : pairAmountBigInt > minBalance
+
   const isActionDisabled = !inputAmount || parseFloat(inputAmount) <= 0 ||
-    mintPending || burnPending || usdcApprovePending || bearApprovePending || bullApprovePending
+    mintPending || burnPending || usdcApprovePending || bearApprovePending || bullApprovePending ||
+    insufficientBalance
 
   return (
     <div className="space-y-10 max-w-xl mx-auto">
