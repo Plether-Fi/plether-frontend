@@ -65,50 +65,54 @@ export const Large: Story = {
   render: () => <ModalWithTrigger size="lg" title="Large Modal" />,
 }
 
+function NoTitleModal() {
+  const [isOpen, setIsOpen] = useState(false)
+  return (
+    <>
+      <Button onClick={() => setIsOpen(true)}>Open Modal (No Title)</Button>
+      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
+        <p className="text-cyber-text-secondary mb-4">
+          This modal has no title bar.
+        </p>
+        <Button onClick={() => setIsOpen(false)}>Close</Button>
+      </Modal>
+    </>
+  )
+}
+
+function FormModal() {
+  const [isOpen, setIsOpen] = useState(false)
+  return (
+    <>
+      <Button onClick={() => setIsOpen(true)}>Open Form Modal</Button>
+      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} title="Enter Details">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm text-cyber-text-secondary mb-1">Amount</label>
+            <input
+              type="text"
+              placeholder="0.00"
+              className="w-full px-4 py-2 bg-cyber-surface-light border border-cyber-border-glow/30 text-cyber-text-primary"
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" onClick={() => setIsOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => setIsOpen(false)}>
+              Submit
+            </Button>
+          </div>
+        </div>
+      </Modal>
+    </>
+  )
+}
+
 export const NoTitle: Story = {
-  render: () => {
-    const [isOpen, setIsOpen] = useState(false)
-    return (
-      <>
-        <Button onClick={() => setIsOpen(true)}>Open Modal (No Title)</Button>
-        <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
-          <p className="text-cyber-text-secondary mb-4">
-            This modal has no title bar.
-          </p>
-          <Button onClick={() => setIsOpen(false)}>Close</Button>
-        </Modal>
-      </>
-    )
-  },
+  render: () => <NoTitleModal />,
 }
 
 export const WithForm: Story = {
-  render: () => {
-    const [isOpen, setIsOpen] = useState(false)
-    return (
-      <>
-        <Button onClick={() => setIsOpen(true)}>Open Form Modal</Button>
-        <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} title="Enter Details">
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm text-cyber-text-secondary mb-1">Amount</label>
-              <input
-                type="text"
-                placeholder="0.00"
-                className="w-full px-4 py-2 bg-cyber-surface-light border border-cyber-border-glow/30 text-cyber-text-primary"
-              />
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="secondary" onClick={() => setIsOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={() => setIsOpen(false)}>
-                Submit
-              </Button>
-            </div>
-          </div>
-        </Modal>
-      </>
-    )
-  },
+  render: () => <FormModal />,
 }

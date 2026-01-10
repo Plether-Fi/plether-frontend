@@ -61,43 +61,45 @@ export const ManyTabs: Story = {
   ),
 }
 
+function TradeExampleTabs() {
+  const [activeTab, setActiveTab] = useState('stake')
+  const tabs = [
+    { id: 'stake', label: 'Stake' },
+    { id: 'unstake', label: 'Unstake' },
+  ]
+  return (
+    <div className="max-w-md space-y-4">
+      <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
+      <TabPanel isActive={activeTab === 'stake'}>
+        <div className="p-4 bg-cyber-surface-dark border border-cyber-border-glow/30 space-y-4">
+          <p className="text-cyber-text-secondary text-sm">Enter amount to stake</p>
+          <input
+            type="text"
+            placeholder="0.00"
+            className="w-full px-4 py-3 bg-cyber-surface-light border border-cyber-border-glow/30 text-cyber-text-primary"
+          />
+          <button className="w-full py-3 bg-cyber-neon-green text-cyber-bg font-medium">
+            Stake
+          </button>
+        </div>
+      </TabPanel>
+      <TabPanel isActive={activeTab === 'unstake'}>
+        <div className="p-4 bg-cyber-surface-dark border border-cyber-border-glow/30 space-y-4">
+          <p className="text-cyber-text-secondary text-sm">Enter amount to unstake</p>
+          <input
+            type="text"
+            placeholder="0.00"
+            className="w-full px-4 py-3 bg-cyber-surface-light border border-cyber-border-glow/30 text-cyber-text-primary"
+          />
+          <button className="w-full py-3 bg-cyber-electric-fuchsia text-cyber-text-primary font-medium">
+            Unstake
+          </button>
+        </div>
+      </TabPanel>
+    </div>
+  )
+}
+
 export const TradeExample: Story = {
-  render: () => {
-    const [activeTab, setActiveTab] = useState('stake')
-    const tabs = [
-      { id: 'stake', label: 'Stake' },
-      { id: 'unstake', label: 'Unstake' },
-    ]
-    return (
-      <div className="max-w-md space-y-4">
-        <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
-        <TabPanel isActive={activeTab === 'stake'}>
-          <div className="p-4 bg-cyber-surface-dark border border-cyber-border-glow/30 space-y-4">
-            <p className="text-cyber-text-secondary text-sm">Enter amount to stake</p>
-            <input
-              type="text"
-              placeholder="0.00"
-              className="w-full px-4 py-3 bg-cyber-surface-light border border-cyber-border-glow/30 text-cyber-text-primary"
-            />
-            <button className="w-full py-3 bg-cyber-neon-green text-cyber-bg font-medium">
-              Stake
-            </button>
-          </div>
-        </TabPanel>
-        <TabPanel isActive={activeTab === 'unstake'}>
-          <div className="p-4 bg-cyber-surface-dark border border-cyber-border-glow/30 space-y-4">
-            <p className="text-cyber-text-secondary text-sm">Enter amount to unstake</p>
-            <input
-              type="text"
-              placeholder="0.00"
-              className="w-full px-4 py-3 bg-cyber-surface-light border border-cyber-border-glow/30 text-cyber-text-primary"
-            />
-            <button className="w-full py-3 bg-cyber-electric-fuchsia text-cyber-text-primary font-medium">
-              Unstake
-            </button>
-          </div>
-        </TabPanel>
-      </div>
-    )
-  },
+  render: () => <TradeExampleTabs />,
 }
