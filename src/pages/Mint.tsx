@@ -1,7 +1,7 @@
-import { useState, useMemo, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAccount } from 'wagmi'
-import { parseUnits } from 'viem'
 import { formatAmount } from '../utils/formatters'
+import { calculatePairAmount, calculateUsdcAmount, calculateOutputDisplay, getMinBalance } from '../utils/mint'
 import { Alert, TokenIcon } from '../components/ui'
 import { TokenInput } from '../components/TokenInput'
 import { useTokenBalances, useMint, useBurn, useAllowance, useApprove } from '../hooks'
@@ -23,32 +23,8 @@ export function Mint() {
   const addresses = getAddresses(chainId ?? 1)
   const { usdcBalance, bearBalance, bullBalance, refetch: refetchBalances } = useTokenBalances()
 
-  // For mint: user inputs USDC, convert to pair amount (18 decimals)
-  // For redeem: user inputs pair amount directly (18 decimals)
-  const pairAmountBigInt = useMemo(() => {
-    if (!inputAmount || isNaN(parseFloat(inputAmount))) return 0n
-    try {
-      if (mode === 'mint') {
-        // 2 USDC = 1 pair, so divide by 2
-        const pairAmount = parseFloat(inputAmount) / 2
-        return parseUnits(pairAmount.toString(), 18)
-      } else {
-        return parseUnits(inputAmount, 18)
-      }
-    } catch {
-      return 0n
-    }
-  }, [inputAmount, mode])
-
-  // USDC amount for approvals (6 decimals)
-  const usdcAmountBigInt = useMemo(() => {
-    if (!inputAmount || isNaN(parseFloat(inputAmount))) return 0n
-    try {
-      return parseUnits(inputAmount, 6)
-    } catch {
-      return 0n
-    }
-  }, [inputAmount])
+  const pairAmountBigInt = calculatePairAmount(inputAmount, mode)
+  const usdcAmountBigInt = calculateUsdcAmount(inputAmount)
 
   const { allowance: usdcAllowance, refetch: refetchUsdcAllowance } = useAllowance(addresses.USDC, addresses.PLETH_CORE)
   const { allowance: bearAllowance, refetch: refetchBearAllowance } = useAllowance(addresses.DXY_BEAR, addresses.PLETH_CORE)
@@ -121,18 +97,8 @@ export function Mint() {
   const needsBearApproval = mode === 'redeem' && pairAmountBigInt > 0n && bearAllowance < pairAmountBigInt
   const needsBullApproval = mode === 'redeem' && pairAmountBigInt > 0n && bullAllowance < pairAmountBigInt
 
-  const outputDisplay = useMemo(() => {
-    const inputNum = parseFloat(inputAmount) || 0
-    if (mode === 'mint') {
-      // 2 USDC = 1 BEAR + 1 BULL
-      return (inputNum / 2).toFixed(4)
-    } else {
-      // 1 pair (BEAR + BULL) = 2 USDC
-      return (inputNum * 2).toFixed(2)
-    }
-  }, [mode, inputAmount])
-
-  const minBalance = bearBalance < bullBalance ? bearBalance : bullBalance
+  const outputDisplay = calculateOutputDisplay(inputAmount, mode)
+  const minBalance = getMinBalance(bearBalance, bullBalance)
 
   const handleMint = async () => {
     usdcApproveHandledRef.current = false
