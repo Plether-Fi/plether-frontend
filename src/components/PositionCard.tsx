@@ -6,9 +6,11 @@ import type { LeveragePosition } from '../types'
 export interface PositionCardProps {
   position: LeveragePosition
   onAdjust: () => void
+  onClose: () => void
+  isClosing?: boolean
 }
 
-export function PositionCard({ position, onAdjust }: PositionCardProps) {
+export function PositionCard({ position, onAdjust, onClose, isClosing }: PositionCardProps) {
   const sideColor = position.side === 'BEAR' ? 'text-cyber-electric-fuchsia' : 'text-cyber-neon-green'
   const pnlColor = position.pnl >= 0n ? 'text-cyber-neon-green' : 'text-cyber-electric-fuchsia'
   const healthColor = position.healthFactor >= HEALTH_FACTOR_WARNING
@@ -65,8 +67,12 @@ export function PositionCard({ position, onAdjust }: PositionCardProps) {
             >
               Adjust
             </button>
-            <button className="px-3 py-1.5 text-sm bg-cyber-electric-fuchsia hover:bg-cyber-electric-fuchsia/80 text-cyber-text-primary transition-colors shadow-md shadow-cyber-electric-fuchsia/20">
-              Close
+            <button
+              onClick={onClose}
+              disabled={isClosing}
+              className="px-3 py-1.5 text-sm bg-cyber-electric-fuchsia hover:bg-cyber-electric-fuchsia/80 text-cyber-text-primary transition-colors shadow-md shadow-cyber-electric-fuchsia/20 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isClosing ? 'Closing...' : 'Close'}
             </button>
           </div>
         </div>

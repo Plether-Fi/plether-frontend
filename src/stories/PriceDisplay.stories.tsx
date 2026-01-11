@@ -10,7 +10,6 @@ const meta: Meta<typeof PriceDisplay> = {
       control: 'select',
       options: ['compact', 'detailed'],
     },
-    isLoading: { control: 'boolean' },
   },
 }
 
@@ -26,20 +25,6 @@ export const Compact: Story = {
 export const Detailed: Story = {
   args: {
     variant: 'detailed',
-  },
-}
-
-export const CompactLoading: Story = {
-  args: {
-    variant: 'compact',
-    isLoading: true,
-  },
-}
-
-export const DetailedLoading: Story = {
-  args: {
-    variant: 'detailed',
-    isLoading: true,
   },
 }
 

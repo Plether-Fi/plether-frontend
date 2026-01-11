@@ -1,5 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { useAccount } from 'wagmi'
+import { parseUnits } from 'viem'
 import { TokenInput } from './TokenInput'
+import { useCurveQuote, useCurveSwap, useZapQuote, useZapSwap, useAllowance, useApprove } from '../hooks'
+import { getAddresses } from '../contracts/addresses'
+import { useSettingsStore } from '../stores/settingsStore'
+import { formatAmount } from '../utils/formatters'
 
 type TradeMode = 'buy' | 'sell'
 type TokenSide = 'BEAR' | 'BULL'
@@ -8,13 +14,21 @@ export interface TradeCardProps {
   usdcBalance: bigint
   bearBalance: bigint
   bullBalance: bigint
+  refetchBalances?: () => void
 }
 
-export function TradeCard({ usdcBalance, bearBalance, bullBalance }: TradeCardProps) {
+export function TradeCard({ usdcBalance, bearBalance, bullBalance, refetchBalances }: TradeCardProps) {
+  const { isConnected, chainId } = useAccount()
+  const addresses = getAddresses(chainId ?? 11155111)
+  const slippage = useSettingsStore((s) => s.slippage)
+
   const [mode, setMode] = useState<TradeMode>('buy')
   const [selectedToken, setSelectedToken] = useState<TokenSide>('BEAR')
   const [inputAmount, setInputAmount] = useState('')
   const [showDetails, setShowDetails] = useState(false)
+  const [pendingSwap, setPendingSwap] = useState(false)
+  const pendingAmountRef = useRef<bigint>(0n)
+  const approveHandledRef = useRef(false)
 
   const inputToken = mode === 'buy'
     ? { symbol: 'USDC', decimals: 6 }
@@ -28,11 +42,104 @@ export function TradeCard({ usdcBalance, bearBalance, bullBalance }: TradeCardPr
     ? usdcBalance
     : selectedToken === 'BEAR' ? bearBalance : bullBalance
 
-  const outputAmount = inputAmount ? (parseFloat(inputAmount) * 0.98).toFixed(4) : '0'
+  const inputDecimals = mode === 'buy' ? 6 : 18
+  const inputAmountBigInt = inputAmount ? parseUnits(inputAmount, inputDecimals) : 0n
+
+  const isBearTrade = selectedToken === 'BEAR'
+
+  const { amountOut: curveAmountOut, isLoading: curveQuoteLoading } = useCurveQuote(
+    mode === 'buy' ? 'USDC' : 'BEAR',
+    isBearTrade ? inputAmountBigInt : 0n
+  )
+
+  const { amountOut: zapAmountOut, isLoading: zapQuoteLoading } = useZapQuote(
+    mode,
+    !isBearTrade ? inputAmountBigInt : 0n
+  )
+
+  const quoteAmountOut = isBearTrade ? curveAmountOut : zapAmountOut
+  const isQuoteLoading = isBearTrade ? curveQuoteLoading : zapQuoteLoading
+
+  const { swap: curveSwap, isPending: curvePending, isSuccess: curveSuccess, reset: resetCurve } = useCurveSwap()
+  const { zapBuy, zapSell, isPending: zapPending, isSuccess: zapSuccess, reset: resetZap } = useZapSwap()
+
+  const spenderAddress = isBearTrade ? addresses.CURVE_POOL : addresses.ZAP_ROUTER
+  const tokenToApprove = mode === 'buy'
+    ? addresses.USDC
+    : (selectedToken === 'BEAR' ? addresses.DXY_BEAR : addresses.DXY_BULL)
+
+  const { allowance, refetch: refetchAllowance } = useAllowance(tokenToApprove, spenderAddress)
+  const { approve, isPending: approvePending, isSuccess: approveSuccess } = useApprove(tokenToApprove, spenderAddress)
+
+  const needsApproval = inputAmountBigInt > 0n && allowance < inputAmountBigInt
+  const insufficientBalance = inputAmountBigInt > inputBalance
+
+  const executeSwap = useCallback(async (amount: bigint) => {
+    const slippageBps = BigInt(Math.floor(slippage * 100))
+    const minAmountOut = quoteAmountOut - (quoteAmountOut * slippageBps / 10000n)
+    const deadline = BigInt(Math.floor(Date.now() / 1000) + 1800)
+
+    if (isBearTrade) {
+      await curveSwap(mode === 'buy' ? 'USDC' : 'BEAR', amount, minAmountOut)
+    } else {
+      if (mode === 'buy') {
+        await zapBuy(amount, minAmountOut, slippageBps, deadline)
+      } else {
+        await zapSell(amount, minAmountOut, deadline)
+      }
+    }
+  }, [slippage, quoteAmountOut, isBearTrade, mode, curveSwap, zapBuy, zapSell])
+
+  useEffect(() => {
+    if (approveSuccess && !approveHandledRef.current) {
+      approveHandledRef.current = true
+      refetchAllowance()
+      if (pendingSwap && pendingAmountRef.current > 0n) {
+        executeSwap(pendingAmountRef.current)
+        pendingAmountRef.current = 0n
+        setPendingSwap(false)
+      }
+    }
+  }, [approveSuccess, refetchAllowance, pendingSwap, executeSwap])
+
+  useEffect(() => {
+    if (curveSuccess || zapSuccess) {
+      refetchBalances?.()
+      setInputAmount('')
+      resetCurve()
+      resetZap()
+    }
+  }, [curveSuccess, zapSuccess, refetchBalances, resetCurve, resetZap])
 
   const handleSwap = async () => {
-    console.log('Swap:', { mode, selectedToken, inputAmount })
+    if (!inputAmountBigInt || inputAmountBigInt <= 0n) return
+
+    approveHandledRef.current = false
+
+    if (needsApproval) {
+      pendingAmountRef.current = inputAmountBigInt
+      setPendingSwap(true)
+      await approve(inputAmountBigInt)
+      return
+    }
+
+    await executeSwap(inputAmountBigInt)
   }
+
+  const getButtonText = () => {
+    if (curvePending || zapPending) return 'Swapping...'
+    if (approvePending) return `Approving ${inputToken.symbol}...`
+    if (insufficientBalance) return `Insufficient ${inputToken.symbol}`
+    if (needsApproval) return `Approve ${inputToken.symbol}`
+    return `${mode === 'buy' ? 'Buy' : 'Sell'} DXY-${selectedToken}`
+  }
+
+  const isPending = curvePending || zapPending || approvePending
+  const isDisabled = !inputAmount || parseFloat(inputAmount) <= 0 || isPending || insufficientBalance
+
+  const outputDisplay = isQuoteLoading && inputAmountBigInt > 0n
+    ? '...'
+    : formatAmount(quoteAmountOut, outputToken.decimals)
 
   return (
     <div className="max-w-xl mx-auto space-y-6">
@@ -108,7 +215,7 @@ export function TradeCard({ usdcBalance, bearBalance, bullBalance }: TradeCardPr
           </div>
           <div className="relative">
             <div className="w-full bg-cyber-surface-dark border border-cyber-border-glow/30 py-4 pl-4 pr-24 text-xl font-medium text-cyber-text-primary flex items-center h-[62px] shadow-sm shadow-cyber-border-glow/10">
-              {outputAmount}
+              {outputDisplay}
             </div>
             <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
               <span className="font-medium text-cyber-text-secondary">{outputToken.symbol}</span>
@@ -119,7 +226,7 @@ export function TradeCard({ usdcBalance, bearBalance, bullBalance }: TradeCardPr
 
       <div className="flex items-center justify-end gap-2 text-xs text-cyber-text-secondary">
         <span className="material-symbols-outlined text-[14px]">settings</span>
-        <span>1% slippage</span>
+        <span>{slippage}% slippage</span>
       </div>
 
       <div className="border-t border-cyber-border-glow/30 pt-4">
@@ -151,13 +258,22 @@ export function TradeCard({ usdcBalance, bearBalance, bullBalance }: TradeCardPr
         </div>
       )}
 
-      <button
-        onClick={handleSwap}
-        disabled={!inputAmount || parseFloat(inputAmount) <= 0}
-        className="w-full bg-cyber-bright-blue hover:bg-cyber-bright-blue/90 text-cyber-bg font-semibold py-4 px-6 shadow-lg shadow-cyber-bright-blue/40 transition-all transform hover:-translate-y-0.5 active:translate-y-0 text-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
-      >
-        {mode === 'buy' ? 'Buy' : 'Sell'} DXY-{selectedToken}
-      </button>
+      {isConnected ? (
+        <button
+          onClick={handleSwap}
+          disabled={isDisabled}
+          className="w-full bg-cyber-bright-blue hover:bg-cyber-bright-blue/90 text-cyber-bg font-semibold py-4 px-6 shadow-lg shadow-cyber-bright-blue/40 transition-all transform hover:-translate-y-0.5 active:translate-y-0 text-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
+        >
+          {getButtonText()}
+        </button>
+      ) : (
+        <button
+          disabled
+          className="w-full bg-cyber-surface-light text-cyber-text-secondary font-semibold py-4 px-6 cursor-not-allowed"
+        >
+          Connect Wallet to Trade
+        </button>
+      )}
     </div>
   )
 }

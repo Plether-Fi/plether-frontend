@@ -1,23 +1,96 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { useAccount } from 'wagmi'
+import { parseUnits } from 'viem'
 import { Modal } from './ui'
+import { useAdjustCollateral, useAllowance, useApprove, useTokenBalances } from '../hooks'
+import { getAddresses } from '../contracts/addresses'
+import { formatAmount } from '../utils/formatters'
 import type { LeveragePosition } from '../types'
 
 export interface AdjustPositionModalProps {
   isOpen: boolean
   onClose: () => void
   position: LeveragePosition
+  onSuccess?: () => void
 }
 
-export function AdjustPositionModal({ isOpen, onClose, position }: AdjustPositionModalProps) {
-  const [action, setAction] = useState<'add' | 'remove' | 'adjust'>('add')
+export function AdjustPositionModal({ isOpen, onClose, position, onSuccess }: AdjustPositionModalProps) {
+  const { chainId } = useAccount()
+  const addresses = getAddresses(chainId ?? 11155111)
+
+  const [action, setAction] = useState<'add' | 'remove'>('add')
   const [amount, setAmount] = useState('')
+  const [pendingAction, setPendingAction] = useState(false)
+  const pendingAmountRef = useRef<bigint>(0n)
+  const approveHandledRef = useRef(false)
+
+  const { usdcBalance } = useTokenBalances()
+  const amountBigInt = amount ? parseUnits(amount, 6) : 0n
+
+  const routerAddress = position.side === 'BEAR' ? addresses.LEVERAGE_ROUTER : addresses.BULL_LEVERAGE_ROUTER
+  const { addCollateral, removeCollateral, isPending, isSuccess, reset } = useAdjustCollateral(position.side)
+  const { allowance, refetch: refetchAllowance } = useAllowance(addresses.USDC, routerAddress)
+  const { approve, isPending: approvePending, isSuccess: approveSuccess } = useApprove(addresses.USDC, routerAddress)
+
+  const needsApproval = action === 'add' && amountBigInt > 0n && allowance < amountBigInt
+  const insufficientBalance = action === 'add' && amountBigInt > usdcBalance
+
+  useEffect(() => {
+    if (approveSuccess && !approveHandledRef.current) {
+      approveHandledRef.current = true
+      refetchAllowance()
+      if (pendingAction && pendingAmountRef.current > 0n) {
+        addCollateral(pendingAmountRef.current)
+        pendingAmountRef.current = 0n
+        setPendingAction(false)
+      }
+    }
+  }, [approveSuccess, refetchAllowance, pendingAction, addCollateral])
+
+  useEffect(() => {
+    if (isSuccess) {
+      onSuccess?.()
+      setAmount('')
+      reset()
+      onClose()
+    }
+  }, [isSuccess, onSuccess, reset, onClose])
+
+  const handleConfirm = async () => {
+    if (!amountBigInt || amountBigInt <= 0n) return
+
+    approveHandledRef.current = false
+
+    if (action === 'add') {
+      if (needsApproval) {
+        pendingAmountRef.current = amountBigInt
+        setPendingAction(true)
+        await approve(amountBigInt)
+        return
+      }
+      await addCollateral(amountBigInt)
+    } else {
+      await removeCollateral(amountBigInt)
+    }
+  }
+
+  const getButtonText = () => {
+    if (isPending) return action === 'add' ? 'Adding...' : 'Removing...'
+    if (approvePending) return 'Approving USDC...'
+    if (insufficientBalance) return 'Insufficient USDC'
+    if (needsApproval) return 'Approve USDC'
+    return `Confirm ${action === 'add' ? 'Add' : 'Remove'}`
+  }
+
+  const isActionPending = isPending || approvePending
+  const isDisabled = !amount || parseFloat(amount) <= 0 || isActionPending || insufficientBalance
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={`Adjust ${position.side} Position`}>
       <div className="space-y-4">
         <div className="flex gap-2">
           <button
-            onClick={() => setAction('add')}
+            onClick={() => { setAction('add'); setAmount('') }}
             className={`flex-1 py-2 px-3 text-sm font-medium transition-colors ${
               action === 'add'
                 ? 'bg-cyber-neon-green/20 text-cyber-neon-green border border-cyber-neon-green/50'
@@ -27,7 +100,7 @@ export function AdjustPositionModal({ isOpen, onClose, position }: AdjustPositio
             Add Collateral
           </button>
           <button
-            onClick={() => setAction('remove')}
+            onClick={() => { setAction('remove'); setAmount('') }}
             className={`flex-1 py-2 px-3 text-sm font-medium transition-colors ${
               action === 'remove'
                 ? 'bg-cyber-electric-fuchsia/20 text-cyber-electric-fuchsia border border-cyber-electric-fuchsia/50'
@@ -36,19 +109,21 @@ export function AdjustPositionModal({ isOpen, onClose, position }: AdjustPositio
           >
             Remove
           </button>
-          <button
-            onClick={() => setAction('adjust')}
-            className={`flex-1 py-2 px-3 text-sm font-medium transition-colors ${
-              action === 'adjust'
-                ? 'bg-cyber-bright-blue/20 text-cyber-bright-blue border border-cyber-bright-blue/50'
-                : 'bg-cyber-surface-light text-cyber-text-secondary border border-cyber-border-glow/30 hover:text-cyber-bright-blue'
-            }`}
-          >
-            Adjust Leverage
-          </button>
         </div>
 
-        {(action === 'add' || action === 'remove') && (
+        <div>
+          {action === 'add' && (
+            <div className="flex justify-between text-sm mb-2">
+              <span className="text-cyber-text-secondary">Available USDC</span>
+              <span className="text-cyber-text-primary">{formatAmount(usdcBalance, 6)}</span>
+            </div>
+          )}
+          {action === 'remove' && (
+            <div className="flex justify-between text-sm mb-2">
+              <span className="text-cyber-text-secondary">Current Collateral</span>
+              <span className="text-cyber-text-primary">{formatAmount(position.collateral, 6)}</span>
+            </div>
+          )}
           <div className="relative">
             <input
               type="number"
@@ -61,35 +136,25 @@ export function AdjustPositionModal({ isOpen, onClose, position }: AdjustPositio
               <span className="font-medium text-cyber-text-secondary">USDC</span>
             </div>
           </div>
-        )}
-
-        {action === 'adjust' && (
-          <div>
-            <label className="block text-sm text-cyber-text-secondary mb-2">New Leverage</label>
-            <input
-              type="range"
-              min="1.1"
-              max="5"
-              step="0.1"
-              defaultValue={position.leverage}
-              className="w-full h-2 bg-cyber-surface-light appearance-none cursor-pointer accent-cyber-bright-blue"
-            />
-          </div>
-        )}
+        </div>
 
         <div className="bg-cyber-surface-light p-3 space-y-2 text-sm border border-cyber-border-glow/30">
           <div className="flex justify-between">
-            <span className="text-cyber-text-secondary">New Liquidation Price</span>
-            <span className="text-cyber-warning-text">$92.50</span>
+            <span className="text-cyber-text-secondary">Current Health Factor</span>
+            <span className="text-cyber-neon-green">{position.healthFactor.toFixed(2)}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-cyber-text-secondary">New Health Factor</span>
-            <span className="text-cyber-neon-green">2.1</span>
+            <span className="text-cyber-text-secondary">Current Liquidation Price</span>
+            <span className="text-cyber-warning-text">${(Number(position.liquidationPrice) / 1e6).toFixed(2)}</span>
           </div>
         </div>
 
-        <button className="w-full bg-cyber-neon-green hover:bg-cyber-neon-green/90 text-cyber-bg font-semibold py-3 px-6 shadow-lg shadow-cyber-neon-green/40 transition-all">
-          Confirm {action === 'add' ? 'Add' : action === 'remove' ? 'Remove' : 'Adjust'}
+        <button
+          onClick={handleConfirm}
+          disabled={isDisabled}
+          className="w-full bg-cyber-neon-green hover:bg-cyber-neon-green/90 text-cyber-bg font-semibold py-3 px-6 shadow-lg shadow-cyber-neon-green/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {getButtonText()}
         </button>
       </div>
     </Modal>

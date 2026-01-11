@@ -80,7 +80,7 @@ export const BearPosition: Story = {
     pnlPercentage: 25,
     healthFactor: 2.1,
   },
-  render: (args) => <PositionCard position={argsToPosition(args)} onAdjust={() => {}} />,
+  render: (args) => <PositionCard position={argsToPosition(args)} onAdjust={() => {}} onClose={() => {}} />,
 }
 
 export const BullPosition: Story = {
@@ -93,7 +93,7 @@ export const BullPosition: Story = {
     pnlPercentage: -7.5,
     healthFactor: 1.8,
   },
-  render: (args) => <PositionCard position={argsToPosition(args)} onAdjust={() => {}} />,
+  render: (args) => <PositionCard position={argsToPosition(args)} onAdjust={() => {}} onClose={() => {}} />,
 }
 
 export const LowHealthPosition: Story = {
@@ -106,7 +106,7 @@ export const LowHealthPosition: Story = {
     pnlPercentage: -40,
     healthFactor: 1.15,
   },
-  render: (args) => <PositionCard position={argsToPosition(args)} onAdjust={() => {}} />,
+  render: (args) => <PositionCard position={argsToPosition(args)} onAdjust={() => {}} onClose={() => {}} />,
 }
 
 export const AllPositions: Story = {
@@ -117,6 +117,7 @@ export const AllPositions: Story = {
         <PositionCard
           position={argsToPosition({ side: 'BEAR', leverage: 3, size: 15000, collateral: 5000, pnl: 1250, pnlPercentage: 25, healthFactor: 2.1 })}
           onAdjust={() => {}}
+          onClose={() => {}}
         />
       </div>
       <div>
@@ -124,6 +125,7 @@ export const AllPositions: Story = {
         <PositionCard
           position={argsToPosition({ side: 'BULL', leverage: 2, size: 10000, collateral: 5000, pnl: -750, pnlPercentage: -7.5, healthFactor: 1.8 })}
           onAdjust={() => {}}
+          onClose={() => {}}
         />
       </div>
       <div>
@@ -131,6 +133,7 @@ export const AllPositions: Story = {
         <PositionCard
           position={argsToPosition({ side: 'BEAR', leverage: 5, size: 25000, collateral: 5000, pnl: -2000, pnlPercentage: -40, healthFactor: 1.15 })}
           onAdjust={() => {}}
+          onClose={() => {}}
         />
       </div>
     </div>

@@ -1,26 +1,112 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { useAccount } from 'wagmi'
+import { parseUnits, formatUnits } from 'viem'
 import { InfoTooltip } from './ui'
 import { TokenInput } from './TokenInput'
 import { formatUsd } from '../utils/formatters'
+import { usePreviewOpenLeverage, useOpenLeverage, useAllowance, useApprove } from '../hooks'
+import { getAddresses } from '../contracts/addresses'
+import { useSettingsStore } from '../stores/settingsStore'
 
 type TokenSide = 'BEAR' | 'BULL'
 
 export interface LeverageCardProps {
   usdcBalance: bigint
+  refetchBalances?: () => void
 }
 
-export function LeverageCard({ usdcBalance }: LeverageCardProps) {
+export function LeverageCard({ usdcBalance, refetchBalances }: LeverageCardProps) {
+  const { isConnected, chainId } = useAccount()
+  const addresses = getAddresses(chainId ?? 11155111)
+  const slippage = useSettingsStore((s) => s.slippage)
+
   const [selectedSide, setSelectedSide] = useState<TokenSide>('BEAR')
   const [collateralAmount, setCollateralAmount] = useState('')
   const [leverage, setLeverage] = useState(2)
+  const [pendingOpen, setPendingOpen] = useState(false)
+  const pendingAmountRef = useRef<bigint>(0n)
+  const approveHandledRef = useRef(false)
 
-  const collateralNum = parseFloat(collateralAmount) || 0
-  const positionSize = collateralNum * leverage
-  const liquidationPrice = collateralNum > 0 ? (103.45 * (1 - 1 / leverage)).toFixed(2) : '0.00'
+  const collateralBigInt = collateralAmount ? parseUnits(collateralAmount, 6) : 0n
+  const leverageBps = BigInt(Math.floor(leverage * 100))
+
+  const { positionSize, liquidationPrice: previewLiqPrice, isLoading: previewLoading } = usePreviewOpenLeverage(
+    selectedSide,
+    collateralBigInt,
+    leverageBps
+  )
+
+  const { openPosition, isPending, isSuccess, reset } = useOpenLeverage(selectedSide)
+
+  const routerAddress = selectedSide === 'BEAR' ? addresses.LEVERAGE_ROUTER : addresses.BULL_LEVERAGE_ROUTER
+  const { allowance, refetch: refetchAllowance } = useAllowance(addresses.USDC, routerAddress)
+  const { approve, isPending: approvePending, isSuccess: approveSuccess } = useApprove(addresses.USDC, routerAddress)
+
+  const needsApproval = collateralBigInt > 0n && allowance < collateralBigInt
+  const insufficientBalance = collateralBigInt > usdcBalance
+
+  const executeOpenPosition = useCallback(async (amount: bigint) => {
+    const slippageBps = BigInt(Math.floor(slippage * 100))
+    const deadline = BigInt(Math.floor(Date.now() / 1000) + 1800)
+    await openPosition(amount, leverageBps, slippageBps, deadline)
+  }, [slippage, leverageBps, openPosition])
+
+  useEffect(() => {
+    if (approveSuccess && !approveHandledRef.current) {
+      approveHandledRef.current = true
+      refetchAllowance()
+      if (pendingOpen && pendingAmountRef.current > 0n) {
+        executeOpenPosition(pendingAmountRef.current)
+        pendingAmountRef.current = 0n
+        setPendingOpen(false)
+      }
+    }
+  }, [approveSuccess, refetchAllowance, pendingOpen, executeOpenPosition])
+
+  useEffect(() => {
+    if (isSuccess) {
+      refetchBalances?.()
+      setCollateralAmount('')
+      setLeverage(2)
+      reset()
+    }
+  }, [isSuccess, refetchBalances, reset])
 
   const handleOpenPosition = async () => {
-    console.log('Open position:', { selectedSide, collateralAmount, leverage })
+    if (!collateralBigInt || collateralBigInt <= 0n) return
+
+    approveHandledRef.current = false
+
+    if (needsApproval) {
+      pendingAmountRef.current = collateralBigInt
+      setPendingOpen(true)
+      await approve(collateralBigInt)
+      return
+    }
+
+    await executeOpenPosition(collateralBigInt)
   }
+
+  const getButtonText = () => {
+    if (isPending) return 'Opening Position...'
+    if (approvePending) return 'Approving USDC...'
+    if (insufficientBalance) return 'Insufficient USDC'
+    if (needsApproval) return 'Approve USDC'
+    return `Open ${selectedSide} Position`
+  }
+
+  const isActionPending = isPending || approvePending
+  const isDisabled = !collateralAmount || parseFloat(collateralAmount) <= 0 || isActionPending || insufficientBalance
+
+  const collateralNum = parseFloat(collateralAmount) || 0
+  const positionSizeDisplay = previewLoading && collateralBigInt > 0n
+    ? '...'
+    : formatUsd(positionSize)
+  const liquidationPriceDisplay = previewLoading && collateralBigInt > 0n
+    ? '...'
+    : previewLiqPrice > 0n
+      ? `$${parseFloat(formatUnits(previewLiqPrice, 6)).toFixed(2)}`
+      : '$0.00'
 
   return (
     <div className="max-w-xl mx-auto space-y-6">
@@ -87,7 +173,7 @@ export function LeverageCard({ usdcBalance }: LeverageCardProps) {
         <h4 className="text-sm font-medium text-cyber-text-secondary">Position Preview</h4>
         <div className="flex justify-between">
           <span className="text-cyber-text-secondary text-sm">Position Size</span>
-          <span className="text-cyber-text-primary">{formatUsd(BigInt(Math.floor(positionSize * 1e6)))}</span>
+          <span className="text-cyber-text-primary">{positionSizeDisplay}</span>
         </div>
         <div className="flex justify-between">
           <span className="text-cyber-text-secondary text-sm">Collateral</span>
@@ -98,17 +184,26 @@ export function LeverageCard({ usdcBalance }: LeverageCardProps) {
             Liquidation Price
             <InfoTooltip content="If DXY reaches this price, your position will be liquidated" />
           </span>
-          <span className="text-cyber-warning-text">${liquidationPrice}</span>
+          <span className="text-cyber-warning-text">{liquidationPriceDisplay}</span>
         </div>
       </div>
 
-      <button
-        onClick={handleOpenPosition}
-        disabled={!collateralAmount || parseFloat(collateralAmount) <= 0}
-        className="w-full bg-cyber-electric-fuchsia hover:bg-cyber-electric-fuchsia/90 text-cyber-bg font-semibold py-4 px-6 shadow-lg shadow-cyber-electric-fuchsia/40 transition-all transform hover:-translate-y-0.5 active:translate-y-0 text-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
-      >
-        Open {selectedSide} Position
-      </button>
+      {isConnected ? (
+        <button
+          onClick={handleOpenPosition}
+          disabled={isDisabled}
+          className="w-full bg-cyber-electric-fuchsia hover:bg-cyber-electric-fuchsia/90 text-cyber-bg font-semibold py-4 px-6 shadow-lg shadow-cyber-electric-fuchsia/40 transition-all transform hover:-translate-y-0.5 active:translate-y-0 text-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
+        >
+          {getButtonText()}
+        </button>
+      ) : (
+        <button
+          disabled
+          className="w-full bg-cyber-surface-light text-cyber-text-secondary font-semibold py-4 px-6 cursor-not-allowed"
+        >
+          Connect Wallet
+        </button>
+      )}
 
       <p className="text-xs text-cyber-text-secondary text-center">
         Leverage trading carries significant risk. You may lose your entire collateral.
