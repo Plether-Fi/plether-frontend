@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useAccount } from 'wagmi'
 import { parseUnits } from 'viem'
 import { TokenInput } from './TokenInput'
-import { useCurveQuote, useCurveSwap, useZapQuote, useZapSwap, useZapSellWithPermit, useAllowance, useApprove } from '../hooks'
+import { useCurveQuote, useCurveSwap, useZapQuote, useZapSwap, useAllowance, useApprove } from '../hooks'
 import { getAddresses } from '../contracts/addresses'
 import { useSettingsStore } from '../stores/settingsStore'
 import { formatAmount } from '../utils/formatters'
@@ -61,10 +61,7 @@ export function TradeCard({ usdcBalance, bearBalance, bullBalance, refetchBalanc
   const isQuoteLoading = isBearTrade ? curveQuoteLoading : zapQuoteLoading
 
   const { swap: curveSwap, isPending: curvePending, isSuccess: curveSuccess, reset: resetCurve } = useCurveSwap()
-  const { zapBuy, isPending: zapBuyPending, isSuccess: zapBuySuccess, reset: resetZapBuy } = useZapSwap()
-  const { zapSellWithPermit, isPending: zapSellPending, isSigningPermit, isSuccess: zapSellSuccess, reset: resetZapSell } = useZapSellWithPermit()
-
-  const canUsePermit = mode === 'sell' && selectedToken === 'BULL'
+  const { zapBuy, zapSell, isPending: zapPending, isSuccess: zapSuccess, reset: resetZap } = useZapSwap()
 
   const spenderAddress = isBearTrade ? addresses.CURVE_POOL : addresses.ZAP_ROUTER
   const tokenToApprove = mode === 'buy'
@@ -74,7 +71,7 @@ export function TradeCard({ usdcBalance, bearBalance, bullBalance, refetchBalanc
   const { allowance, refetch: refetchAllowance } = useAllowance(tokenToApprove, spenderAddress)
   const { approve, isPending: approvePending, isSuccess: approveSuccess } = useApprove(tokenToApprove, spenderAddress)
 
-  const needsApproval = !canUsePermit && inputAmountBigInt > 0n && allowance < inputAmountBigInt
+  const needsApproval = inputAmountBigInt > 0n && allowance < inputAmountBigInt
   const insufficientBalance = inputAmountBigInt > inputBalance
 
   const executeSwap = useCallback(async (amount: bigint) => {
@@ -88,10 +85,10 @@ export function TradeCard({ usdcBalance, bearBalance, bullBalance, refetchBalanc
       if (mode === 'buy') {
         await zapBuy(amount, minAmountOut, slippageBps, deadline)
       } else {
-        await zapSellWithPermit(amount, minAmountOut)
+        await zapSell(amount, minAmountOut, deadline)
       }
     }
-  }, [slippage, quoteAmountOut, isBearTrade, mode, curveSwap, zapBuy, zapSellWithPermit])
+  }, [slippage, quoteAmountOut, isBearTrade, mode, curveSwap, zapBuy, zapSell])
 
   useEffect(() => {
     if (approveSuccess && !approveHandledRef.current) {
@@ -106,24 +103,18 @@ export function TradeCard({ usdcBalance, bearBalance, bullBalance, refetchBalanc
   }, [approveSuccess, refetchAllowance, pendingSwap, executeSwap])
 
   useEffect(() => {
-    if (curveSuccess || zapBuySuccess || zapSellSuccess) {
+    if (curveSuccess || zapSuccess) {
       refetchBalances?.()
       setInputAmount('')
       resetCurve()
-      resetZapBuy()
-      resetZapSell()
+      resetZap()
     }
-  }, [curveSuccess, zapBuySuccess, zapSellSuccess, refetchBalances, resetCurve, resetZapBuy, resetZapSell])
+  }, [curveSuccess, zapSuccess, refetchBalances, resetCurve, resetZap])
 
   const handleSwap = async () => {
     if (!inputAmountBigInt || inputAmountBigInt <= 0n) return
 
     approveHandledRef.current = false
-
-    if (canUsePermit) {
-      await executeSwap(inputAmountBigInt)
-      return
-    }
 
     if (needsApproval) {
       pendingAmountRef.current = inputAmountBigInt
@@ -136,15 +127,14 @@ export function TradeCard({ usdcBalance, bearBalance, bullBalance, refetchBalanc
   }
 
   const getButtonText = () => {
-    if (isSigningPermit) return 'Sign Permit...'
-    if (curvePending || zapBuyPending || zapSellPending) return 'Swapping...'
+    if (curvePending || zapPending) return 'Swapping...'
     if (approvePending) return `Approving ${inputToken.symbol}...`
     if (insufficientBalance) return `Insufficient ${inputToken.symbol}`
     if (needsApproval) return `Approve ${inputToken.symbol}`
     return `${mode === 'buy' ? 'Buy' : 'Sell'} DXY-${selectedToken}`
   }
 
-  const isPending = curvePending || zapBuyPending || zapSellPending || approvePending
+  const isPending = curvePending || zapPending || approvePending
   const isDisabled = !inputAmount || parseFloat(inputAmount) <= 0 || isPending || insufficientBalance
 
   const outputDisplay = isQuoteLoading && inputAmountBigInt > 0n
