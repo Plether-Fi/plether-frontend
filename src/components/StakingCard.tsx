@@ -4,7 +4,7 @@ import { TokenIcon } from './ui'
 import { TokenInput } from './TokenInput'
 import { formatAmount } from '../utils/formatters'
 import { parseStakingAmount, getStakingDecimals, SHARE_DECIMALS } from '../utils/staking'
-import { useStake, useUnstake, useStakedBalance } from '../hooks/useStaking'
+import { useStake, useUnstake, useStakedBalance, usePreviewDeposit, usePreviewRedeem } from '../hooks/useStaking'
 import { useAllowance, useApprove } from '../hooks'
 import { getAddresses } from '../contracts/addresses'
 
@@ -35,6 +35,9 @@ export function StakingCard({ side, tokenBalance }: StakingCardProps) {
 
   const decimals = getStakingDecimals(mode)
   const amountBigInt = parseStakingAmount(amount, mode)
+
+  const { shares: previewShares, isLoading: previewDepositLoading } = usePreviewDeposit(side, mode === 'stake' ? amountBigInt : 0n)
+  const { assets: previewAssets, isLoading: previewRedeemLoading } = usePreviewRedeem(side, mode === 'unstake' ? amountBigInt : 0n)
 
   const needsApproval = mode === 'stake' && amountBigInt > 0n && allowance < amountBigInt
 
@@ -160,6 +163,20 @@ export function StakingCard({ side, tokenBalance }: StakingCardProps) {
           token={{ symbol: mode === 'stake' ? `DXY-${side}` : `sDXY-${side}`, decimals }}
           balance={balance}
         />
+
+        {amountBigInt > 0n && (
+          <div className={`bg-cyber-surface-light p-3 border ${isBear ? 'border-cyber-electric-fuchsia/30' : 'border-cyber-neon-green/30'}`}>
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-cyber-text-secondary">You will receive</span>
+              <span className={`${textColor} font-medium`}>
+                {mode === 'stake'
+                  ? (previewDepositLoading ? '...' : formatAmount(previewShares, SHARE_DECIMALS))
+                  : (previewRedeemLoading ? '...' : formatAmount(previewAssets, 18))
+                } {mode === 'stake' ? `sDXY-${side}` : `DXY-${side}`}
+              </span>
+            </div>
+          </div>
+        )}
 
         <button
           onClick={handleAction}

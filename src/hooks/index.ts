@@ -18,6 +18,8 @@ export {
 export {
   useStakedBalance,
   useStakingInfo,
+  usePreviewDeposit,
+  usePreviewRedeem,
   useStake,
   useUnstake,
 } from './useStaking'

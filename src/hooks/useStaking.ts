@@ -62,6 +62,52 @@ export function useStakingInfo(side: 'BEAR' | 'BULL') {
   }
 }
 
+export function usePreviewDeposit(side: 'BEAR' | 'BULL', assets: bigint) {
+  const { chainId } = useAccount()
+  const addresses = chainId ? getAddresses(chainId) : null
+  const stakingAddress = side === 'BEAR' ? addresses?.STAKING_BEAR : addresses?.STAKING_BULL
+
+  const { data, isLoading, error, refetch } = useReadContract({
+    address: stakingAddress,
+    abi: STAKED_TOKEN_ABI,
+    functionName: 'previewDeposit',
+    args: [assets],
+    query: {
+      enabled: !!stakingAddress && assets > 0n,
+    },
+  })
+
+  return {
+    shares: data ?? 0n,
+    isLoading,
+    error,
+    refetch,
+  }
+}
+
+export function usePreviewRedeem(side: 'BEAR' | 'BULL', shares: bigint) {
+  const { chainId } = useAccount()
+  const addresses = chainId ? getAddresses(chainId) : null
+  const stakingAddress = side === 'BEAR' ? addresses?.STAKING_BEAR : addresses?.STAKING_BULL
+
+  const { data, isLoading, error, refetch } = useReadContract({
+    address: stakingAddress,
+    abi: STAKED_TOKEN_ABI,
+    functionName: 'previewRedeem',
+    args: [shares],
+    query: {
+      enabled: !!stakingAddress && shares > 0n,
+    },
+  })
+
+  return {
+    assets: data ?? 0n,
+    isLoading,
+    error,
+    refetch,
+  }
+}
+
 export function useStake(side: 'BEAR' | 'BULL') {
   const { address, chainId } = useAccount()
   const addresses = chainId ? getAddresses(chainId) : null
