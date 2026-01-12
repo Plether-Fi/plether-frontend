@@ -14,8 +14,6 @@ export {
   useCurveSwap,
   useZapQuote,
   useZapSwap,
-  useZapBuyWithPermit,
-  useZapSellWithPermit,
 } from './useTrading'
 export {
   useStakedBalance,
