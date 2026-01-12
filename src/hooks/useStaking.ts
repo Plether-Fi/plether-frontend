@@ -1,5 +1,6 @@
-import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
-import { useRef, useEffect } from 'react'
+import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt, useSignTypedData } from 'wagmi'
+import { useRef, useEffect, useCallback, useState } from 'react'
+import { type Address } from 'viem'
 import { STAKED_TOKEN_ABI, ERC20_ABI } from '../contracts/abis'
 import { getAddresses } from '../contracts/addresses'
 import { useTransactionStore } from '../stores/transactionStore'
@@ -270,6 +271,145 @@ export function useUnstake(side: 'BEAR' | 'BULL') {
   return {
     unstake,
     isPending,
+    isConfirming,
+    isSuccess,
+    error,
+    reset,
+    hash,
+  }
+}
+
+export function useStakeWithPermit(side: 'BEAR' | 'BULL') {
+  const { address, chainId } = useAccount()
+  const addresses = chainId ? getAddresses(chainId) : null
+  const tokenAddress = side === 'BEAR' ? addresses?.DXY_BEAR : addresses?.DXY_BULL
+  const stakingAddress = side === 'BEAR' ? addresses?.STAKING_BEAR : addresses?.STAKING_BULL
+  const addTransaction = useTransactionStore((s) => s.addTransaction)
+  const updateTransaction = useTransactionStore((s) => s.updateTransaction)
+  const txIdRef = useRef<string | null>(null)
+  const [isSigningPermit, setIsSigningPermit] = useState(false)
+
+  const { data: nonce } = useReadContract({
+    address: tokenAddress,
+    abi: ERC20_ABI,
+    functionName: 'nonces',
+    args: [address!],
+    query: { enabled: !!address && !!tokenAddress },
+  })
+
+  const { data: tokenName } = useReadContract({
+    address: tokenAddress,
+    abi: ERC20_ABI,
+    functionName: 'name',
+    query: { enabled: !!tokenAddress },
+  })
+
+  const { signTypedDataAsync } = useSignTypedData()
+  const { writeContract, data: hash, isPending, error, reset } = useWriteContract()
+
+  const { isLoading: isConfirming, isSuccess, isError, error: receiptError } = useWaitForTransactionReceipt({
+    hash,
+  })
+
+  useEffect(() => {
+    if (isSuccess && txIdRef.current) {
+      updateTransaction(txIdRef.current, { status: 'success' })
+      txIdRef.current = null
+    }
+  }, [isSuccess, updateTransaction])
+
+  useEffect(() => {
+    if (isError && txIdRef.current) {
+      updateTransaction(txIdRef.current, {
+        status: 'failed',
+        errorMessage: parseTransactionError(receiptError),
+      })
+      txIdRef.current = null
+    }
+  }, [isError, receiptError, updateTransaction])
+
+  const stakeWithPermit = useCallback(async (amount: bigint) => {
+    if (!address || !stakingAddress || !tokenAddress || !chainId || nonce === undefined || !tokenName) return
+
+    const txId = crypto.randomUUID()
+    txIdRef.current = txId
+    addTransaction({
+      id: txId,
+      type: 'stake',
+      status: 'pending',
+      hash: undefined,
+      description: `Staking DXY-${side}`,
+    })
+
+    try {
+      setIsSigningPermit(true)
+      const deadline = BigInt(Math.floor(Date.now() / 1000) + 3600)
+
+      const signature = await signTypedDataAsync({
+        domain: {
+          name: tokenName,
+          version: '1',
+          chainId: chainId,
+          verifyingContract: tokenAddress as Address,
+        },
+        types: {
+          Permit: [
+            { name: 'owner', type: 'address' },
+            { name: 'spender', type: 'address' },
+            { name: 'value', type: 'uint256' },
+            { name: 'nonce', type: 'uint256' },
+            { name: 'deadline', type: 'uint256' },
+          ],
+        },
+        primaryType: 'Permit',
+        message: {
+          owner: address,
+          spender: stakingAddress as Address,
+          value: amount,
+          nonce: nonce,
+          deadline: deadline,
+        },
+      })
+      setIsSigningPermit(false)
+
+      const r = signature.slice(0, 66) as `0x${string}`
+      const s = `0x${signature.slice(66, 130)}` as `0x${string}`
+      const v = parseInt(signature.slice(130, 132), 16)
+
+      writeContract(
+        {
+          address: stakingAddress,
+          abi: STAKED_TOKEN_ABI,
+          functionName: 'depositWithPermit',
+          args: [amount, address, deadline, v, r, s],
+        },
+        {
+          onSuccess: (hash) => {
+            updateTransaction(txId, { hash, status: 'confirming' })
+          },
+          onError: (err) => {
+            updateTransaction(txId, {
+              status: 'failed',
+              errorMessage: parseTransactionError(err),
+            })
+            txIdRef.current = null
+          },
+        }
+      )
+    } catch (err) {
+      setIsSigningPermit(false)
+      updateTransaction(txId, {
+        status: 'failed',
+        errorMessage: parseTransactionError(err),
+      })
+      txIdRef.current = null
+    }
+  }, [address, stakingAddress, tokenAddress, chainId, nonce, tokenName, signTypedDataAsync, writeContract, addTransaction, updateTransaction, side])
+
+  return {
+    stakeWithPermit,
+    isPending: isPending || isSigningPermit,
+    isSigningPermit,
     isConfirming,
     isSuccess,
     error,

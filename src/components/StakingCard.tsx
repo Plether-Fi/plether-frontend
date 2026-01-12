@@ -1,12 +1,9 @@
-import { useState, useEffect, useRef } from 'react'
-import { useAccount } from 'wagmi'
+import { useState, useEffect } from 'react'
 import { TokenIcon } from './ui'
 import { TokenInput } from './TokenInput'
 import { formatAmount } from '../utils/formatters'
 import { parseStakingAmount, getStakingDecimals, SHARE_DECIMALS } from '../utils/staking'
-import { useStake, useUnstake, useStakedBalance, usePreviewDeposit, usePreviewRedeem } from '../hooks/useStaking'
-import { useAllowance, useApprove } from '../hooks'
-import { getAddresses } from '../contracts/addresses'
+import { useStakeWithPermit, useUnstake, useStakedBalance, usePreviewDeposit, usePreviewRedeem } from '../hooks/useStaking'
 
 type StakeMode = 'stake' | 'unstake'
 
@@ -16,42 +13,18 @@ export interface StakingCardProps {
 }
 
 export function StakingCard({ side, tokenBalance }: StakingCardProps) {
-  const { chainId } = useAccount()
   const [mode, setMode] = useState<StakeMode>('stake')
   const [amount, setAmount] = useState('')
-  const [pendingStake, setPendingStake] = useState(false)
-  const pendingAmountRef = useRef<bigint>(0n)
-  const approveHandledRef = useRef(false)
-
-  const addresses = getAddresses(chainId ?? 1)
-  const tokenAddress = side === 'BEAR' ? addresses.DXY_BEAR : addresses.DXY_BULL
-  const stakingAddress = side === 'BEAR' ? addresses.STAKING_BEAR : addresses.STAKING_BULL
 
   const { shares: stakedBalance, refetch: refetchStaked } = useStakedBalance(side)
-  const { stake, isPending: stakePending, isSuccess: stakeSuccess, reset: resetStake } = useStake(side)
+  const { stakeWithPermit, isPending: stakePending, isSigningPermit, isSuccess: stakeSuccess, reset: resetStake } = useStakeWithPermit(side)
   const { unstake, isPending: unstakePending, isSuccess: unstakeSuccess, reset: resetUnstake } = useUnstake(side)
-  const { allowance, refetch: refetchAllowance } = useAllowance(tokenAddress, stakingAddress)
-  const { approve, isPending: approvePending, isSuccess: approveSuccess } = useApprove(tokenAddress, stakingAddress)
 
   const decimals = getStakingDecimals(mode)
   const amountBigInt = parseStakingAmount(amount, mode)
 
   const { shares: previewShares, isLoading: previewDepositLoading } = usePreviewDeposit(side, mode === 'stake' ? amountBigInt : 0n)
   const { assets: previewAssets, isLoading: previewRedeemLoading } = usePreviewRedeem(side, mode === 'unstake' ? amountBigInt : 0n)
-
-  const needsApproval = mode === 'stake' && amountBigInt > 0n && allowance < amountBigInt
-
-  useEffect(() => {
-    if (approveSuccess && !approveHandledRef.current) {
-      approveHandledRef.current = true
-      refetchAllowance()
-      if (pendingStake && pendingAmountRef.current > 0n) {
-        stake(pendingAmountRef.current)
-        pendingAmountRef.current = 0n
-        setPendingStake(false)
-      }
-    }
-  }, [approveSuccess, refetchAllowance, pendingStake, stake])
 
   useEffect(() => {
     if (stakeSuccess) {
@@ -70,14 +43,7 @@ export function StakingCard({ side, tokenBalance }: StakingCardProps) {
   }, [unstakeSuccess, refetchStaked, resetUnstake])
 
   const handleStake = async () => {
-    approveHandledRef.current = false
-    if (needsApproval) {
-      pendingAmountRef.current = amountBigInt
-      setPendingStake(true)
-      await approve(amountBigInt)
-      return
-    }
-    await stake(amountBigInt)
+    await stakeWithPermit(amountBigInt)
   }
 
   const handleUnstake = async () => {
@@ -96,10 +62,9 @@ export function StakingCard({ side, tokenBalance }: StakingCardProps) {
 
   const getButtonText = () => {
     if (mode === 'stake') {
+      if (isSigningPermit) return 'Sign Permit...'
       if (stakePending) return 'Staking...'
-      if (approvePending) return `Approving DXY-${side}...`
       if (insufficientBalance) return 'Insufficient Balance'
-      if (needsApproval) return `Approve DXY-${side}`
       return `Stake DXY-${side}`
     } else {
       if (unstakePending) return 'Unstaking...'
@@ -109,7 +74,7 @@ export function StakingCard({ side, tokenBalance }: StakingCardProps) {
   }
 
   const isDisabled = !amount || parseFloat(amount) <= 0 ||
-    stakePending || unstakePending || approvePending || insufficientBalance
+    stakePending || unstakePending || insufficientBalance
 
   return (
     <div className="bg-cyber-surface-dark border border-cyber-border-glow/30 shadow-lg overflow-hidden">

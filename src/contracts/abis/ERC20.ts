@@ -93,4 +93,19 @@ export const ERC20_ABI = [
       { name: 'value', type: 'uint256', indexed: false },
     ],
   },
+  // EIP-2612 Permit
+  {
+    type: 'function',
+    name: 'nonces',
+    stateMutability: 'view',
+    inputs: [{ name: 'owner', type: 'address' }],
+    outputs: [{ type: 'uint256' }],
+  },
+  {
+    type: 'function',
+    name: 'DOMAIN_SEPARATOR',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ type: 'bytes32' }],
+  },
 ] as const

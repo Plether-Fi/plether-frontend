@@ -111,6 +111,20 @@ export const STAKED_TOKEN_ABI = [
     inputs: [{ name: 'amount', type: 'uint256' }],
     outputs: [],
   },
+  {
+    type: 'function',
+    name: 'depositWithPermit',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'assets', type: 'uint256' },
+      { name: 'receiver', type: 'address' },
+      { name: 'deadline', type: 'uint256' },
+      { name: 'v', type: 'uint8' },
+      { name: 'r', type: 'bytes32' },
+      { name: 's', type: 'bytes32' },
+    ],
+    outputs: [{ type: 'uint256', name: 'shares' }],
+  },
   // Events
   {
     type: 'event',

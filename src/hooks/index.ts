@@ -22,6 +22,7 @@ export {
   usePreviewRedeem,
   useStake,
   useUnstake,
+  useStakeWithPermit,
 } from './useStaking'
 export {
   useLeveragePosition,
