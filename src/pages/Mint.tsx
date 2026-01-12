@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { useAccount } from 'wagmi'
 import { formatAmount } from '../utils/formatters'
-import { calculatePairAmount, calculateUsdcAmount, calculateOutputDisplay, getMinBalance } from '../utils/mint'
+import { calculatePairAmount, calculateUsdcAmount, getMinBalance } from '../utils/mint'
 import { Alert, TokenIcon } from '../components/ui'
 import { TokenInput } from '../components/TokenInput'
-import { useTokenBalances, useMint, useBurn, useAllowance, useApprove } from '../hooks'
+import { useTokenBalances, useMint, useBurn, usePreviewMint, usePreviewBurn, useAllowance, useApprove } from '../hooks'
 import { getAddresses } from '../contracts/addresses'
 
 type MintMode = 'mint' | 'redeem'
@@ -36,6 +36,9 @@ export function Mint() {
 
   const { mint, isPending: mintPending, isSuccess: mintSuccess, reset: resetMint } = useMint()
   const { burn, isPending: burnPending, isSuccess: burnSuccess, reset: resetBurn } = useBurn()
+
+  const { pairAmount: previewPairAmount, isLoading: previewMintLoading } = usePreviewMint(usdcAmountBigInt)
+  const { usdcAmount: previewUsdcAmount, isLoading: previewBurnLoading } = usePreviewBurn(pairAmountBigInt)
 
   useEffect(() => {
     if (usdcApproveSuccess && !usdcApproveHandledRef.current) {
@@ -97,18 +100,24 @@ export function Mint() {
   const needsBearApproval = mode === 'redeem' && pairAmountBigInt > 0n && bearAllowance < pairAmountBigInt
   const needsBullApproval = mode === 'redeem' && pairAmountBigInt > 0n && bullAllowance < pairAmountBigInt
 
-  const outputDisplay = calculateOutputDisplay(inputAmount, mode)
+  const isPreviewLoading = mode === 'mint' ? previewMintLoading : previewBurnLoading
+  const previewAmount = mode === 'mint' ? previewPairAmount : previewUsdcAmount
+  const previewDecimals = mode === 'mint' ? 18 : 6
+  const outputDisplay = isPreviewLoading && parseFloat(inputAmount) > 0
+    ? '...'
+    : formatAmount(previewAmount, previewDecimals)
   const minBalance = getMinBalance(bearBalance, bullBalance)
 
   const handleMint = async () => {
+    if (previewPairAmount <= 0n) return
     usdcApproveHandledRef.current = false
     if (needsUsdcApproval) {
-      pendingAmountRef.current = pairAmountBigInt
+      pendingAmountRef.current = previewPairAmount
       setPendingAction('mint')
       await approveUsdc(usdcAmountBigInt)
       return
     }
-    await mint(pairAmountBigInt)
+    await mint(previewPairAmount)
   }
 
   const handleRedeem = async () => {

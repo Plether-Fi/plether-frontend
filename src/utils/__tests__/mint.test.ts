@@ -3,7 +3,6 @@ import { parseUnits } from 'viem'
 import {
   calculatePairAmount,
   calculateUsdcAmount,
-  calculateOutputDisplay,
   getMinBalance,
 } from '../mint'
 
@@ -64,36 +63,6 @@ describe('calculateUsdcAmount', () => {
 
   it('returns 0n for invalid input', () => {
     expect(calculateUsdcAmount('abc')).toBe(0n)
-  })
-})
-
-describe('calculateOutputDisplay', () => {
-  describe('mint mode - shows pairs received', () => {
-    it('100 USDC shows 50.0000 pairs', () => {
-      expect(calculateOutputDisplay('100', 'mint')).toBe('50.0000')
-    })
-
-    it('1 USDC shows 0.5000 pairs', () => {
-      expect(calculateOutputDisplay('1', 'mint')).toBe('0.5000')
-    })
-
-    it('empty input shows 0.0000', () => {
-      expect(calculateOutputDisplay('', 'mint')).toBe('0.0000')
-    })
-  })
-
-  describe('redeem mode - shows USDC received', () => {
-    it('50 pairs shows 100.00 USDC', () => {
-      expect(calculateOutputDisplay('50', 'redeem')).toBe('100.00')
-    })
-
-    it('1 pair shows 2.00 USDC', () => {
-      expect(calculateOutputDisplay('1', 'redeem')).toBe('2.00')
-    })
-
-    it('0.5 pairs shows 1.00 USDC', () => {
-      expect(calculateOutputDisplay('0.5', 'redeem')).toBe('1.00')
-    })
   })
 })
 

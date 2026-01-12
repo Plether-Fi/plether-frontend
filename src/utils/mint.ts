@@ -26,15 +26,6 @@ export function calculateUsdcAmount(inputAmount: string): bigint {
   }
 }
 
-export function calculateOutputDisplay(inputAmount: string, mode: 'mint' | 'redeem'): string {
-  const inputNum = parseFloat(inputAmount) || 0
-  if (mode === 'mint') {
-    return (inputNum / 2).toFixed(4)
-  } else {
-    return (inputNum * 2).toFixed(2)
-  }
-}
-
 export function getMinBalance(bearBalance: bigint, bullBalance: bigint): bigint {
   return bearBalance < bullBalance ? bearBalance : bullBalance
 }
