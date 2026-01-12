@@ -64,7 +64,12 @@ export const ZAP_ROUTER_ABI = [
     name: 'previewZapBurn',
     stateMutability: 'view',
     inputs: [{ name: 'bullAmount', type: 'uint256' }],
-    outputs: [{ type: 'uint256', name: 'usdcAmount' }],
+    outputs: [
+      { type: 'uint256', name: 'expectedUsdcFromBurn' },
+      { type: 'uint256', name: 'usdcForBearBuyback' },
+      { type: 'uint256', name: 'expectedUsdcOut' },
+      { type: 'uint256', name: 'flashFee' },
+    ],
   },
   {
     type: 'function',

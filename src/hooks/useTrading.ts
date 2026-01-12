@@ -117,23 +117,35 @@ export function useZapQuote(direction: 'buy' | 'sell', amount: bigint) {
   const { chainId } = useAccount()
   const addresses = chainId ? getAddresses(chainId) : null
 
-  const functionName = direction === 'buy' ? 'previewZapMint' : 'previewZapBurn'
-
-  const { data, isLoading, error, refetch } = useReadContract({
+  const { data: buyData, isLoading: buyLoading, error: buyError, refetch: buyRefetch } = useReadContract({
     address: addresses?.ZAP_ROUTER,
     abi: ZAP_ROUTER_ABI,
-    functionName,
+    functionName: 'previewZapMint',
     args: [amount],
     query: {
-      enabled: !!addresses && amount > 0n,
+      enabled: !!addresses && amount > 0n && direction === 'buy',
     },
   })
 
+  const { data: sellData, isLoading: sellLoading, error: sellError, refetch: sellRefetch } = useReadContract({
+    address: addresses?.ZAP_ROUTER,
+    abi: ZAP_ROUTER_ABI,
+    functionName: 'previewZapBurn',
+    args: [amount],
+    query: {
+      enabled: !!addresses && amount > 0n && direction === 'sell',
+    },
+  })
+
+  const amountOut = direction === 'buy'
+    ? (buyData ?? 0n)
+    : (sellData?.[2] ?? 0n) // expectedUsdcOut is index 2
+
   return {
-    amountOut: data ?? 0n,
-    isLoading,
-    error,
-    refetch,
+    amountOut,
+    isLoading: direction === 'buy' ? buyLoading : sellLoading,
+    error: direction === 'buy' ? buyError : sellError,
+    refetch: direction === 'buy' ? buyRefetch : sellRefetch,
   }
 }
 
