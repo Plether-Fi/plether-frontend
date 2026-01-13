@@ -3,9 +3,10 @@ import { useAccount } from 'wagmi'
 import { parseUnits } from 'viem'
 import { formatAmount } from '../utils/formatters'
 import { getMinBalance } from '../utils/mint'
+import { parseTransactionError } from '../utils/errors'
 import { Alert, TokenIcon } from '../components/ui'
 import { TokenInput } from '../components/TokenInput'
-import { useTokenBalances, useMint, useBurn, usePreviewMint, usePreviewBurn, useAllowance, useApprove } from '../hooks'
+import { useTokenBalances, useMint, useBurn, usePreviewMint, usePreviewBurn, useAllowance, useApprove, useTransactionModal } from '../hooks'
 import { getAddresses } from '../contracts/addresses'
 
 type MintMode = 'mint' | 'redeem'
@@ -22,6 +23,7 @@ function parsePairAmount(input: string): bigint {
 
 export function Mint() {
   const { isConnected, chainId } = useAccount()
+  const txModal = useTransactionModal()
   const [mode, setMode] = useState<MintMode>('mint')
   const [inputAmount, setInputAmount] = useState('')
   const [pendingAction, setPendingAction] = useState<PendingAction>(null)
@@ -29,6 +31,8 @@ export function Mint() {
   const usdcApproveHandledRef = useRef(false)
   const bearApproveHandledRef = useRef(false)
   const bullApproveHandledRef = useRef(false)
+  const mintTriggeredRef = useRef(false)
+  const burnTriggeredRef = useRef(false)
 
   const addresses = getAddresses(chainId ?? 1)
   const { usdcBalance, bearBalance, bullBalance, refetch: refetchBalances } = useTokenBalances()
@@ -39,21 +43,60 @@ export function Mint() {
   const { allowance: bearAllowance, refetch: refetchBearAllowance } = useAllowance(addresses.DXY_BEAR, addresses.PLETH_CORE)
   const { allowance: bullAllowance, refetch: refetchBullAllowance } = useAllowance(addresses.DXY_BULL, addresses.PLETH_CORE)
 
-  const { approve: approveUsdc, isPending: usdcApprovePending, isSuccess: usdcApproveSuccess } = useApprove(addresses.USDC, addresses.PLETH_CORE)
-  const { approve: approveBear, isPending: bearApprovePending, isSuccess: bearApproveSuccess } = useApprove(addresses.DXY_BEAR, addresses.PLETH_CORE)
-  const { approve: approveBull, isPending: bullApprovePending, isSuccess: bullApproveSuccess } = useApprove(addresses.DXY_BULL, addresses.PLETH_CORE)
+  const {
+    approve: approveUsdc,
+    isPending: usdcApprovePending,
+    isConfirming: usdcApproveConfirming,
+    isSuccess: usdcApproveSuccess,
+    error: usdcApproveError,
+  } = useApprove(addresses.USDC, addresses.PLETH_CORE)
+  const {
+    approve: approveBear,
+    isPending: bearApprovePending,
+    isConfirming: bearApproveConfirming,
+    isSuccess: bearApproveSuccess,
+    error: bearApproveError,
+  } = useApprove(addresses.DXY_BEAR, addresses.PLETH_CORE)
+  const {
+    approve: approveBull,
+    isPending: bullApprovePending,
+    isConfirming: bullApproveConfirming,
+    isSuccess: bullApproveSuccess,
+    error: bullApproveError,
+  } = useApprove(addresses.DXY_BULL, addresses.PLETH_CORE)
 
-  const { mint, isPending: mintPending, isSuccess: mintSuccess, reset: resetMint } = useMint()
-  const { burn, isPending: burnPending, isSuccess: burnSuccess, reset: resetBurn } = useBurn()
+  const {
+    mint,
+    isPending: mintPending,
+    isConfirming: mintConfirming,
+    isSuccess: mintSuccess,
+    error: mintError,
+    reset: resetMint,
+    hash: mintHash,
+  } = useMint()
+  const {
+    burn,
+    isPending: burnPending,
+    isConfirming: burnConfirming,
+    isSuccess: burnSuccess,
+    error: burnError,
+    reset: resetBurn,
+    hash: burnHash,
+  } = useBurn()
 
   const { usdcRequired, isLoading: previewMintLoading } = usePreviewMint(pairAmountBigInt)
   const { usdcToReturn, isLoading: previewBurnLoading } = usePreviewBurn(pairAmountBigInt)
+
+  const needsUsdcApproval = mode === 'mint' && usdcRequired > 0n && usdcAllowance < usdcRequired
+  const needsBearApproval = mode === 'redeem' && pairAmountBigInt > 0n && bearAllowance < pairAmountBigInt
+  const needsBullApproval = mode === 'redeem' && pairAmountBigInt > 0n && bullAllowance < pairAmountBigInt
 
   useEffect(() => {
     if (usdcApproveSuccess && !usdcApproveHandledRef.current) {
       usdcApproveHandledRef.current = true
       refetchUsdcAllowance()
       if (pendingAction === 'mint' && pendingAmountRef.current > 0n) {
+        mintTriggeredRef.current = true
         mint(pendingAmountRef.current)
         pendingAmountRef.current = 0n
         setPendingAction(null)
@@ -69,6 +112,7 @@ export function Mint() {
         if (bullAllowance < pendingAmountRef.current) {
           approveBull(pendingAmountRef.current)
         } else {
+          burnTriggeredRef.current = true
           burn(pendingAmountRef.current)
           pendingAmountRef.current = 0n
           setPendingAction(null)
@@ -82,6 +126,7 @@ export function Mint() {
       bullApproveHandledRef.current = true
       refetchBullAllowance()
       if (pendingAction === 'burn' && pendingAmountRef.current > 0n) {
+        burnTriggeredRef.current = true
         burn(pendingAmountRef.current)
         pendingAmountRef.current = 0n
         setPendingAction(null)
@@ -91,23 +136,87 @@ export function Mint() {
 
   useEffect(() => {
     if (mintSuccess) {
+      if (mintHash) txModal.setSuccess(mintHash)
       refetchBalances()
       setInputAmount('')
       resetMint()
+      mintTriggeredRef.current = false
     }
-  }, [mintSuccess, refetchBalances, resetMint])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mintSuccess, mintHash, refetchBalances, resetMint])
 
   useEffect(() => {
     if (burnSuccess) {
+      if (burnHash) txModal.setSuccess(burnHash)
       refetchBalances()
       setInputAmount('')
       resetBurn()
+      burnTriggeredRef.current = false
     }
-  }, [burnSuccess, refetchBalances, resetBurn])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [burnSuccess, burnHash, refetchBalances, resetBurn])
 
-  const needsUsdcApproval = mode === 'mint' && usdcRequired > 0n && usdcAllowance < usdcRequired
-  const needsBearApproval = mode === 'redeem' && pairAmountBigInt > 0n && bearAllowance < pairAmountBigInt
-  const needsBullApproval = mode === 'redeem' && pairAmountBigInt > 0n && bullAllowance < pairAmountBigInt
+  useEffect(() => {
+    const modal = useTransactionModal.getState()
+    if (!modal.isOpen) return
+    if (usdcApprovePending) {
+      modal.setStepInProgress(0)
+    } else if (usdcApproveConfirming) {
+      modal.setStepInProgress(1)
+    } else if (usdcApproveError) {
+      modal.setError(0, parseTransactionError(usdcApproveError))
+    }
+  }, [usdcApprovePending, usdcApproveConfirming, usdcApproveError])
+
+  useEffect(() => {
+    const modal = useTransactionModal.getState()
+    if (!modal.isOpen || !mintTriggeredRef.current) return
+    const stepOffset = needsUsdcApproval || usdcApproveSuccess ? 2 : 0
+    if (mintPending) {
+      modal.setStepInProgress(stepOffset)
+    } else if (mintConfirming) {
+      modal.setStepInProgress(stepOffset + 1)
+    } else if (mintError) {
+      modal.setError(stepOffset, parseTransactionError(mintError))
+    }
+  }, [mintPending, mintConfirming, mintError, needsUsdcApproval, usdcApproveSuccess])
+
+  useEffect(() => {
+    const modal = useTransactionModal.getState()
+    if (!modal.isOpen) return
+    if (bearApprovePending) {
+      modal.setStepInProgress(0)
+    } else if (bearApproveConfirming) {
+      modal.setStepInProgress(1)
+    } else if (bearApproveError) {
+      modal.setError(0, parseTransactionError(bearApproveError))
+    }
+  }, [bearApprovePending, bearApproveConfirming, bearApproveError])
+
+  useEffect(() => {
+    const modal = useTransactionModal.getState()
+    if (!modal.isOpen) return
+    if (bullApprovePending) {
+      modal.setStepInProgress(2)
+    } else if (bullApproveConfirming) {
+      modal.setStepInProgress(3)
+    } else if (bullApproveError) {
+      modal.setError(2, parseTransactionError(bullApproveError))
+    }
+  }, [bullApprovePending, bullApproveConfirming, bullApproveError])
+
+  useEffect(() => {
+    const modal = useTransactionModal.getState()
+    if (!modal.isOpen || !burnTriggeredRef.current) return
+    const stepOffset = (needsBearApproval || bearApproveSuccess ? 2 : 0) + (needsBullApproval || bullApproveSuccess ? 2 : 0)
+    if (burnPending) {
+      modal.setStepInProgress(stepOffset)
+    } else if (burnConfirming) {
+      modal.setStepInProgress(stepOffset + 1)
+    } else if (burnError) {
+      modal.setError(stepOffset, parseTransactionError(burnError))
+    }
+  }, [burnPending, burnConfirming, burnError, needsBearApproval, bearApproveSuccess, needsBullApproval, bullApproveSuccess])
 
   const isPreviewLoading = mode === 'mint' ? previewMintLoading : previewBurnLoading
   const previewAmount = mode === 'mint' ? usdcRequired : usdcToReturn
@@ -119,18 +228,49 @@ export function Mint() {
   const handleMint = async () => {
     if (pairAmountBigInt <= 0n) return
     usdcApproveHandledRef.current = false
+    mintTriggeredRef.current = false
+
     if (needsUsdcApproval) {
+      txModal.open({
+        title: 'Minting token pairs',
+        steps: ['Approve USDC', 'Confirming approval', 'Mint pairs', 'Awaiting confirmation'],
+        onRetry: handleMint,
+      })
       pendingAmountRef.current = pairAmountBigInt
       setPendingAction('mint')
       await approveUsdc(usdcRequired)
       return
     }
+
+    txModal.open({
+      title: 'Minting token pairs',
+      steps: ['Mint pairs', 'Awaiting confirmation'],
+      onRetry: handleMint,
+    })
+    mintTriggeredRef.current = true
     await mint(pairAmountBigInt)
   }
 
   const handleRedeem = async () => {
     bearApproveHandledRef.current = false
     bullApproveHandledRef.current = false
+    burnTriggeredRef.current = false
+
+    const steps: string[] = []
+    if (needsBearApproval) {
+      steps.push('Approve DXY-BEAR', 'Confirming approval')
+    }
+    if (needsBullApproval) {
+      steps.push('Approve DXY-BULL', 'Confirming approval')
+    }
+    steps.push('Redeem pairs', 'Awaiting confirmation')
+
+    txModal.open({
+      title: 'Redeeming token pairs',
+      steps,
+      onRetry: handleRedeem,
+    })
+
     if (needsBearApproval) {
       pendingAmountRef.current = pairAmountBigInt
       setPendingAction('burn')
@@ -143,6 +283,7 @@ export function Mint() {
       await approveBull(pairAmountBigInt)
       return
     }
+    burnTriggeredRef.current = true
     await burn(pairAmountBigInt)
   }
 

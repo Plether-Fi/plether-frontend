@@ -2,10 +2,11 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useAccount } from 'wagmi'
 import { parseUnits } from 'viem'
 import { TokenInput } from './TokenInput'
-import { useCurveQuote, useCurveSwap, useZapQuote, useZapSwap, useAllowance, useApprove } from '../hooks'
+import { useCurveQuote, useCurveSwap, useZapQuote, useZapSwap, useAllowance, useApprove, useTransactionModal } from '../hooks'
 import { getAddresses } from '../contracts/addresses'
 import { useSettingsStore } from '../stores/settingsStore'
 import { formatAmount } from '../utils/formatters'
+import { parseTransactionError } from '../utils/errors'
 
 type TradeMode = 'buy' | 'sell'
 type TokenSide = 'BEAR' | 'BULL'
@@ -21,6 +22,7 @@ export function TradeCard({ usdcBalance, bearBalance, bullBalance, refetchBalanc
   const { isConnected, chainId } = useAccount()
   const addresses = getAddresses(chainId ?? 11155111)
   const slippage = useSettingsStore((s) => s.slippage)
+  const txModal = useTransactionModal()
 
   const [mode, setMode] = useState<TradeMode>('buy')
   const [selectedToken, setSelectedToken] = useState<TokenSide>('BEAR')
@@ -29,6 +31,7 @@ export function TradeCard({ usdcBalance, bearBalance, bullBalance, refetchBalanc
   const [pendingSwap, setPendingSwap] = useState(false)
   const pendingAmountRef = useRef<bigint>(0n)
   const approveHandledRef = useRef(false)
+  const swapTriggeredRef = useRef(false)
 
   const inputToken = mode === 'buy'
     ? { symbol: 'USDC', decimals: 6 }
@@ -60,8 +63,25 @@ export function TradeCard({ usdcBalance, bearBalance, bullBalance, refetchBalanc
   const quoteAmountOut = isBearTrade ? curveAmountOut : zapAmountOut
   const isQuoteLoading = isBearTrade ? curveQuoteLoading : zapQuoteLoading
 
-  const { swap: curveSwap, isPending: curvePending, isSuccess: curveSuccess, reset: resetCurve } = useCurveSwap()
-  const { zapBuy, zapSell, isPending: zapPending, isSuccess: zapSuccess, reset: resetZap } = useZapSwap()
+  const {
+    swap: curveSwap,
+    isPending: curvePending,
+    isConfirming: curveConfirming,
+    isSuccess: curveSuccess,
+    error: curveError,
+    reset: resetCurve,
+    hash: curveHash,
+  } = useCurveSwap()
+  const {
+    zapBuy,
+    zapSell,
+    isPending: zapPending,
+    isConfirming: zapConfirming,
+    isSuccess: zapSuccess,
+    error: zapError,
+    reset: resetZap,
+    hash: zapHash,
+  } = useZapSwap()
 
   const spenderAddress = isBearTrade ? addresses.CURVE_POOL : addresses.ZAP_ROUTER
   const tokenToApprove = mode === 'buy'
@@ -69,7 +89,13 @@ export function TradeCard({ usdcBalance, bearBalance, bullBalance, refetchBalanc
     : (selectedToken === 'BEAR' ? addresses.DXY_BEAR : addresses.DXY_BULL)
 
   const { allowance, refetch: refetchAllowance } = useAllowance(tokenToApprove, spenderAddress)
-  const { approve, isPending: approvePending, isSuccess: approveSuccess } = useApprove(tokenToApprove, spenderAddress)
+  const {
+    approve,
+    isPending: approvePending,
+    isConfirming: approveConfirming,
+    isSuccess: approveSuccess,
+    error: approveError,
+  } = useApprove(tokenToApprove, spenderAddress)
 
   const needsApproval = inputAmountBigInt > 0n && allowance < inputAmountBigInt
   const insufficientBalance = inputAmountBigInt > inputBalance
@@ -95,6 +121,7 @@ export function TradeCard({ usdcBalance, bearBalance, bullBalance, refetchBalanc
       approveHandledRef.current = true
       refetchAllowance()
       if (pendingSwap && pendingAmountRef.current > 0n) {
+        swapTriggeredRef.current = true
         executeSwap(pendingAmountRef.current)
         pendingAmountRef.current = 0n
         setPendingSwap(false)
@@ -104,25 +131,79 @@ export function TradeCard({ usdcBalance, bearBalance, bullBalance, refetchBalanc
 
   useEffect(() => {
     if (curveSuccess || zapSuccess) {
+      const hash = curveHash || zapHash
+      if (hash) txModal.setSuccess(hash)
       refetchBalances?.()
       setInputAmount('')
       resetCurve()
       resetZap()
+      swapTriggeredRef.current = false
     }
-  }, [curveSuccess, zapSuccess, refetchBalances, resetCurve, resetZap])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [curveSuccess, zapSuccess, curveHash, zapHash, refetchBalances, resetCurve, resetZap])
+
+  useEffect(() => {
+    const modal = useTransactionModal.getState()
+    if (!modal.isOpen) return
+
+    if (approvePending) {
+      modal.setStepInProgress(0)
+    } else if (approveConfirming) {
+      modal.setStepInProgress(1)
+    } else if (approveError) {
+      modal.setError(0, parseTransactionError(approveError))
+    }
+  }, [approvePending, approveConfirming, approveError])
+
+  useEffect(() => {
+    const modal = useTransactionModal.getState()
+    if (!modal.isOpen || !swapTriggeredRef.current) return
+    const swapStepOffset = pendingSwap || approveSuccess ? 2 : 0
+
+    if (curvePending || zapPending) {
+      modal.setStepInProgress(swapStepOffset)
+    } else if (curveConfirming || zapConfirming) {
+      modal.setStepInProgress(swapStepOffset + 1)
+    } else if (curveError || zapError) {
+      modal.setError(swapStepOffset, parseTransactionError(curveError || zapError))
+    }
+  }, [curvePending, zapPending, curveConfirming, zapConfirming, curveError, zapError, pendingSwap, approveSuccess])
 
   const handleSwap = async () => {
     if (!inputAmountBigInt || inputAmountBigInt <= 0n) return
 
     approveHandledRef.current = false
+    swapTriggeredRef.current = false
+
+    const tokenLabel = `DXY-${selectedToken}`
+    const actionLabel = mode === 'buy' ? 'Buying' : 'Selling'
 
     if (needsApproval) {
+      txModal.open({
+        title: `${actionLabel} ${tokenLabel}`,
+        steps: [
+          `Approve ${inputToken.symbol}`,
+          'Confirming approval',
+          `${mode === 'buy' ? 'Buy' : 'Sell'} ${tokenLabel}`,
+          'Awaiting confirmation',
+        ],
+        onRetry: handleSwap,
+      })
       pendingAmountRef.current = inputAmountBigInt
       setPendingSwap(true)
       await approve(inputAmountBigInt)
       return
     }
 
+    txModal.open({
+      title: `${actionLabel} ${tokenLabel}`,
+      steps: [
+        `${mode === 'buy' ? 'Buy' : 'Sell'} ${tokenLabel}`,
+        'Awaiting confirmation',
+      ],
+      onRetry: handleSwap,
+    })
+    swapTriggeredRef.current = true
     await executeSwap(inputAmountBigInt)
   }
 

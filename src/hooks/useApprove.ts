@@ -10,7 +10,7 @@ export function useApprove(tokenAddress: Address, spenderAddress: Address) {
   const updateTransaction = useTransactionStore((s) => s.updateTransaction)
   const txIdRef = useRef<string | null>(null)
 
-  const { writeContract, data: hash, isPending, error, reset } = useWriteContract()
+  const { writeContract, data: hash, isPending, error: writeError, reset: resetWrite } = useWriteContract()
 
   const { isLoading: isConfirming, isSuccess, isError, error: receiptError } = useWaitForTransactionReceipt({
     hash,
@@ -44,34 +44,30 @@ export function useApprove(tokenAddress: Address, spenderAddress: Address) {
       description: 'Approving token spend',
     })
 
-    try {
-      writeContract(
-        {
-          address: tokenAddress,
-          abi: ERC20_ABI,
-          functionName: 'approve',
-          args: [spenderAddress, amount],
+    writeContract(
+      {
+        address: tokenAddress,
+        abi: ERC20_ABI,
+        functionName: 'approve',
+        args: [spenderAddress, amount],
+      },
+      {
+        onSuccess: (hash) => {
+          updateTransaction(txId, { hash, status: 'confirming' })
         },
-        {
-          onSuccess: (hash) => {
-            updateTransaction(txId, { hash, status: 'confirming' })
-          },
-          onError: (err) => {
-            updateTransaction(txId, {
-              status: 'failed',
-              errorMessage: parseTransactionError(err),
-            })
-            txIdRef.current = null
-          },
-        }
-      )
-    } catch (err) {
-      updateTransaction(txId, {
-        status: 'failed',
-        errorMessage: parseTransactionError(err),
-      })
-      txIdRef.current = null
-    }
+        onError: (err) => {
+          updateTransaction(txId, {
+            status: 'failed',
+            errorMessage: parseTransactionError(err),
+          })
+          txIdRef.current = null
+        },
+      }
+    )
+  }
+
+  const reset = () => {
+    resetWrite()
   }
 
   return {
@@ -79,7 +75,7 @@ export function useApprove(tokenAddress: Address, spenderAddress: Address) {
     isPending,
     isConfirming,
     isSuccess,
-    error,
+    error: writeError || receiptError,
     reset,
   }
 }

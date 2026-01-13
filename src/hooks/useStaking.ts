@@ -288,6 +288,8 @@ export function useStakeWithPermit(side: 'BEAR' | 'BULL') {
   const updateTransaction = useTransactionStore((s) => s.updateTransaction)
   const txIdRef = useRef<string | null>(null)
   const [isSigningPermit, setIsSigningPermit] = useState(false)
+  const [permitError, setPermitError] = useState<Error | null>(null)
+  const [permitCompleted, setPermitCompleted] = useState(false)
 
   const { data: nonce } = useReadContract({
     address: tokenAddress,
@@ -331,6 +333,8 @@ export function useStakeWithPermit(side: 'BEAR' | 'BULL') {
   const stakeWithPermit = useCallback(async (amount: bigint) => {
     if (!address || !stakingAddress || !tokenAddress || !chainId || nonce === undefined || !tokenName) return
 
+    setPermitError(null)
+    setPermitCompleted(false)
     const txId = crypto.randomUUID()
     txIdRef.current = txId
     addTransaction({
@@ -371,6 +375,7 @@ export function useStakeWithPermit(side: 'BEAR' | 'BULL') {
         },
       })
       setIsSigningPermit(false)
+      setPermitCompleted(true)
 
       const r = signature.slice(0, 66) as `0x${string}`
       const s = `0x${signature.slice(66, 130)}` as `0x${string}`
@@ -398,6 +403,8 @@ export function useStakeWithPermit(side: 'BEAR' | 'BULL') {
       )
     } catch (err) {
       setIsSigningPermit(false)
+      const error = err instanceof Error ? err : new Error(String(err))
+      setPermitError(error)
       updateTransaction(txId, {
         status: 'failed',
         errorMessage: parseTransactionError(err),
@@ -406,14 +413,21 @@ export function useStakeWithPermit(side: 'BEAR' | 'BULL') {
     }
   }, [address, stakingAddress, tokenAddress, chainId, nonce, tokenName, signTypedDataAsync, writeContract, addTransaction, updateTransaction, side])
 
+  const resetAll = () => {
+    reset()
+    setPermitError(null)
+    setPermitCompleted(false)
+  }
+
   return {
     stakeWithPermit,
     isPending: isPending || isSigningPermit,
     isSigningPermit,
     isConfirming,
     isSuccess,
-    error,
-    reset,
+    error: permitError || error,
+    permitCompleted,
+    reset: resetAll,
     hash,
   }
 }

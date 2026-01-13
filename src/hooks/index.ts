@@ -32,3 +32,4 @@ export {
   useAdjustCollateral,
 } from './useLeverage'
 export { useBasketOraclePrice } from './useBasketOracle'
+export { useTransactionModal } from './useTransactionModal'
