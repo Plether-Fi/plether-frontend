@@ -1,7 +1,10 @@
 import { useAccount, useDisconnect, useChainId } from 'wagmi'
 import { useWeb3Modal } from '@web3modal/wagmi/react'
 import { mainnet, sepolia } from 'wagmi/chains'
+import { anvil } from '../../config/wagmi'
 import { formatAddress } from '../../utils/formatters'
+
+const SUPPORTED_CHAIN_IDS = [mainnet.id, sepolia.id, anvil.id] as const
 
 export function ConnectButton() {
   const { address, isConnected } = useAccount()
@@ -15,12 +18,14 @@ export function ConnectButton() {
         return 'Mainnet'
       case sepolia.id:
         return 'Sepolia'
+      case anvil.id:
+        return 'Anvil - dev'
       default:
         return 'Unknown'
     }
   }
 
-  const isWrongNetwork = chainId !== mainnet.id && chainId !== sepolia.id
+  const isWrongNetwork = !SUPPORTED_CHAIN_IDS.includes(chainId as typeof SUPPORTED_CHAIN_IDS[number])
 
   if (!isConnected) {
     return (

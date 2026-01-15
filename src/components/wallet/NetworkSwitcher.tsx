@@ -1,6 +1,9 @@
 import { useSwitchChain, useChainId } from 'wagmi'
 import { mainnet, sepolia } from 'wagmi/chains'
+import { anvil } from '../../config/wagmi'
 import { Modal } from '../ui'
+
+const SUPPORTED_CHAIN_IDS = [mainnet.id, sepolia.id, anvil.id] as const
 
 interface NetworkSwitcherProps {
   isOpen: boolean
@@ -14,9 +17,10 @@ export function NetworkSwitcher({ isOpen, onClose }: NetworkSwitcherProps) {
   const networks = [
     { chain: mainnet, name: 'Ethereum Mainnet', icon: 'diamond' },
     { chain: sepolia, name: 'Sepolia Testnet', icon: 'science' },
+    { chain: anvil, name: 'Anvil (Local)', icon: 'terminal' },
   ]
 
-  const handleSwitch = async (targetChainId: typeof mainnet.id | typeof sepolia.id) => {
+  const handleSwitch = async (targetChainId: typeof SUPPORTED_CHAIN_IDS[number]) => {
     await switchChain({ chainId: targetChainId })
     onClose()
   }
@@ -29,7 +33,7 @@ export function NetworkSwitcher({ isOpen, onClose }: NetworkSwitcherProps) {
           return (
             <button
               key={chain.id}
-              onClick={() => handleSwitch(chain.id)}
+              onClick={() => handleSwitch(chain.id as typeof SUPPORTED_CHAIN_IDS[number])}
               disabled={isPending}
               className={`
                 w-full flex items-center gap-3 px-4 py-3  transition-all
@@ -64,7 +68,7 @@ export function WrongNetworkBanner() {
   const chainId = useChainId()
   const { switchChain, isPending } = useSwitchChain()
 
-  const isWrongNetwork = chainId !== mainnet.id && chainId !== sepolia.id
+  const isWrongNetwork = !SUPPORTED_CHAIN_IDS.includes(chainId as typeof SUPPORTED_CHAIN_IDS[number])
 
   if (!isWrongNetwork) return null
 
