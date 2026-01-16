@@ -420,8 +420,8 @@ export function useZapBuyWithPermit() {
       })
       setIsSigningPermit(false)
 
-      const r = signature.slice(0, 66) as `0x${string}`
-      const s = `0x${signature.slice(66, 130)}`
+      const r: `0x${string}` = signature.slice(0, 66) as `0x${string}`
+      const s: `0x${string}` = `0x${signature.slice(66, 130)}`
       const v = parseInt(signature.slice(130, 132), 16)
 
       writeContract(
@@ -547,8 +547,8 @@ export function useZapSellWithPermit() {
       })
       setIsSigningPermit(false)
 
-      const r = signature.slice(0, 66) as `0x${string}`
-      const s = `0x${signature.slice(66, 130)}`
+      const r: `0x${string}` = signature.slice(0, 66) as `0x${string}`
+      const s: `0x${string}` = `0x${signature.slice(66, 130)}`
       const v = parseInt(signature.slice(130, 132), 16)
 
       writeContract(

@@ -5,6 +5,10 @@ import {
   http,
   parseEther,
   parseUnits,
+  keccak256,
+  concat,
+  pad,
+  toHex,
   type Address,
   type Hash,
 } from 'viem'
@@ -12,6 +16,9 @@ import { foundry } from 'viem/chains'
 import { ERC20_ABI } from '../contracts/abis'
 import { ANVIL_RPC_URL, TEST_ACCOUNTS } from './wagmi'
 
+// Use foundry chain (31337) since that's what Anvil reports
+// The wagmi config uses Sepolia chain ID for address resolution,
+// but viem clients need to match Anvil's actual chain ID
 export const testClient = createTestClient({
   chain: foundry,
   mode: 'anvil',
@@ -96,6 +103,29 @@ export async function dealERC20(
 
 export async function waitForTransaction(hash: Hash) {
   return publicClient.waitForTransactionReceipt({ hash })
+}
+
+/**
+ * Set ERC20 balance directly via storage manipulation.
+ * Works for standard ERC20 contracts with balances mapping at slot 0.
+ */
+export async function setERC20Balance(
+  tokenAddress: Address,
+  account: Address,
+  amount: bigint,
+  balanceSlot = 0
+): Promise<void> {
+  const storageKey = keccak256(
+    concat([
+      pad(account, { size: 32 }),
+      pad(toHex(balanceSlot), { size: 32 }),
+    ])
+  )
+  await testClient.setStorageAt({
+    address: tokenAddress,
+    index: storageKey,
+    value: pad(toHex(amount), { size: 32 }),
+  })
 }
 
 export { TEST_ACCOUNTS, parseEther, parseUnits }

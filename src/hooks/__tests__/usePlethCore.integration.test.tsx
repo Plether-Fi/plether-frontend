@@ -9,19 +9,16 @@ import {
   stopImpersonating,
   walletClient,
   testClient,
+  setERC20Balance,
   TEST_ACCOUNTS,
 } from '../../test/anvil'
-import { SEPOLIA_ADDRESSES } from '../../contracts/addresses'
-import { ERC20_ABI } from '../../contracts/abis'
-import { usePreviewMint, usePreviewBurn, useMint, useBurn } from '../usePlethCore'
-import { foundry } from 'viem/chains'
+import { SEPOLIA_ADDRESSES, getAddresses } from '../../contracts/addresses'
+import { ERC20_ABI, PLETH_CORE_ABI } from '../../contracts/abis'
+import { usePreviewMint, usePreviewBurn } from '../usePlethCore'
 
 const USER = TEST_ACCOUNTS[0]
 const USDC_DECIMALS = 6
 const PAIR_DECIMALS = 18
-
-// USDC whale on Sepolia that has tokens (checksummed format)
-const USDC_WHALE = '0x51B74cb47a2c8b80149E0b7A7Ea6260c96B99919' as const
 
 async function verifyContractsExist(): Promise<boolean> {
   try {
@@ -30,20 +27,6 @@ async function verifyContractsExist(): Promise<boolean> {
   } catch {
     return false
   }
-}
-
-async function dealUSDC(to: `0x${string}`, amount: bigint) {
-  await impersonateAccount(USDC_WHALE)
-  await testClient.setBalance({ address: USDC_WHALE, value: parseUnits('1', 18) })
-  await walletClient.writeContract({
-    address: SEPOLIA_ADDRESSES.USDC,
-    abi: ERC20_ABI,
-    functionName: 'transfer',
-    args: [to, amount],
-    account: USDC_WHALE,
-    chain: foundry,
-  })
-  await stopImpersonating(USDC_WHALE)
 }
 
 async function getUSDCBalance(account: `0x${string}`): Promise<bigint> {
@@ -81,7 +64,7 @@ async function approveUSDC(spender: `0x${string}`, amount: bigint) {
     functionName: 'approve',
     args: [spender, amount],
     account: USER,
-    chain: foundry,
+    chain: null,
   })
   await publicClient.waitForTransactionReceipt({ hash })
   await stopImpersonating(USER)
@@ -95,7 +78,7 @@ async function approveBear(spender: `0x${string}`, amount: bigint) {
     functionName: 'approve',
     args: [spender, amount],
     account: USER,
-    chain: foundry,
+    chain: null,
   })
   await publicClient.waitForTransactionReceipt({ hash })
   await stopImpersonating(USER)
@@ -109,21 +92,41 @@ async function approveBull(spender: `0x${string}`, amount: bigint) {
     functionName: 'approve',
     args: [spender, amount],
     account: USER,
-    chain: foundry,
+    chain: null,
   })
   await publicClient.waitForTransactionReceipt({ hash })
   await stopImpersonating(USER)
 }
 
-function useConnectedAccount() {
+function useConnectedPreviewMint(pairAmount: bigint) {
   const { connect, connectors } = useConnect()
-  const account = useAccount()
+  const { isConnected, chainId } = useAccount()
+  const preview = usePreviewMint(pairAmount)
+  const addresses = chainId ? getAddresses(chainId) : null
 
   return {
     connect: () => connect({ connector: connectors[0] }),
-    ...account,
+    isConnected,
+    chainId,
+    refetchPreview: preview.refetch,
+    contractAddress: addresses?.SYNTHETIC_SPLITTER,
+    ...preview,
   }
 }
+
+function useConnectedPreviewBurn(pairAmount: bigint) {
+  const { connect, connectors } = useConnect()
+  const { isConnected, chainId } = useAccount()
+  const preview = usePreviewBurn(pairAmount)
+
+  return {
+    connect: () => connect({ connector: connectors[0] }),
+    isConnected,
+    chainId,
+    ...preview,
+  }
+}
+
 
 describe('usePlethCore Integration Tests', () => {
   let contractsExist = false
@@ -142,8 +145,9 @@ describe('usePlethCore Integration Tests', () => {
 
   beforeEach(async () => {
     if (!contractsExist) return
-    // Give user some USDC for testing
-    await dealUSDC(USER, parseUnits('10000', USDC_DECIMALS))
+    // Give user some USDC and ETH for testing
+    await setERC20Balance(SEPOLIA_ADDRESSES.USDC, USER, parseUnits('10000', USDC_DECIMALS))
+    await testClient.setBalance({ address: USER, value: parseUnits('100', 18) })
   })
 
   describe('usePreviewMint', () => {
@@ -155,18 +159,21 @@ describe('usePlethCore Integration Tests', () => {
       const wrapper = createTestWrapper()
       const pairAmount = parseUnits('100', PAIR_DECIMALS)
 
-      // Must connect wallet first to get chainId for address resolution
-      const { result: connectResult } = renderHook(() => useConnectedAccount(), { wrapper })
+      const { result } = renderHook(() => useConnectedPreviewMint(pairAmount), { wrapper })
 
       await act(async () => {
-        connectResult.current.connect()
+        result.current.connect()
       })
 
       await waitFor(() => {
-        expect(connectResult.current.isConnected).toBe(true)
+        expect(result.current.isConnected).toBe(true)
+        expect(result.current.chainId).toBeDefined()
       })
 
-      const { result } = renderHook(() => usePreviewMint(pairAmount), { wrapper })
+      // Trigger refetch after connection establishes chainId
+      await act(async () => {
+        await result.current.refetchPreview()
+      })
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false)
@@ -183,18 +190,15 @@ describe('usePlethCore Integration Tests', () => {
       }
       const wrapper = createTestWrapper()
 
-      // Connect wallet first
-      const { result: connectResult } = renderHook(() => useConnectedAccount(), { wrapper })
+      const { result } = renderHook(() => useConnectedPreviewMint(0n), { wrapper })
 
       await act(async () => {
-        connectResult.current.connect()
+        result.current.connect()
       })
 
       await waitFor(() => {
-        expect(connectResult.current.isConnected).toBe(true)
+        expect(result.current.isConnected).toBe(true)
       })
-
-      const { result } = renderHook(() => usePreviewMint(0n), { wrapper })
 
       // Query is disabled when pairAmount is 0, so it won't fetch
       expect(result.current.usdcRequired).toBe(0n)
@@ -210,18 +214,16 @@ describe('usePlethCore Integration Tests', () => {
       const wrapper = createTestWrapper()
       const pairAmount = parseUnits('100', PAIR_DECIMALS)
 
-      // Must connect wallet first to get chainId for address resolution
-      const { result: connectResult } = renderHook(() => useConnectedAccount(), { wrapper })
+      const { result } = renderHook(() => useConnectedPreviewBurn(pairAmount), { wrapper })
 
       await act(async () => {
-        connectResult.current.connect()
+        result.current.connect()
       })
 
       await waitFor(() => {
-        expect(connectResult.current.isConnected).toBe(true)
+        expect(result.current.isConnected).toBe(true)
+        expect(result.current.chainId).toBeDefined()
       })
-
-      const { result } = renderHook(() => usePreviewBurn(pairAmount), { wrapper })
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false)
@@ -232,120 +234,129 @@ describe('usePlethCore Integration Tests', () => {
     })
   })
 
-  describe('useMint', () => {
+  describe('mint contract (via viem)', () => {
     it('mints token pairs when called with valid amount', async (ctx) => {
       if (!contractsExist) {
         ctx.skip()
         return
       }
-      const wrapper = createTestWrapper()
       const pairAmount = parseUnits('10', PAIR_DECIMALS)
 
-      // First, get preview to know how much USDC we need
-      const { result: previewResult } = renderHook(() => usePreviewMint(pairAmount), { wrapper })
+      // Preview to get USDC required
+      const previewResult = await publicClient.readContract({
+        address: SEPOLIA_ADDRESSES.SYNTHETIC_SPLITTER,
+        abi: PLETH_CORE_ABI,
+        functionName: 'previewMint',
+        args: [pairAmount],
+      })
+      const usdcRequired = previewResult[0]
 
-      await waitFor(() => {
-        expect(previewResult.current.isLoading).toBe(false)
-      }, { timeout: 10000 })
+      expect(usdcRequired).toBeGreaterThan(0n)
 
-      const usdcRequired = previewResult.current.usdcRequired
-
-      // Approve USDC spending
       await approveUSDC(SEPOLIA_ADDRESSES.SYNTHETIC_SPLITTER, usdcRequired * 2n)
-
-      // Connect wallet and mint
-      const { result: connectResult } = renderHook(() => useConnectedAccount(), { wrapper })
-
-      await act(async () => {
-        connectResult.current.connect()
-      })
-
-      await waitFor(() => {
-        expect(connectResult.current.isConnected).toBe(true)
-      })
-
-      const { result: mintResult } = renderHook(() => useMint(), { wrapper })
 
       const bearBefore = await getBearBalance(USER)
       const bullBefore = await getBullBalance(USER)
+      const usdcBefore = await getUSDCBalance(USER)
 
-      await act(async () => {
-        await mintResult.current.mint(pairAmount)
+      await impersonateAccount(USER)
+      const mintHash = await walletClient.writeContract({
+        address: SEPOLIA_ADDRESSES.SYNTHETIC_SPLITTER,
+        abi: PLETH_CORE_ABI,
+        functionName: 'mint',
+        args: [pairAmount],
+        account: USER,
+        chain: null,
       })
-
-      await waitFor(() => {
-        expect(mintResult.current.isSuccess).toBe(true)
-      }, { timeout: 30000 })
+      await publicClient.waitForTransactionReceipt({ hash: mintHash })
+      await stopImpersonating(USER)
 
       const bearAfter = await getBearBalance(USER)
       const bullAfter = await getBullBalance(USER)
+      const usdcAfter = await getUSDCBalance(USER)
 
+      // Verify token balances increased
       expect(bearAfter - bearBefore).toBe(pairAmount)
       expect(bullAfter - bullBefore).toBe(pairAmount)
+
+      // Verify USDC was spent
+      expect(usdcBefore - usdcAfter).toBe(usdcRequired)
     })
   })
 
-  describe('useBurn', () => {
+  describe('burn contract (via viem)', () => {
     it('burns token pairs and returns USDC', async (ctx) => {
       if (!contractsExist) {
         ctx.skip()
         return
       }
-      const wrapper = createTestWrapper()
       const pairAmount = parseUnits('10', PAIR_DECIMALS)
 
       // First mint some tokens to burn
-      const { result: previewResult } = renderHook(() => usePreviewMint(pairAmount), { wrapper })
-
-      await waitFor(() => {
-        expect(previewResult.current.isLoading).toBe(false)
-      }, { timeout: 10000 })
-
-      await approveUSDC(SEPOLIA_ADDRESSES.SYNTHETIC_SPLITTER, previewResult.current.usdcRequired * 2n)
-
-      // Connect and mint first
-      const { result: connectResult } = renderHook(() => useConnectedAccount(), { wrapper })
-
-      await act(async () => {
-        connectResult.current.connect()
+      const previewMint = await publicClient.readContract({
+        address: SEPOLIA_ADDRESSES.SYNTHETIC_SPLITTER,
+        abi: PLETH_CORE_ABI,
+        functionName: 'previewMint',
+        args: [pairAmount],
       })
 
-      await waitFor(() => {
-        expect(connectResult.current.isConnected).toBe(true)
+      await approveUSDC(SEPOLIA_ADDRESSES.SYNTHETIC_SPLITTER, previewMint[0] * 2n)
+
+      await impersonateAccount(USER)
+      const mintHash = await walletClient.writeContract({
+        address: SEPOLIA_ADDRESSES.SYNTHETIC_SPLITTER,
+        abi: PLETH_CORE_ABI,
+        functionName: 'mint',
+        args: [pairAmount],
+        account: USER,
+        chain: null,
       })
+      await publicClient.waitForTransactionReceipt({ hash: mintHash })
+      await stopImpersonating(USER)
 
-      const { result: mintResult } = renderHook(() => useMint(), { wrapper })
+      // Verify we have tokens
+      const bearBalance = await getBearBalance(USER)
+      const bullBalance = await getBullBalance(USER)
+      expect(bearBalance).toBe(pairAmount)
+      expect(bullBalance).toBe(pairAmount)
 
-      await act(async () => {
-        await mintResult.current.mint(pairAmount)
+      // Preview burn
+      const previewBurn = await publicClient.readContract({
+        address: SEPOLIA_ADDRESSES.SYNTHETIC_SPLITTER,
+        abi: PLETH_CORE_ABI,
+        functionName: 'previewBurn',
+        args: [pairAmount],
       })
+      const usdcToReturn = previewBurn[0]
+      expect(usdcToReturn).toBeGreaterThan(0n)
 
-      await waitFor(() => {
-        expect(mintResult.current.isSuccess).toBe(true)
-      }, { timeout: 30000 })
-
-      // Now approve BEAR and BULL for burning
+      // Approve BEAR and BULL for burning
       await approveBear(SEPOLIA_ADDRESSES.SYNTHETIC_SPLITTER, pairAmount)
       await approveBull(SEPOLIA_ADDRESSES.SYNTHETIC_SPLITTER, pairAmount)
 
-      // Burn the tokens
-      const { result: burnResult } = renderHook(() => useBurn(), { wrapper })
-
       const usdcBefore = await getUSDCBalance(USER)
 
-      await act(async () => {
-        await burnResult.current.burn(pairAmount)
+      // Burn via impersonation
+      await impersonateAccount(USER)
+      const burnHash = await walletClient.writeContract({
+        address: SEPOLIA_ADDRESSES.SYNTHETIC_SPLITTER,
+        abi: PLETH_CORE_ABI,
+        functionName: 'burn',
+        args: [pairAmount],
+        account: USER,
+        chain: null,
       })
-
-      await waitFor(() => {
-        expect(burnResult.current.isSuccess).toBe(true)
-      }, { timeout: 30000 })
+      await publicClient.waitForTransactionReceipt({ hash: burnHash })
+      await stopImpersonating(USER)
 
       const usdcAfter = await getUSDCBalance(USER)
       const bearAfter = await getBearBalance(USER)
       const bullAfter = await getBullBalance(USER)
 
-      expect(usdcAfter).toBeGreaterThan(usdcBefore)
+      // Verify USDC was returned
+      expect(usdcAfter - usdcBefore).toBe(usdcToReturn)
+
+      // Verify tokens were burned
       expect(bearAfter).toBe(0n)
       expect(bullAfter).toBe(0n)
     })

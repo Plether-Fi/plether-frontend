@@ -1,5 +1,5 @@
-import { createConfig, http } from 'wagmi'
-import { foundry } from 'wagmi/chains'
+import { createConfig, http, type Chain } from 'wagmi'
+import { sepolia } from 'wagmi/chains'
 import { mock } from 'wagmi/connectors'
 
 export const ANVIL_RPC_URL = 'http://127.0.0.1:8546'
@@ -13,14 +13,28 @@ export const TEST_ACCOUNTS = [
   '0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65',
 ] as const
 
-export const testConfig = createConfig({
-  chains: [foundry],
-  connectors: [
-    mock({
-      accounts: [...TEST_ACCOUNTS],
-    }),
-  ],
-  transports: {
-    [foundry.id]: http(ANVIL_RPC_URL),
+// Use Sepolia chain ID but point to local Anvil RPC
+// This ensures getAddresses() returns SEPOLIA_ADDRESSES
+const testChain: Chain = {
+  ...sepolia,
+  rpcUrls: {
+    default: { http: [ANVIL_RPC_URL] },
   },
-})
+}
+
+export function createTestConfig() {
+  return createConfig({
+    chains: [testChain],
+    connectors: [
+      mock({
+        accounts: [...TEST_ACCOUNTS],
+      }),
+    ],
+    transports: {
+      [testChain.id]: http(ANVIL_RPC_URL),
+    },
+  })
+}
+
+// Legacy export for backwards compatibility
+export const testConfig = createTestConfig()

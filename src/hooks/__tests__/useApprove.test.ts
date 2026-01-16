@@ -20,7 +20,7 @@ const SPENDER_ADDRESS = '0x2222222222222222222222222222222222222222' as const
 
 describe('useApprove', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    vi.resetAllMocks()
     useTransactionStore.setState({ pendingTransactions: [] })
 
     mockUseWriteContract.mockReturnValue({

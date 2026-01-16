@@ -22,14 +22,16 @@ export interface ContractAddresses {
 }
 
 // Load addresses from JSON files at build time
-const addressModules = import.meta.glob<{ default: Record<string, string> }>(
+const addressModules = import.meta.glob<{ default: ContractAddresses }>(
   './addresses.*.json',
   { eager: true }
 )
 
 function loadAddresses(filename: string): ContractAddresses | null {
-  const module = addressModules[`./${filename}`] as { default: ContractAddresses } | undefined
-  return module?.default ?? null
+  const module = addressModules[`./${filename}`]
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- module can be undefined at runtime
+  if (!module) return null
+  return module.default
 }
 
 const MAINNET_ADDRESSES = loadAddresses('addresses.mainnet.json')

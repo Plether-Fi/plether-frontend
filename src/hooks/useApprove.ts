@@ -44,26 +44,34 @@ export function useApprove(tokenAddress: Address, spenderAddress: Address) {
       description: 'Approving token spend',
     })
 
-    writeContract(
-      {
-        address: tokenAddress,
-        abi: ERC20_ABI,
-        functionName: 'approve',
-        args: [spenderAddress, amount],
-      },
-      {
-        onSuccess: (hash) => {
-          updateTransaction(txId, { hash, status: 'confirming' })
+    try {
+      writeContract(
+        {
+          address: tokenAddress,
+          abi: ERC20_ABI,
+          functionName: 'approve',
+          args: [spenderAddress, amount],
         },
-        onError: (err) => {
-          updateTransaction(txId, {
-            status: 'failed',
-            errorMessage: parseTransactionError(err),
-          })
-          txIdRef.current = null
-        },
-      }
-    )
+        {
+          onSuccess: (hash) => {
+            updateTransaction(txId, { hash, status: 'confirming' })
+          },
+          onError: (err) => {
+            updateTransaction(txId, {
+              status: 'failed',
+              errorMessage: parseTransactionError(err),
+            })
+            txIdRef.current = null
+          },
+        }
+      )
+    } catch (err) {
+      updateTransaction(txId, {
+        status: 'failed',
+        errorMessage: parseTransactionError(err),
+      })
+      txIdRef.current = null
+    }
   }
 
   const reset = () => {
