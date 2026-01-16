@@ -1,25 +1,28 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Layout } from './components/layout'
 import { TransactionModal } from './components/TransactionModal'
-import {
-  Dashboard,
-  Mint,
-  Stake,
-  History,
-} from './pages'
+import { Spinner } from './components/ui/Spinner'
+
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const Mint = lazy(() => import('./pages/Mint'))
+const Stake = lazy(() => import('./pages/Stake'))
+const History = lazy(() => import('./pages/History'))
 
 function App() {
   return (
     <BrowserRouter>
       <Layout>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/leverage" element={<Dashboard />} />
-          <Route path="/yield" element={<Dashboard />} />
-          <Route path="/mint" element={<Mint />} />
-          <Route path="/stake" element={<Stake />} />
-          <Route path="/history" element={<History />} />
-        </Routes>
+        <Suspense fallback={<div className="flex items-center justify-center min-h-[50vh]"><Spinner size="lg" /></div>}>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/leverage" element={<Dashboard />} />
+            <Route path="/yield" element={<Dashboard />} />
+            <Route path="/mint" element={<Mint />} />
+            <Route path="/stake" element={<Stake />} />
+            <Route path="/history" element={<History />} />
+          </Routes>
+        </Suspense>
       </Layout>
       <TransactionModal />
     </BrowserRouter>

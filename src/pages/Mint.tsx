@@ -483,3 +483,5 @@ export function Mint() {
     </div>
   )
 }
+
+export default Mint

@@ -1,6 +1,7 @@
 /// <reference types="vitest/config" />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react-swc';
+import { visualizer } from 'rollup-plugin-visualizer';
 
 // https://vite.dev/config/
 import path from 'node:path';
@@ -11,7 +12,36 @@ const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(file
 
 // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    visualizer({
+      filename: 'bundle-stats.html',
+      gzipSize: true,
+      brotliSize: true,
+    }),
+  ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react-dom') || id.includes('react-router')) {
+              return 'react-vendor';
+            }
+            if (id.includes('/viem/')) {
+              return 'web3-core';
+            }
+            if (id.includes('/wagmi/') || id.includes('@tanstack/react-query')) {
+              return 'web3-wagmi';
+            }
+            if (id.includes('@web3modal') || id.includes('@reown')) {
+              return 'web3-modal';
+            }
+          }
+        },
+      },
+    },
+  },
   test: {
     projects: [
       {
