@@ -1,6 +1,6 @@
 import { type Address } from 'viem'
 
-type ContractAddresses = {
+export type ContractAddresses = {
   USDC: Address
   DXY_BEAR: Address
   DXY_BULL: Address
@@ -21,81 +21,40 @@ type ContractAddresses = {
   STAKED_ORACLE_BULL: Address
 }
 
-// Placeholder addresses - replace with actual deployed contract addresses
-const PLACEHOLDER: Address = '0x0000000000000000000000000000000000000000'
+// Load addresses from JSON files at build time
+const addressModules = import.meta.glob<{ default: Record<string, string> }>(
+  './addresses.*.json',
+  { eager: true }
+)
 
-export const MAINNET_ADDRESSES: ContractAddresses = {
-  USDC: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
-  DXY_BEAR: PLACEHOLDER,
-  DXY_BULL: PLACEHOLDER,
-  SDXY_BEAR: PLACEHOLDER,
-  SDXY_BULL: PLACEHOLDER,
-  SYNTHETIC_SPLITTER: PLACEHOLDER,
-  CURVE_POOL: PLACEHOLDER,
-  ZAP_ROUTER: PLACEHOLDER,
-  LEVERAGE_ROUTER: PLACEHOLDER,
-  BULL_LEVERAGE_ROUTER: PLACEHOLDER,
-  STAKING_BEAR: PLACEHOLDER,
-  STAKING_BULL: PLACEHOLDER,
-  BASKET_ORACLE: PLACEHOLDER,
-  MOCK_ADAPTER: PLACEHOLDER,
-  MORPHO_ORACLE_BEAR: PLACEHOLDER,
-  MORPHO_ORACLE_BULL: PLACEHOLDER,
-  STAKED_ORACLE_BEAR: PLACEHOLDER,
-  STAKED_ORACLE_BULL: PLACEHOLDER,
+function loadAddresses(filename: string): ContractAddresses | null {
+  const module = addressModules[`./${filename}`]
+  return module ? (module.default as ContractAddresses) : null
 }
 
-export const SEPOLIA_ADDRESSES: ContractAddresses = {
-  USDC: PLACEHOLDER,
-  DXY_BEAR: PLACEHOLDER,
-  DXY_BULL: PLACEHOLDER,
-  SDXY_BEAR: PLACEHOLDER,
-  SDXY_BULL: PLACEHOLDER,
-  SYNTHETIC_SPLITTER: PLACEHOLDER,
-  CURVE_POOL: PLACEHOLDER,
-  ZAP_ROUTER: PLACEHOLDER,
-  LEVERAGE_ROUTER: PLACEHOLDER,
-  BULL_LEVERAGE_ROUTER: PLACEHOLDER,
-  STAKING_BEAR: PLACEHOLDER,
-  STAKING_BULL: PLACEHOLDER,
-  BASKET_ORACLE: PLACEHOLDER,
-  MOCK_ADAPTER: PLACEHOLDER,
-  MORPHO_ORACLE_BEAR: PLACEHOLDER,
-  MORPHO_ORACLE_BULL: PLACEHOLDER,
-  STAKED_ORACLE_BEAR: PLACEHOLDER,
-  STAKED_ORACLE_BULL: PLACEHOLDER,
-}
-
-export const ANVIL_ADDRESSES: ContractAddresses = {
-  USDC: '0x1768bEB3f47C6C467185D281dD948e97BA3287f4',
-  DXY_BEAR: '0xc62B7E1Ee657D9b597329bFC6700cAC54beaB3f8',
-  DXY_BULL: '0x6321ad946cA067bC227d94Eb026Dc44E551e7748',
-  SDXY_BEAR: '0x5AA72B3648C79Bb423848DC6412646D58F44E1c1',
-  SDXY_BULL: '0xFB61d4f02F6D4832787b09e4cCAd0A8FF7bFfD99',
-  SYNTHETIC_SPLITTER: '0x63D4E286a12Ef7D9c75C81247f7103026215dFba',
-  CURVE_POOL: '0x0873aDf1260f8df312054C4697d2a39f41EFF357',
-  ZAP_ROUTER: '0xc146Bf88F8c96ca147f79959232dD71f69E27276',
-  LEVERAGE_ROUTER: '0x81dc0C1624411DD900800557614154C0306d49d8',
-  BULL_LEVERAGE_ROUTER: '0x998F073014C8e1FE11059195dc441A65A55B453E',
-  STAKING_BEAR: '0x5AA72B3648C79Bb423848DC6412646D58F44E1c1',
-  STAKING_BULL: '0xFB61d4f02F6D4832787b09e4cCAd0A8FF7bFfD99',
-  BASKET_ORACLE: '0x17C3C348D59f1839C925aeaF9ae9012c3911dC7a',
-  MOCK_ADAPTER: '0xdEE195fD92b9c16872B04066E30f8b0c09ea3201',
-  MORPHO_ORACLE_BEAR: '0x0071Fa0C03AE52EF950aF6973901c48966b2b1F3',
-  MORPHO_ORACLE_BULL: '0x2383D82ce7a417065556A1Da62E8943390d46F08',
-  STAKED_ORACLE_BEAR: '0x1936Dd2dd787284767e30F5F3d0F73f8d21e2BBa',
-  STAKED_ORACLE_BULL: '0x0A4E2d9b5D43F6711aC9DF3768Be4D06b945430C',
-}
+const MAINNET_ADDRESSES = loadAddresses('addresses.mainnet.json')
+const SEPOLIA_ADDRESSES = loadAddresses('addresses.sepolia.json')
+const LOCAL_ADDRESSES = loadAddresses('addresses.local.json')
 
 export function getAddresses(chainId: number): ContractAddresses {
   switch (chainId) {
     case 1:
+      if (!MAINNET_ADDRESSES) {
+        throw new Error('Mainnet addresses not found')
+      }
       return MAINNET_ADDRESSES
     case 11155111:
+      if (!SEPOLIA_ADDRESSES) {
+        throw new Error('Sepolia addresses not found')
+      }
       return SEPOLIA_ADDRESSES
     case 31337:
-      return ANVIL_ADDRESSES
+      if (!LOCAL_ADDRESSES) {
+        console.warn('Local addresses not found. Copy addresses.local.example.json to addresses.local.json')
+        return SEPOLIA_ADDRESSES!
+      }
+      return LOCAL_ADDRESSES
     default:
-      return MAINNET_ADDRESSES
+      return MAINNET_ADDRESSES!
   }
 }
