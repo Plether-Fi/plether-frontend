@@ -361,4 +361,144 @@ describe('usePlethCore Integration Tests', () => {
       expect(bullAfter).toBe(0n)
     })
   })
+
+  describe('edge cases', () => {
+    it('reverts mint when USDC allowance is insufficient', async (ctx) => {
+      if (!contractsExist) {
+        ctx.skip()
+        return
+      }
+      const pairAmount = parseUnits('10', PAIR_DECIMALS)
+
+      const previewResult = await publicClient.readContract({
+        address: SEPOLIA_ADDRESSES.SYNTHETIC_SPLITTER,
+        abi: PLETH_CORE_ABI,
+        functionName: 'previewMint',
+        args: [pairAmount],
+      })
+      const usdcRequired = previewResult[0]
+
+      await approveUSDC(SEPOLIA_ADDRESSES.SYNTHETIC_SPLITTER, usdcRequired / 2n)
+
+      await impersonateAccount(USER)
+      await expect(
+        walletClient.writeContract({
+          address: SEPOLIA_ADDRESSES.SYNTHETIC_SPLITTER,
+          abi: PLETH_CORE_ABI,
+          functionName: 'mint',
+          args: [pairAmount],
+          account: USER,
+          chain: null,
+        })
+      ).rejects.toThrow()
+      await stopImpersonating(USER)
+    })
+
+    it('reverts burn when BEAR allowance is insufficient', async (ctx) => {
+      if (!contractsExist) {
+        ctx.skip()
+        return
+      }
+      const pairAmount = parseUnits('10', PAIR_DECIMALS)
+
+      const previewMint = await publicClient.readContract({
+        address: SEPOLIA_ADDRESSES.SYNTHETIC_SPLITTER,
+        abi: PLETH_CORE_ABI,
+        functionName: 'previewMint',
+        args: [pairAmount],
+      })
+
+      await approveUSDC(SEPOLIA_ADDRESSES.SYNTHETIC_SPLITTER, previewMint[0] * 2n)
+
+      await impersonateAccount(USER)
+      const mintHash = await walletClient.writeContract({
+        address: SEPOLIA_ADDRESSES.SYNTHETIC_SPLITTER,
+        abi: PLETH_CORE_ABI,
+        functionName: 'mint',
+        args: [pairAmount],
+        account: USER,
+        chain: null,
+      })
+      await publicClient.waitForTransactionReceipt({ hash: mintHash })
+      await stopImpersonating(USER)
+
+      await approveBull(SEPOLIA_ADDRESSES.SYNTHETIC_SPLITTER, pairAmount)
+
+      await impersonateAccount(USER)
+      await expect(
+        walletClient.writeContract({
+          address: SEPOLIA_ADDRESSES.SYNTHETIC_SPLITTER,
+          abi: PLETH_CORE_ABI,
+          functionName: 'burn',
+          args: [pairAmount],
+          account: USER,
+          chain: null,
+        })
+      ).rejects.toThrow()
+      await stopImpersonating(USER)
+    })
+
+    it('handles partial burn correctly', async (ctx) => {
+      if (!contractsExist) {
+        ctx.skip()
+        return
+      }
+      const pairAmount = parseUnits('20', PAIR_DECIMALS)
+      const burnAmount = parseUnits('10', PAIR_DECIMALS)
+
+      const previewMint = await publicClient.readContract({
+        address: SEPOLIA_ADDRESSES.SYNTHETIC_SPLITTER,
+        abi: PLETH_CORE_ABI,
+        functionName: 'previewMint',
+        args: [pairAmount],
+      })
+
+      await approveUSDC(SEPOLIA_ADDRESSES.SYNTHETIC_SPLITTER, previewMint[0] * 2n)
+
+      await impersonateAccount(USER)
+      const mintHash = await walletClient.writeContract({
+        address: SEPOLIA_ADDRESSES.SYNTHETIC_SPLITTER,
+        abi: PLETH_CORE_ABI,
+        functionName: 'mint',
+        args: [pairAmount],
+        account: USER,
+        chain: null,
+      })
+      await publicClient.waitForTransactionReceipt({ hash: mintHash })
+      await stopImpersonating(USER)
+
+      await approveBear(SEPOLIA_ADDRESSES.SYNTHETIC_SPLITTER, burnAmount)
+      await approveBull(SEPOLIA_ADDRESSES.SYNTHETIC_SPLITTER, burnAmount)
+
+      const previewBurn = await publicClient.readContract({
+        address: SEPOLIA_ADDRESSES.SYNTHETIC_SPLITTER,
+        abi: PLETH_CORE_ABI,
+        functionName: 'previewBurn',
+        args: [burnAmount],
+      })
+      const expectedUsdc = previewBurn[0]
+
+      const usdcBefore = await getUSDCBalance(USER)
+
+      await impersonateAccount(USER)
+      const burnHash = await walletClient.writeContract({
+        address: SEPOLIA_ADDRESSES.SYNTHETIC_SPLITTER,
+        abi: PLETH_CORE_ABI,
+        functionName: 'burn',
+        args: [burnAmount],
+        account: USER,
+        chain: null,
+      })
+      await publicClient.waitForTransactionReceipt({ hash: burnHash })
+      await stopImpersonating(USER)
+
+      const usdcAfter = await getUSDCBalance(USER)
+      const bearAfter = await getBearBalance(USER)
+      const bullAfter = await getBullBalance(USER)
+
+      expect(usdcAfter - usdcBefore).toBe(expectedUsdc)
+      expect(bearAfter).toBe(pairAmount - burnAmount)
+      expect(bullAfter).toBe(pairAmount - burnAmount)
+    })
+  })
 })

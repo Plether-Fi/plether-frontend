@@ -1,0 +1,516 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { renderHook, act, waitFor } from '@testing-library/react'
+import { Result } from 'better-result'
+import { useTransactionStore } from '../../stores/transactionStore'
+import type { LeverageError } from '../useLeverage'
+
+const mockWriteContract = vi.fn()
+const mockReset = vi.fn()
+
+const mockUseAccount = vi.fn()
+const mockUseReadContract = vi.fn()
+const mockUseWriteContract = vi.fn()
+const mockUseWaitForTransactionReceipt = vi.fn()
+
+vi.mock('wagmi', () => ({
+  useAccount: () => mockUseAccount(),
+  useReadContract: () => mockUseReadContract(),
+  useWriteContract: () => mockUseWriteContract(),
+  useWaitForTransactionReceipt: () => mockUseWaitForTransactionReceipt(),
+}))
+
+import {
+  useLeveragePosition,
+  usePreviewOpenLeverage,
+  useOpenLeverage,
+  useCloseLeverage,
+  useAdjustCollateral,
+} from '../useLeverage'
+
+const MOCK_CHAIN_ID = 1
+const MOCK_ADDRESS = '0x1234567890123456789012345678901234567890' as const
+
+describe('useLeveragePosition', () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+
+    mockUseAccount.mockReturnValue({
+      address: MOCK_ADDRESS,
+      chainId: MOCK_CHAIN_ID,
+    })
+
+    mockUseReadContract.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+    })
+  })
+
+  it('returns position data when available', () => {
+    const positionData = [
+      1000000000000000000n,
+      500000000000000000n,
+      2000000000000000000n,
+    ]
+
+    let readCallCount = 0
+    mockUseReadContract.mockImplementation(() => {
+      readCallCount++
+      if (readCallCount === 1) {
+        return { data: positionData, isLoading: false, error: null, refetch: vi.fn() }
+      }
+      if (readCallCount === 2) {
+        return { data: 1500000000000000000n }
+      }
+      return { data: 900000000000000000n }
+    })
+
+    const { result } = renderHook(() => useLeveragePosition('BEAR'))
+
+    expect(result.current.collateral).toBe(1000000000000000000n)
+    expect(result.current.debt).toBe(500000000000000000n)
+    expect(result.current.leverage).toBe(2000000000000000000n)
+  })
+
+  it('returns default values when no position exists', () => {
+    mockUseReadContract.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+    })
+
+    const { result } = renderHook(() => useLeveragePosition('BULL'))
+
+    expect(result.current.collateral).toBe(0n)
+    expect(result.current.debt).toBe(0n)
+    expect(result.current.leverage).toBe(0n)
+    expect(result.current.healthFactor).toBe(0n)
+    expect(result.current.liquidationPrice).toBe(0n)
+    expect(result.current.hasPosition).toBe(false)
+  })
+
+  it('returns hasPosition true when collateral > 0', () => {
+    mockUseReadContract.mockReturnValue({
+      data: [1000000000000000000n, 0n, 0n],
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+    })
+
+    const { result } = renderHook(() => useLeveragePosition('BEAR'))
+
+    expect(result.current.hasPosition).toBe(true)
+  })
+
+  it('returns loading state', () => {
+    mockUseReadContract.mockReturnValue({
+      data: undefined,
+      isLoading: true,
+      error: null,
+      refetch: vi.fn(),
+    })
+
+    const { result } = renderHook(() => useLeveragePosition('BEAR'))
+
+    expect(result.current.isLoading).toBe(true)
+  })
+})
+
+describe('usePreviewOpenLeverage', () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+
+    mockUseAccount.mockReturnValue({
+      address: MOCK_ADDRESS,
+      chainId: MOCK_CHAIN_ID,
+    })
+
+    mockUseReadContract.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+    })
+  })
+
+  it('returns preview data when available', () => {
+    const previewData = [
+      2000000000000000000n,
+      1000000000000000000n,
+      800000000000000000n,
+    ]
+
+    mockUseReadContract.mockReturnValue({
+      data: previewData,
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+    })
+
+    const { result } = renderHook(() =>
+      usePreviewOpenLeverage('BEAR', 1000000000000000000n, 2000000000000000000n)
+    )
+
+    expect(result.current.positionSize).toBe(2000000000000000000n)
+    expect(result.current.debt).toBe(1000000000000000000n)
+    expect(result.current.liquidationPrice).toBe(800000000000000000n)
+  })
+
+  it('returns default values when no data', () => {
+    mockUseReadContract.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+    })
+
+    const { result } = renderHook(() =>
+      usePreviewOpenLeverage('BULL', 1000000000000000000n, 2000000000000000000n)
+    )
+
+    expect(result.current.positionSize).toBe(0n)
+    expect(result.current.debt).toBe(0n)
+    expect(result.current.liquidationPrice).toBe(0n)
+  })
+})
+
+describe('useOpenLeverage', () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+    useTransactionStore.setState({ pendingTransactions: [] })
+
+    mockUseAccount.mockReturnValue({
+      address: MOCK_ADDRESS,
+      chainId: MOCK_CHAIN_ID,
+    })
+
+    mockUseWriteContract.mockReturnValue({
+      writeContract: mockWriteContract,
+      data: undefined,
+      isPending: false,
+      error: null,
+      reset: mockReset,
+    })
+
+    mockUseWaitForTransactionReceipt.mockReturnValue({
+      isLoading: false,
+      isSuccess: false,
+      isError: false,
+    })
+  })
+
+  it('adds pending transaction when openPosition is called', async () => {
+    mockWriteContract.mockImplementation((_, callbacks) => {
+      callbacks.onSuccess('0xhash')
+    })
+
+    const { result } = renderHook(() => useOpenLeverage('BEAR'))
+    const deadline = BigInt(Math.floor(Date.now() / 1000) + 3600)
+
+    await act(async () => {
+      await result.current.openPosition(1000000000000000000n, 2000000000000000000n, 100n, deadline)
+    })
+
+    const { pendingTransactions } = useTransactionStore.getState()
+    expect(pendingTransactions).toHaveLength(1)
+    expect(pendingTransactions[0].type).toBe('leverage')
+    expect(pendingTransactions[0].description).toBe('Opening BEAR leverage position')
+  })
+
+  it('returns Result.ok with hash on success', async () => {
+    mockWriteContract.mockImplementation((_, callbacks) => {
+      callbacks.onSuccess('0xleveragehash')
+    })
+
+    const { result } = renderHook(() => useOpenLeverage('BULL'))
+    const deadline = BigInt(Math.floor(Date.now() / 1000) + 3600)
+    let leverageResult: Result<`0x${string}`, LeverageError> | undefined
+
+    await act(async () => {
+      leverageResult = await result.current.openPosition(
+        1000000000000000000n,
+        2000000000000000000n,
+        100n,
+        deadline
+      )
+    })
+
+    expect(leverageResult).toBeDefined()
+    expect(Result.isOk(leverageResult!)).toBe(true)
+    if (Result.isOk(leverageResult!)) {
+      expect(leverageResult.value).toBe('0xleveragehash')
+    }
+  })
+
+  it('returns NotConnectedError when chainId is missing', async () => {
+    mockUseAccount.mockReturnValue({
+      address: MOCK_ADDRESS,
+      chainId: undefined,
+    })
+
+    const { result } = renderHook(() => useOpenLeverage('BEAR'))
+    const deadline = BigInt(Math.floor(Date.now() / 1000) + 3600)
+    let leverageResult: Result<`0x${string}`, LeverageError> | undefined
+
+    await act(async () => {
+      leverageResult = await result.current.openPosition(
+        1000000000000000000n,
+        2000000000000000000n,
+        100n,
+        deadline
+      )
+    })
+
+    expect(leverageResult).toBeDefined()
+    expect(Result.isError(leverageResult!)).toBe(true)
+    if (Result.isError(leverageResult!)) {
+      expect(leverageResult.error._tag).toBe('NotConnectedError')
+    }
+  })
+
+  it('returns Result.err when writeContract fails', async () => {
+    mockWriteContract.mockImplementation((_, callbacks) => {
+      callbacks.onError(new Error('User rejected'))
+    })
+
+    const { result } = renderHook(() => useOpenLeverage('BEAR'))
+    const deadline = BigInt(Math.floor(Date.now() / 1000) + 3600)
+    let leverageResult: Result<`0x${string}`, LeverageError> | undefined
+
+    await act(async () => {
+      leverageResult = await result.current.openPosition(
+        1000000000000000000n,
+        2000000000000000000n,
+        100n,
+        deadline
+      )
+    })
+
+    expect(leverageResult).toBeDefined()
+    expect(Result.isError(leverageResult!)).toBe(true)
+
+    const { pendingTransactions } = useTransactionStore.getState()
+    expect(pendingTransactions[0].status).toBe('failed')
+  })
+
+  it('updates transaction to success when receipt confirms', async () => {
+    mockWriteContract.mockImplementation((_, callbacks) => {
+      callbacks.onSuccess('0xhash')
+    })
+
+    const { result, rerender } = renderHook(() => useOpenLeverage('BEAR'))
+    const deadline = BigInt(Math.floor(Date.now() / 1000) + 3600)
+
+    await act(async () => {
+      await result.current.openPosition(1000000000000000000n, 2000000000000000000n, 100n, deadline)
+    })
+
+    mockUseWaitForTransactionReceipt.mockReturnValue({
+      isLoading: false,
+      isSuccess: true,
+      isError: false,
+    })
+    rerender()
+
+    await waitFor(() => {
+      const { pendingTransactions } = useTransactionStore.getState()
+      expect(pendingTransactions[0].status).toBe('success')
+    })
+  })
+})
+
+describe('useCloseLeverage', () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+    useTransactionStore.setState({ pendingTransactions: [] })
+
+    mockUseAccount.mockReturnValue({
+      address: MOCK_ADDRESS,
+      chainId: MOCK_CHAIN_ID,
+    })
+
+    mockUseWriteContract.mockReturnValue({
+      writeContract: mockWriteContract,
+      data: undefined,
+      isPending: false,
+      error: null,
+      reset: mockReset,
+    })
+
+    mockUseWaitForTransactionReceipt.mockReturnValue({
+      isLoading: false,
+      isSuccess: false,
+      isError: false,
+    })
+  })
+
+  it('adds pending transaction for close position', async () => {
+    mockWriteContract.mockImplementation((_, callbacks) => {
+      callbacks.onSuccess('0xhash')
+    })
+
+    const { result } = renderHook(() => useCloseLeverage('BULL'))
+    const deadline = BigInt(Math.floor(Date.now() / 1000) + 3600)
+
+    await act(async () => {
+      await result.current.closePosition(
+        500000000000000000n,
+        1000000000000000000n,
+        100n,
+        deadline
+      )
+    })
+
+    const { pendingTransactions } = useTransactionStore.getState()
+    expect(pendingTransactions).toHaveLength(1)
+    expect(pendingTransactions[0].type).toBe('leverage')
+    expect(pendingTransactions[0].description).toBe('Closing BULL leverage position')
+  })
+
+  it('returns Result.ok on success', async () => {
+    mockWriteContract.mockImplementation((_, callbacks) => {
+      callbacks.onSuccess('0xclosehash')
+    })
+
+    const { result } = renderHook(() => useCloseLeverage('BEAR'))
+    const deadline = BigInt(Math.floor(Date.now() / 1000) + 3600)
+    let closeResult: Result<`0x${string}`, LeverageError> | undefined
+
+    await act(async () => {
+      closeResult = await result.current.closePosition(
+        500000000000000000n,
+        1000000000000000000n,
+        100n,
+        deadline
+      )
+    })
+
+    expect(closeResult).toBeDefined()
+    expect(Result.isOk(closeResult!)).toBe(true)
+  })
+})
+
+describe('useAdjustCollateral', () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+    useTransactionStore.setState({ pendingTransactions: [] })
+
+    mockUseAccount.mockReturnValue({
+      address: MOCK_ADDRESS,
+      chainId: MOCK_CHAIN_ID,
+    })
+
+    mockUseWriteContract.mockReturnValue({
+      writeContract: mockWriteContract,
+      data: undefined,
+      isPending: false,
+      error: null,
+      reset: mockReset,
+    })
+
+    mockUseWaitForTransactionReceipt.mockReturnValue({
+      isLoading: false,
+      isSuccess: false,
+      isError: false,
+    })
+  })
+
+  it('adds collateral and creates transaction', async () => {
+    mockWriteContract.mockImplementation((_, callbacks) => {
+      callbacks.onSuccess('0xaddcollateralhash')
+    })
+
+    const { result } = renderHook(() => useAdjustCollateral('BEAR'))
+    let adjustResult: Result<`0x${string}`, LeverageError> | undefined
+
+    await act(async () => {
+      adjustResult = await result.current.addCollateral(500000000000000000n)
+    })
+
+    expect(adjustResult).toBeDefined()
+    expect(Result.isOk(adjustResult!)).toBe(true)
+
+    const { pendingTransactions } = useTransactionStore.getState()
+    expect(pendingTransactions[0].description).toBe('Adding collateral')
+  })
+
+  it('removes collateral and creates transaction', async () => {
+    mockWriteContract.mockImplementation((_, callbacks) => {
+      callbacks.onSuccess('0xremovecollateralhash')
+    })
+
+    const { result } = renderHook(() => useAdjustCollateral('BULL'))
+    let adjustResult: Result<`0x${string}`, LeverageError> | undefined
+
+    await act(async () => {
+      adjustResult = await result.current.removeCollateral(250000000000000000n)
+    })
+
+    expect(adjustResult).toBeDefined()
+    expect(Result.isOk(adjustResult!)).toBe(true)
+
+    const { pendingTransactions } = useTransactionStore.getState()
+    expect(pendingTransactions[0].description).toBe('Removing collateral')
+  })
+
+  it('returns NotConnectedError when chainId is missing for addCollateral', async () => {
+    mockUseAccount.mockReturnValue({
+      address: MOCK_ADDRESS,
+      chainId: undefined,
+    })
+
+    const { result } = renderHook(() => useAdjustCollateral('BEAR'))
+    let adjustResult: Result<`0x${string}`, LeverageError> | undefined
+
+    await act(async () => {
+      adjustResult = await result.current.addCollateral(500000000000000000n)
+    })
+
+    expect(adjustResult).toBeDefined()
+    expect(Result.isError(adjustResult!)).toBe(true)
+    if (Result.isError(adjustResult!)) {
+      expect(adjustResult.error._tag).toBe('NotConnectedError')
+    }
+  })
+
+  it('returns NotConnectedError when chainId is missing for removeCollateral', async () => {
+    mockUseAccount.mockReturnValue({
+      address: MOCK_ADDRESS,
+      chainId: undefined,
+    })
+
+    const { result } = renderHook(() => useAdjustCollateral('BULL'))
+    let adjustResult: Result<`0x${string}`, LeverageError> | undefined
+
+    await act(async () => {
+      adjustResult = await result.current.removeCollateral(250000000000000000n)
+    })
+
+    expect(adjustResult).toBeDefined()
+    expect(Result.isError(adjustResult!)).toBe(true)
+    if (Result.isError(adjustResult!)) {
+      expect(adjustResult.error._tag).toBe('NotConnectedError')
+    }
+  })
+
+  it('handles writeContract failure for addCollateral', async () => {
+    mockWriteContract.mockImplementation((_, callbacks) => {
+      callbacks.onError(new Error('Insufficient funds'))
+    })
+
+    const { result } = renderHook(() => useAdjustCollateral('BEAR'))
+    let adjustResult: Result<`0x${string}`, LeverageError> | undefined
+
+    await act(async () => {
+      adjustResult = await result.current.addCollateral(500000000000000000n)
+    })
+
+    expect(adjustResult).toBeDefined()
+    expect(Result.isError(adjustResult!)).toBe(true)
+
+    const { pendingTransactions } = useTransactionStore.getState()
+    expect(pendingTransactions[0].status).toBe('failed')
+  })
+})

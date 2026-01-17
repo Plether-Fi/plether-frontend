@@ -16,7 +16,9 @@
     "test:integration:watch": "vitest --project integration",
     "anvil": "dotenv -- sh -c 'anvil --fork-url $SEPOLIA_RPC_URL --chain-id 31337 --port 8546'",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "test:e2e": "playwright test --config=e2e/playwright.config.ts",
+    "test:e2e:ui": "playwright test --config=e2e/playwright.config.ts --ui"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.16",
