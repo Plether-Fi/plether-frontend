@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { expect, userEvent, within } from 'storybook/test'
 import { TradeCard } from '../components/TradeCard'
 
 interface TradeCardArgs {
@@ -80,4 +81,153 @@ export const LowBalances: Story = {
       bullBalance={toTokenBigint(args.bullBalance)}
     />
   ),
+}
+
+export const BuyBearFlow: Story = {
+  args: {
+    usdcBalance: 10000,
+    bearBalance: 500,
+    bullBalance: 500,
+  },
+  render: (args) => (
+    <TradeCard
+      usdcBalance={toUsdcBigint(args.usdcBalance)}
+      bearBalance={toTokenBigint(args.bearBalance)}
+      bullBalance={toTokenBigint(args.bullBalance)}
+    />
+  ),
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement)
+
+    await step('Verify Buy mode is selected by default', async () => {
+      const buyButton = canvas.getByRole('button', { name: /buy/i })
+      expect(buyButton).toHaveClass('bg-cyber-surface-dark')
+    })
+
+    await step('Select DXY-BEAR token', async () => {
+      const bearButton = canvas.getByRole('button', { name: /dxy-bear/i })
+      await userEvent.click(bearButton)
+      expect(bearButton).toHaveClass('border-cyber-electric-fuchsia')
+    })
+
+    await step('Enter amount to buy', async () => {
+      const input = canvas.getByPlaceholderText('0.00')
+      await userEvent.clear(input)
+      await userEvent.type(input, '100')
+      expect(input).toHaveValue('100')
+    })
+
+    await step('Expand swap details', async () => {
+      const detailsButton = canvas.getByRole('button', { name: /swap details/i })
+      await userEvent.click(detailsButton)
+      expect(canvas.getByText(/route/i)).toBeInTheDocument()
+    })
+  },
+}
+
+export const SellBullFlow: Story = {
+  args: {
+    usdcBalance: 10000,
+    bearBalance: 500,
+    bullBalance: 500,
+  },
+  render: (args) => (
+    <TradeCard
+      usdcBalance={toUsdcBigint(args.usdcBalance)}
+      bearBalance={toTokenBigint(args.bearBalance)}
+      bullBalance={toTokenBigint(args.bullBalance)}
+    />
+  ),
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement)
+
+    await step('Switch to Sell mode', async () => {
+      const sellButton = canvas.getByRole('button', { name: /^sell$/i })
+      await userEvent.click(sellButton)
+      expect(sellButton).toHaveClass('bg-cyber-surface-dark')
+    })
+
+    await step('Select DXY-BULL token', async () => {
+      const bullButton = canvas.getByRole('button', { name: /dxy-bull/i })
+      await userEvent.click(bullButton)
+      expect(bullButton).toHaveClass('border-cyber-neon-green')
+    })
+
+    await step('Enter amount to sell', async () => {
+      const input = canvas.getByPlaceholderText('0.00')
+      await userEvent.clear(input)
+      await userEvent.type(input, '50')
+      expect(input).toHaveValue('50')
+    })
+  },
+}
+
+export const TokenToggle: Story = {
+  args: {
+    usdcBalance: 10000,
+    bearBalance: 500,
+    bullBalance: 500,
+  },
+  render: (args) => (
+    <TradeCard
+      usdcBalance={toUsdcBigint(args.usdcBalance)}
+      bearBalance={toTokenBigint(args.bearBalance)}
+      bullBalance={toTokenBigint(args.bullBalance)}
+    />
+  ),
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement)
+
+    await step('Start with BEAR selected', async () => {
+      const bearButton = canvas.getByRole('button', { name: /dxy-bear/i })
+      expect(bearButton).toHaveClass('border-cyber-electric-fuchsia')
+    })
+
+    await step('Switch to BULL', async () => {
+      const bullButton = canvas.getByRole('button', { name: /dxy-bull/i })
+      await userEvent.click(bullButton)
+      expect(bullButton).toHaveClass('border-cyber-neon-green')
+    })
+
+    await step('Switch back to BEAR', async () => {
+      const bearButton = canvas.getByRole('button', { name: /dxy-bear/i })
+      await userEvent.click(bearButton)
+      expect(bearButton).toHaveClass('border-cyber-electric-fuchsia')
+    })
+  },
+}
+
+export const ModeToggle: Story = {
+  args: {
+    usdcBalance: 10000,
+    bearBalance: 500,
+    bullBalance: 500,
+  },
+  render: (args) => (
+    <TradeCard
+      usdcBalance={toUsdcBigint(args.usdcBalance)}
+      bearBalance={toTokenBigint(args.bearBalance)}
+      bullBalance={toTokenBigint(args.bullBalance)}
+    />
+  ),
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement)
+
+    await step('Start in Buy mode', async () => {
+      const buyButton = canvas.getByRole('button', { name: /^buy$/i })
+      expect(buyButton).toHaveClass('bg-cyber-surface-dark')
+    })
+
+    await step('Switch to Sell mode', async () => {
+      const sellButton = canvas.getByRole('button', { name: /^sell$/i })
+      await userEvent.click(sellButton)
+      expect(sellButton).toHaveClass('bg-cyber-surface-dark')
+    })
+
+    await step('Switch back to Buy mode', async () => {
+      const buyButton = canvas.getByRole('button', { name: /^buy$/i })
+      await userEvent.click(buyButton)
+      expect(buyButton).toHaveClass('bg-cyber-surface-dark')
+    })
+  },
 }
