@@ -178,9 +178,9 @@ export const TokenToggle: Story = {
   play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement)
 
-    await step('Start with BEAR selected', async () => {
-      const bearButton = canvas.getByRole('button', { name: /dxy-bear/i })
-      expect(bearButton).toHaveClass('border-cyber-electric-fuchsia')
+    await step('Start with BULL selected', async () => {
+      const bullButton = canvas.getByRole('button', { name: /dxy-bull/i })
+      expect(bullButton).toHaveClass('border-cyber-neon-green')
     })
 
     await step('Switch to BULL', async () => {

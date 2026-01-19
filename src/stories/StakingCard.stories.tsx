@@ -63,8 +63,8 @@ export const BullStaking: Story = {
 export const BothCards: Story = {
   render: () => (
     <div className="grid grid-cols-2 gap-6 max-w-4xl">
-      <StakingCard side="BEAR" tokenBalance={toTokenBigint(5000)} />
       <StakingCard side="BULL" tokenBalance={toTokenBigint(7500)} />
+      <StakingCard side="BEAR" tokenBalance={toTokenBigint(5000)} />
     </div>
   ),
 }

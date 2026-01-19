@@ -130,15 +130,15 @@ export function Mint() {
                 <p className="text-sm text-cyber-text-secondary">You will receive:</p>
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
-                    <TokenIcon side="BEAR" size="sm" />
-                    <span className="text-cyber-electric-fuchsia font-medium">DXY-BEAR</span>
+                    <TokenIcon side="BULL" size="sm" />
+                    <span className="text-cyber-neon-green font-medium">DXY-BULL</span>
                   </div>
                   <span className="text-cyber-text-primary font-semibold">{inputAmount || '0'}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
-                    <TokenIcon side="BULL" size="sm" />
-                    <span className="text-cyber-neon-green font-medium">DXY-BULL</span>
+                    <TokenIcon side="BEAR" size="sm" />
+                    <span className="text-cyber-electric-fuchsia font-medium">DXY-BEAR</span>
                   </div>
                   <span className="text-cyber-text-primary font-semibold">{inputAmount || '0'}</span>
                 </div>
@@ -182,17 +182,17 @@ export function Mint() {
                 <p className="text-sm text-cyber-text-secondary">Your balances:</p>
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
-                    <TokenIcon side="BEAR" size="sm" />
-                    <span className="text-cyber-electric-fuchsia font-medium">DXY-BEAR</span>
-                  </div>
-                  <span className="text-cyber-text-primary font-semibold">{formatAmount(bearBalance, 18)}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-2">
                     <TokenIcon side="BULL" size="sm" />
                     <span className="text-cyber-neon-green font-medium">DXY-BULL</span>
                   </div>
                   <span className="text-cyber-text-primary font-semibold">{formatAmount(bullBalance, 18)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <TokenIcon side="BEAR" size="sm" />
+                    <span className="text-cyber-electric-fuchsia font-medium">DXY-BEAR</span>
+                  </div>
+                  <span className="text-cyber-text-primary font-semibold">{formatAmount(bearBalance, 18)}</span>
                 </div>
               </div>
 

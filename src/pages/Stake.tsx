@@ -17,12 +17,12 @@ export function Stake() {
       {isConnected ? (
         <div className="grid md:grid-cols-2 gap-6">
           <StakingCard
-            side="BEAR"
-            tokenBalance={bearBalance}
-          />
-          <StakingCard
             side="BULL"
             tokenBalance={bullBalance}
+          />
+          <StakingCard
+            side="BEAR"
+            tokenBalance={bearBalance}
           />
         </div>
       ) : (

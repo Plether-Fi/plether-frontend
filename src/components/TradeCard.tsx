@@ -27,7 +27,7 @@ export function TradeCard({ usdcBalance, bearBalance, bullBalance, refetchBalanc
   const txModal = useTransactionModal()
 
   const [mode, setMode] = useState<TradeMode>('buy')
-  const [selectedToken, setSelectedToken] = useState<TokenSide>('BEAR')
+  const [selectedToken, setSelectedToken] = useState<TokenSide>('BULL')
   const [inputAmount, setInputAmount] = useState('')
   const [showPriceImpactWarning, setShowPriceImpactWarning] = useState(false)
   const [showDetails, setShowDetails] = useState(false)
@@ -251,17 +251,6 @@ export function TradeCard({ usdcBalance, bearBalance, bullBalance, refetchBalanc
         <label className="text-sm font-medium text-cyber-text-secondary">Select Token</label>
         <div className="grid grid-cols-2 gap-4">
           <button
-            onClick={() => { setSelectedToken('BEAR'); }}
-            className={`relative p-4 text-center transition-all ${
-              selectedToken === 'BEAR'
-                ? 'border-2 border-cyber-electric-fuchsia bg-cyber-electric-fuchsia/10 shadow-md shadow-cyber-electric-fuchsia/20'
-                : 'border border-cyber-border-glow/30 bg-cyber-surface-dark hover:border-cyber-electric-fuchsia/50 opacity-60 hover:opacity-100'
-            }`}
-          >
-            <div className={`font-semibold ${selectedToken === 'BEAR' ? 'text-cyber-electric-fuchsia' : 'text-cyber-text-primary'}`}>DXY-BEAR</div>
-            <div className={`text-xs mt-1 ${selectedToken === 'BEAR' ? 'text-cyber-electric-fuchsia/70' : 'text-cyber-text-secondary'}`}>Bearish on USD</div>
-          </button>
-          <button
             onClick={() => { setSelectedToken('BULL'); }}
             className={`relative p-4 text-center transition-all ${
               selectedToken === 'BULL'
@@ -271,6 +260,17 @@ export function TradeCard({ usdcBalance, bearBalance, bullBalance, refetchBalanc
           >
             <div className={`font-semibold ${selectedToken === 'BULL' ? 'text-cyber-neon-green' : 'text-cyber-text-primary'}`}>DXY-BULL</div>
             <div className={`text-xs mt-1 ${selectedToken === 'BULL' ? 'text-cyber-neon-green/70' : 'text-cyber-text-secondary'}`}>Bullish on USD</div>
+          </button>
+          <button
+            onClick={() => { setSelectedToken('BEAR'); }}
+            className={`relative p-4 text-center transition-all ${
+              selectedToken === 'BEAR'
+                ? 'border-2 border-cyber-electric-fuchsia bg-cyber-electric-fuchsia/10 shadow-md shadow-cyber-electric-fuchsia/20'
+                : 'border border-cyber-border-glow/30 bg-cyber-surface-dark hover:border-cyber-electric-fuchsia/50 opacity-60 hover:opacity-100'
+            }`}
+          >
+            <div className={`font-semibold ${selectedToken === 'BEAR' ? 'text-cyber-electric-fuchsia' : 'text-cyber-text-primary'}`}>DXY-BEAR</div>
+            <div className={`text-xs mt-1 ${selectedToken === 'BEAR' ? 'text-cyber-electric-fuchsia/70' : 'text-cyber-text-secondary'}`}>Bearish on USD</div>
           </button>
         </div>
       </div>

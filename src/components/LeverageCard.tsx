@@ -20,7 +20,7 @@ export function LeverageCard({ usdcBalance, refetchBalances }: LeverageCardProps
   const addresses = getAddresses(chainId ?? DEFAULT_CHAIN_ID)
   const slippage = useSettingsStore((s) => s.slippage)
 
-  const [selectedSide, setSelectedSide] = useState<TokenSide>('BEAR')
+  const [selectedSide, setSelectedSide] = useState<TokenSide>('BULL')
   const [collateralAmount, setCollateralAmount] = useState('')
   const [leverage, setLeverage] = useState(2)
 
@@ -96,17 +96,6 @@ export function LeverageCard({ usdcBalance, refetchBalances }: LeverageCardProps
         <label className="text-sm font-medium text-cyber-text-secondary">Position Side</label>
         <div className="grid grid-cols-2 gap-4">
           <button
-            onClick={() => { setSelectedSide('BEAR'); }}
-            className={`relative p-4 text-center transition-all ${
-              selectedSide === 'BEAR'
-                ? 'border-2 border-cyber-electric-fuchsia bg-cyber-electric-fuchsia/10 shadow-md shadow-cyber-electric-fuchsia/20'
-                : 'border border-cyber-border-glow/30 bg-cyber-surface-dark hover:border-cyber-electric-fuchsia/50 opacity-60 hover:opacity-100'
-            }`}
-          >
-            <div className={`font-semibold ${selectedSide === 'BEAR' ? 'text-cyber-electric-fuchsia' : 'text-cyber-text-primary'}`}>DXY-BEAR</div>
-            <div className={`text-xs mt-1 ${selectedSide === 'BEAR' ? 'text-cyber-electric-fuchsia/70' : 'text-cyber-text-secondary'}`}>Bearish on USD</div>
-          </button>
-          <button
             onClick={() => { setSelectedSide('BULL'); }}
             className={`relative p-4 text-center transition-all ${
               selectedSide === 'BULL'
@@ -116,6 +105,17 @@ export function LeverageCard({ usdcBalance, refetchBalances }: LeverageCardProps
           >
             <div className={`font-semibold ${selectedSide === 'BULL' ? 'text-cyber-neon-green' : 'text-cyber-text-primary'}`}>DXY-BULL</div>
             <div className={`text-xs mt-1 ${selectedSide === 'BULL' ? 'text-cyber-neon-green/70' : 'text-cyber-text-secondary'}`}>Bullish on USD</div>
+          </button>
+          <button
+            onClick={() => { setSelectedSide('BEAR'); }}
+            className={`relative p-4 text-center transition-all ${
+              selectedSide === 'BEAR'
+                ? 'border-2 border-cyber-electric-fuchsia bg-cyber-electric-fuchsia/10 shadow-md shadow-cyber-electric-fuchsia/20'
+                : 'border border-cyber-border-glow/30 bg-cyber-surface-dark hover:border-cyber-electric-fuchsia/50 opacity-60 hover:opacity-100'
+            }`}
+          >
+            <div className={`font-semibold ${selectedSide === 'BEAR' ? 'text-cyber-electric-fuchsia' : 'text-cyber-text-primary'}`}>DXY-BEAR</div>
+            <div className={`text-xs mt-1 ${selectedSide === 'BEAR' ? 'text-cyber-electric-fuchsia/70' : 'text-cyber-text-secondary'}`}>Bearish on USD</div>
           </button>
         </div>
       </div>
