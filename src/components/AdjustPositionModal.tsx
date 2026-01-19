@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAccount } from 'wagmi'
 import { parseUnits } from 'viem'
 import { Modal } from './ui'
-import { useAdjustCollateral, useAllowance, useApprove, useTokenBalances } from '../hooks'
+import { useAdjustCollateral, useApprovalFlow, useTokenBalances } from '../hooks'
 import { getAddresses, DEFAULT_CHAIN_ID } from '../contracts/addresses'
 import { formatAmount } from '../utils/formatters'
 import type { LeveragePosition } from '../types'
@@ -20,32 +20,24 @@ export function AdjustPositionModal({ isOpen, onClose, position, onSuccess }: Ad
 
   const [action, setAction] = useState<'add' | 'remove'>('add')
   const [amount, setAmount] = useState('')
-  const [pendingAction, setPendingAction] = useState(false)
-  const pendingAmountRef = useRef<bigint>(0n)
-  const approveHandledRef = useRef(false)
 
   const { usdcBalance } = useTokenBalances()
   const amountBigInt = amount ? parseUnits(amount, 6) : 0n
 
   const routerAddress = position.side === 'BEAR' ? addresses.LEVERAGE_ROUTER : addresses.BULL_LEVERAGE_ROUTER
   const { addCollateral, removeCollateral, isPending, isSuccess, reset } = useAdjustCollateral(position.side)
-  const { allowance, refetch: refetchAllowance } = useAllowance(addresses.USDC, routerAddress)
-  const { approve, isPending: approvePending, isSuccess: approveSuccess } = useApprove(addresses.USDC, routerAddress)
 
-  const needsApproval = action === 'add' && amountBigInt > 0n && allowance < amountBigInt
+  const {
+    execute: executeWithApproval,
+    needsApproval,
+    isApproving,
+    approvePending,
+  } = useApprovalFlow({
+    tokenAddress: addresses.USDC,
+    spenderAddress: routerAddress,
+  })
+
   const insufficientBalance = action === 'add' && amountBigInt > usdcBalance
-
-  useEffect(() => {
-    if (approveSuccess && !approveHandledRef.current) {
-      approveHandledRef.current = true
-      void refetchAllowance()
-      if (pendingAction && pendingAmountRef.current > 0n) {
-        void addCollateral(pendingAmountRef.current)
-        pendingAmountRef.current = 0n
-        setPendingAction(false)
-      }
-    }
-  }, [approveSuccess, refetchAllowance, pendingAction, addCollateral])
 
   useEffect(() => {
     if (isSuccess) {
@@ -56,19 +48,15 @@ export function AdjustPositionModal({ isOpen, onClose, position, onSuccess }: Ad
     }
   }, [isSuccess, onSuccess, reset, onClose])
 
+  const executeAddCollateral = useCallback(async (amt: bigint) => {
+    await addCollateral(amt)
+  }, [addCollateral])
+
   const handleConfirm = async () => {
     if (!amountBigInt || amountBigInt <= 0n) return
 
-    approveHandledRef.current = false
-
     if (action === 'add') {
-      if (needsApproval) {
-        pendingAmountRef.current = amountBigInt
-        setPendingAction(true)
-        await approve(amountBigInt)
-        return
-      }
-      await addCollateral(amountBigInt)
+      await executeWithApproval(amountBigInt, executeAddCollateral)
     } else {
       await removeCollateral(amountBigInt)
     }
@@ -78,11 +66,11 @@ export function AdjustPositionModal({ isOpen, onClose, position, onSuccess }: Ad
     if (isPending) return action === 'add' ? 'Adding...' : 'Removing...'
     if (approvePending) return 'Approving USDC...'
     if (insufficientBalance) return 'Insufficient USDC'
-    if (needsApproval) return 'Approve USDC'
+    if (action === 'add' && needsApproval(amountBigInt)) return 'Approve USDC'
     return `Confirm ${action === 'add' ? 'Add' : 'Remove'}`
   }
 
-  const isActionPending = isPending || approvePending
+  const isActionPending = isPending || isApproving
   const isDisabled = !amount || parseFloat(amount) <= 0 || isActionPending || insufficientBalance
 
   return (

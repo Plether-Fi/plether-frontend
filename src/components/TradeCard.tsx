@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAccount } from 'wagmi'
 import { parseUnits } from 'viem'
 import { TokenInput } from './TokenInput'
 import { InfoTooltip, OutputDisplay, Modal, Button } from './ui'
-import { useCurveQuote, useCurveSwap, useZapQuote, useZapSwap, useAllowance, useApprove, useTransactionModal } from '../hooks'
+import { useCurveQuote, useCurveSwap, useZapQuote, useZapSwap, useApprovalFlow, useTransactionModal } from '../hooks'
 import { getAddresses, DEFAULT_CHAIN_ID } from '../contracts/addresses'
 import { useSettingsStore } from '../stores/settingsStore'
 import { formatAmount } from '../utils/formatters'
@@ -31,10 +31,7 @@ export function TradeCard({ usdcBalance, bearBalance, bullBalance, refetchBalanc
   const [inputAmount, setInputAmount] = useState('')
   const [showPriceImpactWarning, setShowPriceImpactWarning] = useState(false)
   const [showDetails, setShowDetails] = useState(false)
-  const [pendingSwap, setPendingSwap] = useState(false)
-  const pendingAmountRef = useRef<bigint>(0n)
-  const approveHandledRef = useRef(false)
-  const swapTriggeredRef = useRef(false)
+  const [isSwapping, setIsSwapping] = useState(false)
 
   const inputToken = mode === 'buy'
     ? { symbol: 'USDC', decimals: 6 }
@@ -82,6 +79,7 @@ export function TradeCard({ usdcBalance, bearBalance, bullBalance, refetchBalanc
     reset: resetCurve,
     hash: curveHash,
   } = useCurveSwap()
+
   const {
     zapBuy,
     zapSell,
@@ -98,19 +96,22 @@ export function TradeCard({ usdcBalance, bearBalance, bullBalance, refetchBalanc
     ? addresses.USDC
     : (selectedToken === 'BEAR' ? addresses.DXY_BEAR : addresses.DXY_BULL)
 
-  const { allowance, refetch: refetchAllowance } = useAllowance(tokenToApprove, spenderAddress)
   const {
-    approve,
-    isPending: approvePending,
-    isConfirming: approveConfirming,
-    isSuccess: approveSuccess,
-    error: approveError,
-  } = useApprove(tokenToApprove, spenderAddress)
+    execute: executeWithApproval,
+    needsApproval,
+    isApproving,
+    approvePending,
+    approveConfirming,
+    approveError,
+  } = useApprovalFlow({
+    tokenAddress: tokenToApprove,
+    spenderAddress,
+  })
 
-  const needsApproval = inputAmountBigInt > 0n && allowance < inputAmountBigInt
   const insufficientBalance = inputAmountBigInt > inputBalance
 
   const executeSwap = useCallback(async (amount: bigint) => {
+    setIsSwapping(true)
     const slippageBps = BigInt(Math.floor(slippage * 100))
     const minAmountOut = quoteAmountOut - (quoteAmountOut * slippageBps / 10000n)
     const deadline = BigInt(Math.floor(Date.now() / 1000) + 1800)
@@ -127,34 +128,20 @@ export function TradeCard({ usdcBalance, bearBalance, bullBalance, refetchBalanc
   }, [slippage, quoteAmountOut, isBearTrade, mode, curveSwap, zapBuy, zapSell])
 
   useEffect(() => {
-    if (approveSuccess && !approveHandledRef.current) {
-      approveHandledRef.current = true
-      void refetchAllowance()
-      if (pendingSwap && pendingAmountRef.current > 0n) {
-        swapTriggeredRef.current = true
-        void executeSwap(pendingAmountRef.current)
-        pendingAmountRef.current = 0n
-        setPendingSwap(false)
-      }
-    }
-  }, [approveSuccess, refetchAllowance, pendingSwap, executeSwap])
-
-  useEffect(() => {
     if (curveSuccess || zapSuccess) {
       const hash = curveHash ?? zapHash
       if (hash) txModal.setSuccess(hash)
       refetchBalances?.()
       setInputAmount('')
+      setIsSwapping(false)
       resetCurve()
       resetZap()
-      swapTriggeredRef.current = false
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [curveSuccess, zapSuccess, curveHash, zapHash, refetchBalances, resetCurve, resetZap])
+  }, [curveSuccess, zapSuccess, curveHash, zapHash, refetchBalances, resetCurve, resetZap, txModal])
 
   useEffect(() => {
     const modal = useTransactionModal.getState()
-    if (!modal.isOpen) return
+    if (!modal.isOpen || !isApproving) return
 
     if (approvePending) {
       modal.setStepInProgress(0)
@@ -163,57 +150,46 @@ export function TradeCard({ usdcBalance, bearBalance, bullBalance, refetchBalanc
     } else if (approveError) {
       modal.setError(0, getErrorMessage(parseTransactionError(approveError)))
     }
-  }, [approvePending, approveConfirming, approveError])
+  }, [isApproving, approvePending, approveConfirming, approveError])
 
   useEffect(() => {
     const modal = useTransactionModal.getState()
-    if (!modal.isOpen || !swapTriggeredRef.current) return
-    const swapStepOffset = pendingSwap || approveSuccess ? 2 : 0
+    if (!modal.isOpen || !isSwapping) return
+    const stepOffset = needsApproval(inputAmountBigInt) ? 2 : 0
 
     if (curvePending || zapPending) {
-      modal.setStepInProgress(swapStepOffset)
+      modal.setStepInProgress(stepOffset)
     } else if (curveConfirming || zapConfirming) {
-      modal.setStepInProgress(swapStepOffset + 1)
+      modal.setStepInProgress(stepOffset + 1)
     } else if (curveError || zapError) {
-      modal.setError(swapStepOffset, getErrorMessage(parseTransactionError(curveError ?? zapError)))
+      modal.setError(stepOffset, getErrorMessage(parseTransactionError(curveError ?? zapError)))
+      setIsSwapping(false)
     }
-  }, [curvePending, zapPending, curveConfirming, zapConfirming, curveError, zapError, pendingSwap, approveSuccess])
+  }, [isSwapping, curvePending, zapPending, curveConfirming, zapConfirming, curveError, zapError, needsApproval, inputAmountBigInt])
 
-  const proceedWithSwap = async () => {
-    approveHandledRef.current = false
-    swapTriggeredRef.current = false
-
+  const proceedWithSwap = useCallback(async () => {
     const tokenLabel = `DXY-${selectedToken}`
     const actionLabel = mode === 'buy' ? 'Buying' : 'Selling'
-
-    if (needsApproval) {
-      txModal.open({
-        title: `${actionLabel} ${tokenLabel}`,
-        steps: [
-          `Approve ${inputToken.symbol}`,
-          'Confirming approval',
-          `${mode === 'buy' ? 'Buy' : 'Sell'} ${tokenLabel}`,
-          'Awaiting confirmation',
-        ],
-        onRetry: () => void proceedWithSwap(),
-      })
-      pendingAmountRef.current = inputAmountBigInt
-      setPendingSwap(true)
-      await approve(inputAmountBigInt)
-      return
-    }
+    const requiresApproval = needsApproval(inputAmountBigInt)
 
     txModal.open({
       title: `${actionLabel} ${tokenLabel}`,
-      steps: [
-        `${mode === 'buy' ? 'Buy' : 'Sell'} ${tokenLabel}`,
-        'Awaiting confirmation',
-      ],
+      steps: requiresApproval
+        ? [
+            `Approve ${inputToken.symbol}`,
+            'Confirming approval',
+            `${mode === 'buy' ? 'Buy' : 'Sell'} ${tokenLabel}`,
+            'Awaiting confirmation',
+          ]
+        : [
+            `${mode === 'buy' ? 'Buy' : 'Sell'} ${tokenLabel}`,
+            'Awaiting confirmation',
+          ],
       onRetry: () => void proceedWithSwap(),
     })
-    swapTriggeredRef.current = true
-    await executeSwap(inputAmountBigInt)
-  }
+
+    await executeWithApproval(inputAmountBigInt, executeSwap)
+  }, [selectedToken, mode, needsApproval, inputAmountBigInt, inputToken.symbol, txModal, executeWithApproval, executeSwap])
 
   const handleSwap = async () => {
     if (!inputAmountBigInt || inputAmountBigInt <= 0n) return
@@ -235,11 +211,11 @@ export function TradeCard({ usdcBalance, bearBalance, bullBalance, refetchBalanc
     if (curvePending || zapPending) return 'Swapping...'
     if (approvePending) return `Approving ${inputToken.symbol}...`
     if (insufficientBalance) return `Insufficient ${inputToken.symbol}`
-    if (needsApproval) return `Approve ${inputToken.symbol}`
+    if (needsApproval(inputAmountBigInt)) return `Approve ${inputToken.symbol}`
     return `${mode === 'buy' ? 'Buy' : 'Sell'} DXY-${selectedToken}`
   }
 
-  const isPending = curvePending || zapPending || approvePending
+  const isPending = curvePending || zapPending || isApproving
   const isDisabled = !inputAmount || parseFloat(inputAmount) <= 0 || isPending || insufficientBalance
 
   const outputDisplay = isQuoteLoading && inputAmountBigInt > 0n

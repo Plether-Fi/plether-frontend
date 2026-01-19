@@ -33,3 +33,4 @@ export {
 } from './useLeverage'
 export { useBasketOraclePrice } from './useBasketOracle'
 export { useTransactionModal } from './useTransactionModal'
+export { useApprovalFlow } from './useApprovalFlow'

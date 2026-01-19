@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAccount } from 'wagmi'
 import { parseUnits, formatUnits } from 'viem'
 import { InfoTooltip } from './ui'
 import { TokenInput } from './TokenInput'
 import { formatUsd } from '../utils/formatters'
-import { usePreviewOpenLeverage, useOpenLeverage, useAllowance, useApprove } from '../hooks'
+import { usePreviewOpenLeverage, useOpenLeverage, useApprovalFlow } from '../hooks'
 import { getAddresses, DEFAULT_CHAIN_ID } from '../contracts/addresses'
 import { useSettingsStore } from '../stores/settingsStore'
 
@@ -23,9 +23,6 @@ export function LeverageCard({ usdcBalance, refetchBalances }: LeverageCardProps
   const [selectedSide, setSelectedSide] = useState<TokenSide>('BEAR')
   const [collateralAmount, setCollateralAmount] = useState('')
   const [leverage, setLeverage] = useState(2)
-  const [pendingOpen, setPendingOpen] = useState(false)
-  const pendingAmountRef = useRef<bigint>(0n)
-  const approveHandledRef = useRef(false)
 
   const collateralBigInt = collateralAmount ? parseUnits(collateralAmount, 6) : 0n
   const leverageBps = BigInt(Math.floor(leverage * 100))
@@ -36,13 +33,20 @@ export function LeverageCard({ usdcBalance, refetchBalances }: LeverageCardProps
     leverageBps
   )
 
-  const { openPosition, isPending, isSuccess, reset } = useOpenLeverage(selectedSide)
+  const { openPosition, isPending: positionPending, isSuccess, reset } = useOpenLeverage(selectedSide)
 
   const routerAddress = selectedSide === 'BEAR' ? addresses.LEVERAGE_ROUTER : addresses.BULL_LEVERAGE_ROUTER
-  const { allowance, refetch: refetchAllowance } = useAllowance(addresses.USDC, routerAddress)
-  const { approve, isPending: approvePending, isSuccess: approveSuccess } = useApprove(addresses.USDC, routerAddress)
 
-  const needsApproval = collateralBigInt > 0n && allowance < collateralBigInt
+  const {
+    execute: executeWithApproval,
+    needsApproval,
+    isApproving,
+    approvePending,
+  } = useApprovalFlow({
+    tokenAddress: addresses.USDC,
+    spenderAddress: routerAddress,
+  })
+
   const insufficientBalance = collateralBigInt > usdcBalance
 
   const executeOpenPosition = useCallback(async (amount: bigint) => {
@@ -50,18 +54,6 @@ export function LeverageCard({ usdcBalance, refetchBalances }: LeverageCardProps
     const deadline = BigInt(Math.floor(Date.now() / 1000) + 1800)
     await openPosition(amount, leverageBps, slippageBps, deadline)
   }, [slippage, leverageBps, openPosition])
-
-  useEffect(() => {
-    if (approveSuccess && !approveHandledRef.current) {
-      approveHandledRef.current = true
-      void refetchAllowance()
-      if (pendingOpen && pendingAmountRef.current > 0n) {
-        void executeOpenPosition(pendingAmountRef.current)
-        pendingAmountRef.current = 0n
-        setPendingOpen(false)
-      }
-    }
-  }, [approveSuccess, refetchAllowance, pendingOpen, executeOpenPosition])
 
   useEffect(() => {
     if (isSuccess) {
@@ -74,28 +66,18 @@ export function LeverageCard({ usdcBalance, refetchBalances }: LeverageCardProps
 
   const handleOpenPosition = async () => {
     if (!collateralBigInt || collateralBigInt <= 0n) return
-
-    approveHandledRef.current = false
-
-    if (needsApproval) {
-      pendingAmountRef.current = collateralBigInt
-      setPendingOpen(true)
-      await approve(collateralBigInt)
-      return
-    }
-
-    await executeOpenPosition(collateralBigInt)
+    await executeWithApproval(collateralBigInt, executeOpenPosition)
   }
 
   const getButtonText = () => {
-    if (isPending) return 'Opening Position...'
+    if (positionPending) return 'Opening Position...'
     if (approvePending) return 'Approving USDC...'
     if (insufficientBalance) return 'Insufficient USDC'
-    if (needsApproval) return 'Approve USDC'
+    if (needsApproval(collateralBigInt)) return 'Approve USDC'
     return `Open ${selectedSide} Position`
   }
 
-  const isActionPending = isPending || approvePending
+  const isActionPending = positionPending || isApproving
   const isDisabled = !collateralAmount || parseFloat(collateralAmount) <= 0 || isActionPending || insufficientBalance
 
   const collateralNum = parseFloat(collateralAmount) || 0
