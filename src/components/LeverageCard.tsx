@@ -175,7 +175,7 @@ export function LeverageCard({ usdcBalance, refetchBalances }: LeverageCardProps
         <input
           type="range"
           min="1.1"
-          max="5"
+          max="10"
           step="0.1"
           value={leverage}
           onChange={(e) => { setLeverage(parseFloat(e.target.value)); }}
@@ -183,7 +183,7 @@ export function LeverageCard({ usdcBalance, refetchBalances }: LeverageCardProps
         />
         <div className="flex justify-between text-xs text-cyber-text-secondary mt-1">
           <span>1.1x</span>
-          <span>5x</span>
+          <span>10x</span>
         </div>
       </div>
 
