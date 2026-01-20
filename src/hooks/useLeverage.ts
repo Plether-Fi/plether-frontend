@@ -2,7 +2,7 @@ import { useAccount, useReadContract, useWriteContract, useWaitForTransactionRec
 import { useRef, useEffect, useMemo } from 'react'
 import { zeroAddress, keccak256, encodeAbiParameters } from 'viem'
 import { Result } from 'better-result'
-import { LEVERAGE_ROUTER_ABI, MORPHO_ABI } from '../contracts/abis'
+import { LEVERAGE_ROUTER_ABI, MORPHO_ABI, PLETH_CORE_ABI, BASKET_ORACLE_ABI } from '../contracts/abis'
 import { getAddresses } from '../contracts/addresses'
 import { useTransactionStore } from '../stores/transactionStore'
 import {
@@ -80,29 +80,52 @@ export function useLeveragePosition(side: 'BEAR' | 'BULL') {
     },
   })
 
-  // Collateral is the third field in Morpho position struct
+  // Get token price for proper USD calculation
+  const { data: roundData } = useReadContract({
+    address: addresses?.BASKET_ORACLE,
+    abi: BASKET_ORACLE_ABI,
+    functionName: 'latestRoundData',
+    query: {
+      enabled: !!addresses,
+    },
+  })
+
+  const { data: cap } = useReadContract({
+    address: addresses?.SYNTHETIC_SPLITTER,
+    abi: PLETH_CORE_ABI,
+    functionName: 'CAP',
+    query: {
+      enabled: !!addresses,
+    },
+  })
+
+  // Calculate token price: BEAR = CAP - oracle, BULL = oracle (8 decimals)
+  const oraclePrice = roundData?.[1] ?? 0n
+  const capValue = cap ?? 0n
+  const tokenPrice = side === 'BEAR'
+    ? (capValue > oraclePrice ? capValue - oraclePrice : 0n)
+    : oraclePrice
+
+  // Collateral is the third field in Morpho position struct (staked token units, 21 decimals)
   const collateral = morphoPosition?.[2] ?? 0n
   const actualDebt = debt ?? 0n
   const hasPosition = collateral > 0n
 
-  // Calculate leverage: (collateral + debt) / collateral * 100 (as percentage points)
-  // e.g., 2x leverage = 200
-  const leverage = hasPosition && collateral > 0n
-    ? ((collateral + actualDebt) * 100n) / collateral
+  // Calculate collateral USD value: shares * price / 10^23 (gives 6-decimal USDC)
+  // Shares have 21 effective decimals (18 + 1000x offset), price has 8 decimals
+  const collateralUsdc = collateral * tokenPrice / 10n ** 23n
+  const equity = collateralUsdc > actualDebt ? collateralUsdc - actualDebt : 1n
+  const leverage = hasPosition && equity > 0n
+    ? (collateralUsdc * 100n) / equity
     : 0n
 
-  // Debug logging
   console.log(`[useLeveragePosition ${side}]`, {
-    routerAddress,
-    morphoAddress,
-    marketParams,
-    marketId,
-    morphoPosition,
-    debt,
     collateral: collateral.toString(),
-    actualDebt: actualDebt.toString(),
-    hasPosition,
-    error,
+    tokenPrice: tokenPrice.toString(),
+    collateralUsdc: collateralUsdc.toString(),
+    debt: actualDebt.toString(),
+    equity: equity.toString(),
+    leverage: leverage.toString(),
   })
 
   return {

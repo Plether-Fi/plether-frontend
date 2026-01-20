@@ -75,6 +75,13 @@ export const PLETH_CORE_ABI = [
     outputs: [{ type: 'address' }],
   },
   {
+    type: 'function',
+    name: 'CAP',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ type: 'uint256' }],
+  },
+  {
     type: 'event',
     name: 'Mint',
     inputs: [

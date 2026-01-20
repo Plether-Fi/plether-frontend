@@ -11,7 +11,10 @@ import { MainTabNav } from '../components/MainTabNav'
 import { ConnectWalletPrompt } from '../components/ConnectWalletPrompt'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { HEALTH_FACTOR_WARNING } from '../config/constants'
-import { useTokenBalances, useLeveragePosition, useCloseLeverage, useStakedBalance } from '../hooks'
+import { useTokenBalances, useLeveragePosition, useStakedBalance, useTokenPrices, useTransactionSequence, type TransactionStep } from '../hooks'
+import { useWriteContract } from 'wagmi'
+import { LEVERAGE_ROUTER_ABI } from '../contracts/abis'
+import { getAddresses, DEFAULT_CHAIN_ID } from '../contracts/addresses'
 import { useSettingsStore } from '../stores/settingsStore'
 import type { LeveragePosition } from '../types'
 
@@ -46,39 +49,67 @@ export function Dashboard() {
   const { assets: stakedBearAssets, isLoading: stakedBearLoading } = useStakedBalance('BEAR')
   const { assets: stakedBullAssets, isLoading: stakedBullLoading } = useStakedBalance('BULL')
 
+  const { bearPrice, bullPrice } = useTokenPrices()
+
   const bearPosition = useLeveragePosition('BEAR')
   const bullPosition = useLeveragePosition('BULL')
 
   const slippage = useSettingsStore((s) => s.slippage)
-  const { closePosition: closeBearPosition, isPending: bearClosePending } = useCloseLeverage('BEAR')
-  const { closePosition: closeBullPosition, isPending: bullClosePending } = useCloseLeverage('BULL')
+  const { chainId } = useAccount()
+  const addresses = getAddresses(chainId ?? DEFAULT_CHAIN_ID)
+  const { writeContractAsync } = useWriteContract()
+  const closeSequence = useTransactionSequence()
 
-  const handleClosePosition = async (position: LeveragePosition) => {
-    const slippageBps = BigInt(Math.floor(slippage * 100))
-    const deadline = BigInt(Math.floor(Date.now() / 1000) + 1800)
+  const handleClosePosition = (position: LeveragePosition) => {
+    const collateralToClose = position.side === 'BEAR' ? bearPosition.collateral : bullPosition.collateral
+    const routerAddress = position.side === 'BEAR' ? addresses.LEVERAGE_ROUTER : addresses.BULL_LEVERAGE_ROUTER
 
-    if (position.side === 'BEAR') {
-      await closeBearPosition(bearPosition.collateral, slippageBps, deadline)
-    } else {
-      await closeBullPosition(bullPosition.collateral, slippageBps, deadline)
+    const buildCloseSteps = (): TransactionStep[] => {
+      const slippageBps = BigInt(Math.floor(slippage * 100))
+      const deadline = BigInt(Math.floor(Date.now() / 1000) + 1800)
+
+      console.log('[closeLeverage] args:', {
+        side: position.side,
+        collateralToWithdraw: collateralToClose.toString(),
+        slippageBps: slippageBps.toString(),
+        deadline: deadline.toString(),
+      })
+
+      return [{
+        label: `Close ${position.side} position`,
+        action: () => writeContractAsync({
+          address: routerAddress,
+          abi: LEVERAGE_ROUTER_ABI,
+          functionName: 'closeLeverage',
+          args: [collateralToClose, slippageBps, deadline],
+        }),
+      }]
     }
 
-    void bearPosition.refetch()
-    void bullPosition.refetch()
-    void refetchBalances()
+    void closeSequence.execute({
+      title: `Closing ${position.side} leverage position`,
+      buildSteps: buildCloseSteps,
+      onSuccess: () => {
+        void bearPosition.refetch()
+        void bullPosition.refetch()
+        void refetchBalances()
+      },
+    })
   }
 
   const positions: LeveragePosition[] = []
 
   if (bearPosition.hasPosition) {
     const leverageNum = Number(bearPosition.leverage) / 100
-    // Convert collateral from staked token units to USDC equivalent (6 decimals)
-    const collateralUsdc = bearPosition.collateral / 10n ** 15n
+    // Convert collateral to USD: shares * price / 10^23 (gives 6-decimal USDC)
+    // Shares have 21 effective decimals (18 + 1000x offset), price has 8 decimals
+    const positionValue = bearPosition.collateral * bearPrice / 10n ** 23n
+    const equity = positionValue > bearPosition.debt ? positionValue - bearPosition.debt : 0n
     positions.push({
       id: 'bear-position',
       side: 'BEAR',
-      size: collateralUsdc * BigInt(Math.floor(leverageNum * 100)) / 100n,
-      collateral: collateralUsdc,
+      size: positionValue,
+      collateral: equity,
       leverage: leverageNum,
       entryPrice: 0n,
       liquidationPrice: bearPosition.liquidationPrice,
@@ -90,13 +121,21 @@ export function Dashboard() {
 
   if (bullPosition.hasPosition) {
     const leverageNum = Number(bullPosition.leverage) / 100
-    // Convert collateral from staked token units to USDC equivalent (6 decimals)
-    const collateralUsdc = bullPosition.collateral / 10n ** 15n
+    // Convert collateral to USD: shares * price / 10^23 (gives 6-decimal USDC)
+    const positionValue = bullPosition.collateral * bullPrice / 10n ** 23n
+    const equity = positionValue > bullPosition.debt ? positionValue - bullPosition.debt : 0n
+    console.log('[Dashboard BULL]', {
+      collateral: bullPosition.collateral.toString(),
+      bullPrice: bullPrice.toString(),
+      positionValue: positionValue.toString(),
+      debt: bullPosition.debt.toString(),
+      equity: equity.toString(),
+    })
     positions.push({
       id: 'bull-position',
       side: 'BULL',
-      size: collateralUsdc * BigInt(Math.floor(leverageNum * 100)) / 100n,
-      collateral: collateralUsdc,
+      size: positionValue,
+      collateral: equity,
       leverage: leverageNum,
       entryPrice: 0n,
       liquidationPrice: bullPosition.liquidationPrice,
@@ -108,8 +147,16 @@ export function Dashboard() {
 
   const hasLowHealth = positions.some((p) => p.healthFactor > 0 && p.healthFactor < HEALTH_FACTOR_WARNING)
 
-  const spotValue = usdcBalance + (bearBalance * 1n) / 10n ** 12n + (bullBalance * 1n) / 10n ** 12n
-  const stakedValue = (stakedBearAssets * 1n) / 10n ** 12n + (stakedBullAssets * 1n) / 10n ** 12n
+  // Portfolio values: token balances (18 dec) * price (8 dec) / 10^20 = 6 dec USDC
+  const bearSpotValue = bearBalance * bearPrice / 10n ** 20n
+  const bullSpotValue = bullBalance * bullPrice / 10n ** 20n
+  const spotValue = usdcBalance + bearSpotValue + bullSpotValue
+
+  // Staked values: assets (18 dec) * price (8 dec) / 10^20 = 6 dec USDC
+  const stakedBearValue = stakedBearAssets * bearPrice / 10n ** 20n
+  const stakedBullValue = stakedBullAssets * bullPrice / 10n ** 20n
+  const stakedValue = stakedBearValue + stakedBullValue
+
   const leverageValue = positions.reduce((acc, p) => acc + p.collateral, 0n)
   const lendingValue = 0n
 
@@ -179,8 +226,8 @@ export function Dashboard() {
                       setSelectedPosition(position)
                       setAdjustModalOpen(true)
                     }}
-                    onClose={() => void handleClosePosition(position)}
-                    isClosing={position.side === 'BEAR' ? bearClosePending : bullClosePending}
+                    onClose={() => handleClosePosition(position)}
+                    isClosing={closeSequence.isRunning}
                   />
                 ))}
               </div>

@@ -28,7 +28,7 @@ export function LeverageCard({ usdcBalance, refetchBalances }: LeverageCardProps
   const collateralBigInt = collateralAmount ? parseUnits(collateralAmount, 6) : 0n
   const leverageWei = parseUnits(leverage.toString(), 18)
 
-  const { totalUSDC, expectedDebt, isLoading: previewLoading } = usePreviewOpenLeverage(
+  const { totalUSDC, loanAmount, isLoading: previewLoading } = usePreviewOpenLeverage(
     selectedSide,
     collateralBigInt,
     leverageWei
@@ -113,6 +113,12 @@ export function LeverageCard({ usdcBalance, refetchBalances }: LeverageCardProps
       action: () => {
         const slippageBps = BigInt(Math.floor(slippage * 100))
         const deadline = BigInt(Math.floor(Date.now() / 1000) + 1800)
+        console.log('[openLeverage] args:', {
+          principal: collateralBigInt.toString(),
+          leverage: leverageWei.toString(),
+          slippageBps: slippageBps.toString(),
+          deadline: deadline.toString(),
+        })
         return writeContractAsync({
           address: routerAddress,
           abi: LEVERAGE_ROUTER_ABI,
@@ -165,7 +171,7 @@ export function LeverageCard({ usdcBalance, refetchBalances }: LeverageCardProps
     : formatUsd(totalUSDC)
   const debtDisplay = previewLoading && collateralBigInt > 0n
     ? '...'
-    : formatUsd(expectedDebt)
+    : formatUsd(loanAmount)
 
   return (
     <div className="max-w-xl mx-auto space-y-6">

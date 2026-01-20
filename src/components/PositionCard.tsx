@@ -32,7 +32,7 @@ export function PositionCard({ position, onAdjust, onClose, isClosing }: Positio
               </span>
             </div>
             <div className="text-xs text-cyber-text-secondary mt-1">
-              Size: {formatUsd(position.size)} | Collateral: {formatUsd(position.collateral)}
+              Size: {formatUsd(position.size)} | Equity: {formatUsd(position.collateral)}
             </div>
           </div>
         </div>

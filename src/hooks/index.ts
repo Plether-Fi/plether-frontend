@@ -32,6 +32,7 @@ export {
   useAdjustCollateral,
 } from './useLeverage'
 export { useBasketOraclePrice } from './useBasketOracle'
+export { useTokenPrices } from './useTokenPrices'
 export { useTransactionModal } from './useTransactionModal'
 export { useApprovalFlow } from './useApprovalFlow'
 export { useTransactionSequence, type TransactionStep } from './useTransactionSequence'

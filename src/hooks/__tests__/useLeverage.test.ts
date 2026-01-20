@@ -31,7 +31,15 @@ const MOCK_CHAIN_ID = 1
 const MOCK_ADDRESS = '0x1234567890123456789012345678901234567890' as const
 
 const MOCK_MORPHO_ADDRESS = '0xMorphoAddress0000000000000000000000000000' as const
-const MOCK_MARKET_ID = '0x1234567890123456789012345678901234567890123456789012345678901234' as const
+const MOCK_MARKET_PARAMS = [
+  '0x1111111111111111111111111111111111111111',
+  '0x2222222222222222222222222222222222222222',
+  '0x3333333333333333333333333333333333333333',
+  '0x4444444444444444444444444444444444444444',
+  800000000000000000n,
+] as const
+const MOCK_ORACLE_ROUND_DATA = [1n, 100000000n, 0n, 0n, 1n] as const // price = 1.00 (8 decimals)
+const MOCK_CAP = 200000000n // CAP = 2.00 (8 decimals)
 
 describe('useLeveragePosition', () => {
   beforeEach(() => {
@@ -52,24 +60,31 @@ describe('useLeveragePosition', () => {
 
   it('returns position data when available', () => {
     // Morpho position: [supplyShares, borrowShares, collateral]
-    const morphoPosition = [0n, 0n, 1000000000000000000n]
-    const debt = 500000000000000000n
+    // Collateral: 200e21 shares (200 tokens with 1000x offset)
+    const morphoPosition = [0n, 0n, 200000000000000000000000n]
+    const debt = 100000000n // 100 USDC (6 decimals)
 
     let readCallCount = 0
     mockUseReadContract.mockImplementation(() => {
       readCallCount++
       if (readCallCount === 1) return { data: MOCK_MORPHO_ADDRESS } // MORPHO()
-      if (readCallCount === 2) return { data: MOCK_MARKET_ID } // marketId()
+      if (readCallCount === 2) return { data: MOCK_MARKET_PARAMS } // marketParams()
       if (readCallCount === 3) return { data: morphoPosition, isLoading: false, error: null, refetch: vi.fn() } // position()
-      return { data: debt, isLoading: false } // getActualDebt()
+      if (readCallCount === 4) return { data: debt, isLoading: false } // getActualDebt()
+      if (readCallCount === 5) return { data: MOCK_ORACLE_ROUND_DATA } // latestRoundData()
+      if (readCallCount === 6) return { data: MOCK_CAP } // CAP()
+      return { data: undefined }
     })
 
     const { result } = renderHook(() => useLeveragePosition('BEAR'))
 
-    expect(result.current.collateral).toBe(1000000000000000000n)
-    expect(result.current.debt).toBe(500000000000000000n)
-    // leverage = (collateral + debt) * 100 / collateral = (1e18 + 0.5e18) * 100 / 1e18 = 150
-    expect(result.current.leverage).toBe(150n)
+    expect(result.current.collateral).toBe(200000000000000000000000n)
+    expect(result.current.debt).toBe(100000000n)
+    // BEAR price = CAP - oracle = 2.00 - 1.00 = 1.00
+    // collateralUsdc = 200e21 * 1e8 / 10^23 = 200e6 = $200
+    // equity = 200e6 - 100e6 = 100e6 = $100
+    // leverage = 200e6 * 100 / 100e6 = 200 (2x)
+    expect(result.current.leverage).toBe(200n)
   })
 
   it('returns default values when no position exists', () => {
@@ -92,15 +107,18 @@ describe('useLeveragePosition', () => {
 
   it('returns hasPosition true when collateral > 0', () => {
     // Morpho position with collateral
-    const morphoPosition = [0n, 0n, 1000000000000000000n]
+    const morphoPosition = [0n, 0n, 200000000000000000000000n]
 
     let readCallCount = 0
     mockUseReadContract.mockImplementation(() => {
       readCallCount++
       if (readCallCount === 1) return { data: MOCK_MORPHO_ADDRESS }
-      if (readCallCount === 2) return { data: MOCK_MARKET_ID }
+      if (readCallCount === 2) return { data: MOCK_MARKET_PARAMS }
       if (readCallCount === 3) return { data: morphoPosition, isLoading: false, error: null, refetch: vi.fn() }
-      return { data: 0n, isLoading: false }
+      if (readCallCount === 4) return { data: 0n, isLoading: false }
+      if (readCallCount === 5) return { data: MOCK_ORACLE_ROUND_DATA }
+      if (readCallCount === 6) return { data: MOCK_CAP }
+      return { data: undefined }
     })
 
     const { result } = renderHook(() => useLeveragePosition('BEAR'))
