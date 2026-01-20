@@ -72,11 +72,13 @@ export function Dashboard() {
 
   if (bearPosition.hasPosition) {
     const leverageNum = Number(bearPosition.leverage) / 100
+    // Convert collateral from staked token units to USDC equivalent (6 decimals)
+    const collateralUsdc = bearPosition.collateral / 10n ** 15n
     positions.push({
       id: 'bear-position',
       side: 'BEAR',
-      size: bearPosition.collateral * BigInt(Math.floor(leverageNum * 100)) / 100n,
-      collateral: bearPosition.collateral,
+      size: collateralUsdc * BigInt(Math.floor(leverageNum * 100)) / 100n,
+      collateral: collateralUsdc,
       leverage: leverageNum,
       entryPrice: 0n,
       liquidationPrice: bearPosition.liquidationPrice,
@@ -88,11 +90,13 @@ export function Dashboard() {
 
   if (bullPosition.hasPosition) {
     const leverageNum = Number(bullPosition.leverage) / 100
+    // Convert collateral from staked token units to USDC equivalent (6 decimals)
+    const collateralUsdc = bullPosition.collateral / 10n ** 15n
     positions.push({
       id: 'bull-position',
       side: 'BULL',
-      size: bullPosition.collateral * BigInt(Math.floor(leverageNum * 100)) / 100n,
-      collateral: bullPosition.collateral,
+      size: collateralUsdc * BigInt(Math.floor(leverageNum * 100)) / 100n,
+      collateral: collateralUsdc,
       leverage: leverageNum,
       entryPrice: 0n,
       liquidationPrice: bullPosition.liquidationPrice,

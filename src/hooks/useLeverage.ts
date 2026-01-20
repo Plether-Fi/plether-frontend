@@ -1,8 +1,8 @@
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
-import { useRef, useEffect } from 'react'
-import { zeroAddress } from 'viem'
+import { useRef, useEffect, useMemo } from 'react'
+import { zeroAddress, keccak256, encodeAbiParameters } from 'viem'
 import { Result } from 'better-result'
-import { LEVERAGE_ROUTER_ABI } from '../contracts/abis'
+import { LEVERAGE_ROUTER_ABI, MORPHO_ABI } from '../contracts/abis'
 import { getAddresses } from '../contracts/addresses'
 import { useTransactionStore } from '../stores/transactionStore'
 import {
@@ -20,44 +20,99 @@ export function useLeveragePosition(side: 'BEAR' | 'BULL') {
   const routerAddress = side === 'BEAR' ? addresses?.LEVERAGE_ROUTER : addresses?.BULL_LEVERAGE_ROUTER
   const queryAddress = address ?? zeroAddress
 
-  const { data, isLoading, error, refetch } = useReadContract({
+  // Get Morpho address from router
+  const { data: morphoAddress } = useReadContract({
     address: routerAddress,
     abi: LEVERAGE_ROUTER_ABI,
-    functionName: 'getPosition',
+    functionName: 'MORPHO',
+    query: {
+      enabled: !!routerAddress,
+    },
+  })
+
+  // Get market params from router
+  const { data: marketParams } = useReadContract({
+    address: routerAddress,
+    abi: LEVERAGE_ROUTER_ABI,
+    functionName: 'marketParams',
+    query: {
+      enabled: !!routerAddress,
+    },
+  })
+
+  // Compute market ID from market params: keccak256(abi.encode(marketParams))
+  const marketId = useMemo(() => {
+    if (!marketParams) return undefined
+    const [loanToken, collateralToken, oracle, irm, lltv] = marketParams
+    return keccak256(
+      encodeAbiParameters(
+        [
+          { type: 'address' },
+          { type: 'address' },
+          { type: 'address' },
+          { type: 'address' },
+          { type: 'uint256' },
+        ],
+        [loanToken, collateralToken, oracle, irm, lltv]
+      )
+    )
+  }, [marketParams])
+
+  // Query Morpho for position (collateral is stored there)
+  const { data: morphoPosition, isLoading: positionLoading, error, refetch } = useReadContract({
+    address: morphoAddress,
+    abi: MORPHO_ABI,
+    functionName: 'position',
+    args: [marketId!, queryAddress],
+    query: {
+      enabled: !!address && !!morphoAddress && !!marketId,
+    },
+  })
+
+  // Get debt from router (includes accrued interest)
+  const { data: debt, isLoading: debtLoading } = useReadContract({
+    address: routerAddress,
+    abi: LEVERAGE_ROUTER_ABI,
+    functionName: 'getActualDebt',
     args: [queryAddress],
     query: {
       enabled: !!address && !!routerAddress,
     },
   })
 
-  const { data: healthFactor } = useReadContract({
-    address: routerAddress,
-    abi: LEVERAGE_ROUTER_ABI,
-    functionName: 'getHealthFactor',
-    args: [queryAddress],
-    query: {
-      enabled: !!address && !!routerAddress && !!data && data[0] > 0n,
-    },
-  })
+  // Collateral is the third field in Morpho position struct
+  const collateral = morphoPosition?.[2] ?? 0n
+  const actualDebt = debt ?? 0n
+  const hasPosition = collateral > 0n
 
-  const { data: liquidationPrice } = useReadContract({
-    address: routerAddress,
-    abi: LEVERAGE_ROUTER_ABI,
-    functionName: 'getLiquidationPrice',
-    args: [queryAddress],
-    query: {
-      enabled: !!address && !!routerAddress && !!data && data[0] > 0n,
-    },
+  // Calculate leverage: (collateral + debt) / collateral * 100 (as percentage points)
+  // e.g., 2x leverage = 200
+  const leverage = hasPosition && collateral > 0n
+    ? ((collateral + actualDebt) * 100n) / collateral
+    : 0n
+
+  // Debug logging
+  console.log(`[useLeveragePosition ${side}]`, {
+    routerAddress,
+    morphoAddress,
+    marketParams,
+    marketId,
+    morphoPosition,
+    debt,
+    collateral: collateral.toString(),
+    actualDebt: actualDebt.toString(),
+    hasPosition,
+    error,
   })
 
   return {
-    collateral: data?.[0] ?? 0n,
-    debt: data?.[1] ?? 0n,
-    leverage: data?.[2] ?? 0n,
-    healthFactor: healthFactor ?? 0n,
-    liquidationPrice: liquidationPrice ?? 0n,
-    hasPosition: (data?.[0] ?? 0n) > 0n,
-    isLoading,
+    collateral,
+    debt: actualDebt,
+    leverage,
+    healthFactor: 0n, // TODO: Calculate from Morpho oracle prices
+    liquidationPrice: 0n, // TODO: Calculate from Morpho oracle prices
+    hasPosition,
+    isLoading: positionLoading || debtLoading,
     error,
     refetch,
   }

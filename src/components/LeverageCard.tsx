@@ -1,13 +1,13 @@
 import { useState, useCallback } from 'react'
-import { useAccount, useWriteContract } from 'wagmi'
-import { parseUnits } from 'viem'
+import { useAccount, useWriteContract, useReadContract } from 'wagmi'
+import { parseUnits, zeroAddress } from 'viem'
 import { InfoTooltip } from './ui'
 import { TokenInput } from './TokenInput'
 import { formatUsd } from '../utils/formatters'
 import { usePreviewOpenLeverage, useAllowance, useTransactionSequence, type TransactionStep } from '../hooks'
 import { getAddresses, DEFAULT_CHAIN_ID } from '../contracts/addresses'
 import { useSettingsStore } from '../stores/settingsStore'
-import { ERC20_ABI, LEVERAGE_ROUTER_ABI } from '../contracts/abis'
+import { ERC20_ABI, LEVERAGE_ROUTER_ABI, MORPHO_ABI } from '../contracts/abis'
 
 type TokenSide = 'BEAR' | 'BULL'
 
@@ -17,7 +17,7 @@ export interface LeverageCardProps {
 }
 
 export function LeverageCard({ usdcBalance, refetchBalances }: LeverageCardProps) {
-  const { isConnected, chainId } = useAccount()
+  const { isConnected, address, chainId } = useAccount()
   const addresses = getAddresses(chainId ?? DEFAULT_CHAIN_ID)
   const slippage = useSettingsStore((s) => s.slippage)
 
@@ -35,6 +35,26 @@ export function LeverageCard({ usdcBalance, refetchBalances }: LeverageCardProps
   )
 
   const routerAddress = selectedSide === 'BEAR' ? addresses.LEVERAGE_ROUTER : addresses.BULL_LEVERAGE_ROUTER
+
+  // Get Morpho address from router
+  const { data: morphoAddress } = useReadContract({
+    address: routerAddress,
+    abi: LEVERAGE_ROUTER_ABI,
+    functionName: 'MORPHO',
+  })
+
+  // Check if user has authorized the router in Morpho
+  const { data: isAuthorized, refetch: refetchAuthorization } = useReadContract({
+    address: morphoAddress,
+    abi: MORPHO_ABI,
+    functionName: 'isAuthorized',
+    args: [address ?? zeroAddress, routerAddress],
+    query: {
+      enabled: !!morphoAddress && !!address,
+    },
+  })
+
+  const needsMorphoAuthorization = !isAuthorized
 
   const { writeContractAsync } = useWriteContract()
   const sequence = useTransactionSequence()
@@ -55,6 +75,22 @@ export function LeverageCard({ usdcBalance, refetchBalances }: LeverageCardProps
 
   const buildOpenLeverageSteps = useCallback((): TransactionStep[] => {
     const steps: TransactionStep[] = []
+
+    if (needsMorphoAuthorization && morphoAddress) {
+      steps.push({
+        label: 'Authorize Morpho',
+        action: async () => {
+          const hash = await writeContractAsync({
+            address: morphoAddress,
+            abi: MORPHO_ABI,
+            functionName: 'setAuthorization',
+            args: [routerAddress, true],
+          })
+          await refetchAuthorization()
+          return hash
+        },
+      })
+    }
 
     if (needsUsdcApproval) {
       steps.push({
@@ -88,6 +124,8 @@ export function LeverageCard({ usdcBalance, refetchBalances }: LeverageCardProps
 
     return steps
   }, [
+    needsMorphoAuthorization,
+    morphoAddress,
     needsUsdcApproval,
     selectedSide,
     collateralBigInt,
@@ -96,6 +134,7 @@ export function LeverageCard({ usdcBalance, refetchBalances }: LeverageCardProps
     addresses.USDC,
     routerAddress,
     writeContractAsync,
+    refetchAuthorization,
     refetchUsdcAllowance,
   ])
 
@@ -112,6 +151,8 @@ export function LeverageCard({ usdcBalance, refetchBalances }: LeverageCardProps
   const getButtonText = () => {
     if (sequence.isRunning) return 'Processing...'
     if (insufficientBalance) return 'Insufficient USDC'
+    if (needsMorphoAuthorization && needsUsdcApproval) return 'Authorize, Approve & Open'
+    if (needsMorphoAuthorization) return 'Authorize & Open Position'
     if (needsUsdcApproval) return 'Approve & Open Position'
     return `Open ${selectedSide} Position`
   }

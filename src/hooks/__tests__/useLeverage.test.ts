@@ -30,6 +30,9 @@ import {
 const MOCK_CHAIN_ID = 1
 const MOCK_ADDRESS = '0x1234567890123456789012345678901234567890' as const
 
+const MOCK_MORPHO_ADDRESS = '0xMorphoAddress0000000000000000000000000000' as const
+const MOCK_MARKET_ID = '0x1234567890123456789012345678901234567890123456789012345678901234' as const
+
 describe('useLeveragePosition', () => {
   beforeEach(() => {
     vi.resetAllMocks()
@@ -48,29 +51,25 @@ describe('useLeveragePosition', () => {
   })
 
   it('returns position data when available', () => {
-    const positionData = [
-      1000000000000000000n,
-      500000000000000000n,
-      2000000000000000000n,
-    ]
+    // Morpho position: [supplyShares, borrowShares, collateral]
+    const morphoPosition = [0n, 0n, 1000000000000000000n]
+    const debt = 500000000000000000n
 
     let readCallCount = 0
     mockUseReadContract.mockImplementation(() => {
       readCallCount++
-      if (readCallCount === 1) {
-        return { data: positionData, isLoading: false, error: null, refetch: vi.fn() }
-      }
-      if (readCallCount === 2) {
-        return { data: 1500000000000000000n }
-      }
-      return { data: 900000000000000000n }
+      if (readCallCount === 1) return { data: MOCK_MORPHO_ADDRESS } // MORPHO()
+      if (readCallCount === 2) return { data: MOCK_MARKET_ID } // marketId()
+      if (readCallCount === 3) return { data: morphoPosition, isLoading: false, error: null, refetch: vi.fn() } // position()
+      return { data: debt, isLoading: false } // getActualDebt()
     })
 
     const { result } = renderHook(() => useLeveragePosition('BEAR'))
 
     expect(result.current.collateral).toBe(1000000000000000000n)
     expect(result.current.debt).toBe(500000000000000000n)
-    expect(result.current.leverage).toBe(2000000000000000000n)
+    // leverage = (collateral + debt) * 100 / collateral = (1e18 + 0.5e18) * 100 / 1e18 = 150
+    expect(result.current.leverage).toBe(150n)
   })
 
   it('returns default values when no position exists', () => {
@@ -92,11 +91,16 @@ describe('useLeveragePosition', () => {
   })
 
   it('returns hasPosition true when collateral > 0', () => {
-    mockUseReadContract.mockReturnValue({
-      data: [1000000000000000000n, 0n, 0n],
-      isLoading: false,
-      error: null,
-      refetch: vi.fn(),
+    // Morpho position with collateral
+    const morphoPosition = [0n, 0n, 1000000000000000000n]
+
+    let readCallCount = 0
+    mockUseReadContract.mockImplementation(() => {
+      readCallCount++
+      if (readCallCount === 1) return { data: MOCK_MORPHO_ADDRESS }
+      if (readCallCount === 2) return { data: MOCK_MARKET_ID }
+      if (readCallCount === 3) return { data: morphoPosition, isLoading: false, error: null, refetch: vi.fn() }
+      return { data: 0n, isLoading: false }
     })
 
     const { result } = renderHook(() => useLeveragePosition('BEAR'))
@@ -105,11 +109,12 @@ describe('useLeveragePosition', () => {
   })
 
   it('returns loading state', () => {
-    mockUseReadContract.mockReturnValue({
-      data: undefined,
-      isLoading: true,
-      error: null,
-      refetch: vi.fn(),
+    let readCallCount = 0
+    mockUseReadContract.mockImplementation(() => {
+      readCallCount++
+      if (readCallCount === 3) return { data: undefined, isLoading: true, error: null, refetch: vi.fn() }
+      if (readCallCount === 4) return { data: undefined, isLoading: true }
+      return { data: undefined }
     })
 
     const { result } = renderHook(() => useLeveragePosition('BEAR'))
