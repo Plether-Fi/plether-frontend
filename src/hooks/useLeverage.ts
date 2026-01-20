@@ -79,9 +79,10 @@ export function usePreviewOpenLeverage(side: 'BEAR' | 'BULL', principal: bigint,
   })
 
   return {
-    positionSize: data?.[0] ?? 0n,
-    debt: data?.[1] ?? 0n,
-    liquidationPrice: data?.[2] ?? 0n,
+    loanAmount: data?.[0] ?? 0n,
+    totalUSDC: data?.[1] ?? 0n,
+    expectedPlDxyBear: data?.[2] ?? 0n,
+    expectedDebt: data?.[3] ?? 0n,
     isLoading,
     error,
     refetch,
@@ -226,7 +227,6 @@ export function useCloseLeverage(side: 'BEAR' | 'BULL') {
   }, [isError, receiptError, updateTransaction])
 
   const closePosition = async (
-    debtToRepay: bigint,
     collateralToWithdraw: bigint,
     maxSlippageBps: bigint,
     deadline: bigint
@@ -253,7 +253,7 @@ export function useCloseLeverage(side: 'BEAR' | 'BULL') {
               address: routerAddress,
               abi: LEVERAGE_ROUTER_ABI,
               functionName: 'closeLeverage',
-              args: [debtToRepay, collateralToWithdraw, maxSlippageBps, deadline],
+              args: [collateralToWithdraw, maxSlippageBps, deadline],
             },
             {
               onSuccess: (hash) => {

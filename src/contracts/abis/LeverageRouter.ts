@@ -20,7 +20,6 @@ export const LEVERAGE_ROUTER_ABI = [
     name: 'closeLeverage',
     stateMutability: 'nonpayable',
     inputs: [
-      { name: 'debtToRepay', type: 'uint256' },
       { name: 'collateralToWithdraw', type: 'uint256' },
       { name: 'maxSlippageBps', type: 'uint256' },
       { name: 'deadline', type: 'uint256' },
@@ -50,9 +49,10 @@ export const LEVERAGE_ROUTER_ABI = [
       { name: 'leverage', type: 'uint256' },
     ],
     outputs: [
-      { type: 'uint256', name: 'positionSize' },
-      { type: 'uint256', name: 'debt' },
-      { type: 'uint256', name: 'liquidationPrice' },
+      { type: 'uint256', name: 'loanAmount' },
+      { type: 'uint256', name: 'totalUSDC' },
+      { type: 'uint256', name: 'expectedPlDxyBear' },
+      { type: 'uint256', name: 'expectedDebt' },
     ],
   },
   {
@@ -63,7 +63,11 @@ export const LEVERAGE_ROUTER_ABI = [
       { name: 'debtToRepay', type: 'uint256' },
       { name: 'collateralToWithdraw', type: 'uint256' },
     ],
-    outputs: [{ type: 'uint256', name: 'usdcReturned' }],
+    outputs: [
+      { type: 'uint256', name: 'expectedUSDC' },
+      { type: 'uint256', name: 'flashFee' },
+      { type: 'uint256', name: 'expectedReturn' },
+    ],
   },
   {
     type: 'function',

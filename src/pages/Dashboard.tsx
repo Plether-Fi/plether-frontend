@@ -58,9 +58,9 @@ export function Dashboard() {
     const deadline = BigInt(Math.floor(Date.now() / 1000) + 1800)
 
     if (position.side === 'BEAR') {
-      await closeBearPosition(bearPosition.debt, bearPosition.collateral, slippageBps, deadline)
+      await closeBearPosition(bearPosition.collateral, slippageBps, deadline)
     } else {
-      await closeBullPosition(bullPosition.debt, bullPosition.collateral, slippageBps, deadline)
+      await closeBullPosition(bullPosition.collateral, slippageBps, deadline)
     }
 
     void bearPosition.refetch()

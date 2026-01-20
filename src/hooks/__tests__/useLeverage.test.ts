@@ -138,8 +138,9 @@ describe('usePreviewOpenLeverage', () => {
   it('returns preview data when available', () => {
     const previewData = [
       2000000000000000000n,
+      3000000000000000000n,
+      1500000000000000000n,
       1000000000000000000n,
-      800000000000000000n,
     ]
 
     mockUseReadContract.mockReturnValue({
@@ -153,9 +154,10 @@ describe('usePreviewOpenLeverage', () => {
       usePreviewOpenLeverage('BEAR', 1000000000000000000n, 2000000000000000000n)
     )
 
-    expect(result.current.positionSize).toBe(2000000000000000000n)
-    expect(result.current.debt).toBe(1000000000000000000n)
-    expect(result.current.liquidationPrice).toBe(800000000000000000n)
+    expect(result.current.loanAmount).toBe(2000000000000000000n)
+    expect(result.current.totalUSDC).toBe(3000000000000000000n)
+    expect(result.current.expectedPlDxyBear).toBe(1500000000000000000n)
+    expect(result.current.expectedDebt).toBe(1000000000000000000n)
   })
 
   it('returns default values when no data', () => {
@@ -170,9 +172,10 @@ describe('usePreviewOpenLeverage', () => {
       usePreviewOpenLeverage('BULL', 1000000000000000000n, 2000000000000000000n)
     )
 
-    expect(result.current.positionSize).toBe(0n)
-    expect(result.current.debt).toBe(0n)
-    expect(result.current.liquidationPrice).toBe(0n)
+    expect(result.current.loanAmount).toBe(0n)
+    expect(result.current.totalUSDC).toBe(0n)
+    expect(result.current.expectedPlDxyBear).toBe(0n)
+    expect(result.current.expectedDebt).toBe(0n)
   })
 })
 
@@ -356,7 +359,6 @@ describe('useCloseLeverage', () => {
 
     await act(async () => {
       await result.current.closePosition(
-        500000000000000000n,
         1000000000000000000n,
         100n,
         deadline
@@ -380,7 +382,6 @@ describe('useCloseLeverage', () => {
 
     await act(async () => {
       closeResult = await result.current.closePosition(
-        500000000000000000n,
         1000000000000000000n,
         100n,
         deadline

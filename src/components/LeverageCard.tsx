@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useAccount } from 'wagmi'
-import { parseUnits, formatUnits } from 'viem'
+import { parseUnits } from 'viem'
 import { InfoTooltip } from './ui'
 import { TokenInput } from './TokenInput'
 import { formatUsd } from '../utils/formatters'
@@ -25,12 +25,12 @@ export function LeverageCard({ usdcBalance, refetchBalances }: LeverageCardProps
   const [leverage, setLeverage] = useState(2)
 
   const collateralBigInt = collateralAmount ? parseUnits(collateralAmount, 6) : 0n
-  const leverageBps = BigInt(Math.floor(leverage * 100))
+  const leverageWei = parseUnits(leverage.toString(), 18)
 
-  const { positionSize, liquidationPrice: previewLiqPrice, isLoading: previewLoading } = usePreviewOpenLeverage(
+  const { totalUSDC, expectedDebt, isLoading: previewLoading } = usePreviewOpenLeverage(
     selectedSide,
     collateralBigInt,
-    leverageBps
+    leverageWei
   )
 
   const { openPosition, isPending: positionPending, isSuccess, reset } = useOpenLeverage(selectedSide)
@@ -52,8 +52,8 @@ export function LeverageCard({ usdcBalance, refetchBalances }: LeverageCardProps
   const executeOpenPosition = useCallback(async (amount: bigint) => {
     const slippageBps = BigInt(Math.floor(slippage * 100))
     const deadline = BigInt(Math.floor(Date.now() / 1000) + 1800)
-    await openPosition(amount, leverageBps, slippageBps, deadline)
-  }, [slippage, leverageBps, openPosition])
+    await openPosition(amount, leverageWei, slippageBps, deadline)
+  }, [slippage, leverageWei, openPosition])
 
   useEffect(() => {
     if (isSuccess) {
@@ -83,12 +83,10 @@ export function LeverageCard({ usdcBalance, refetchBalances }: LeverageCardProps
   const collateralNum = parseFloat(collateralAmount) || 0
   const positionSizeDisplay = previewLoading && collateralBigInt > 0n
     ? '...'
-    : formatUsd(positionSize)
-  const liquidationPriceDisplay = previewLoading && collateralBigInt > 0n
+    : formatUsd(totalUSDC)
+  const debtDisplay = previewLoading && collateralBigInt > 0n
     ? '...'
-    : previewLiqPrice > 0n
-      ? `$${parseFloat(formatUnits(previewLiqPrice, 6)).toFixed(2)}`
-      : '$0.00'
+    : formatUsd(expectedDebt)
 
   return (
     <div className="max-w-xl mx-auto space-y-6">
@@ -154,7 +152,7 @@ export function LeverageCard({ usdcBalance, refetchBalances }: LeverageCardProps
       <div className="bg-cyber-surface-light p-4 space-y-3 border border-cyber-border-glow/30">
         <h4 className="text-sm font-medium text-cyber-text-secondary">Position Preview</h4>
         <div className="flex justify-between">
-          <span className="text-cyber-text-secondary text-sm">Position Size</span>
+          <span className="text-cyber-text-secondary text-sm">Total Position</span>
           <span className="text-cyber-text-primary">{positionSizeDisplay}</span>
         </div>
         <div className="flex justify-between">
@@ -163,10 +161,10 @@ export function LeverageCard({ usdcBalance, refetchBalances }: LeverageCardProps
         </div>
         <div className="flex justify-between">
           <span className="text-cyber-text-secondary text-sm flex items-center gap-1">
-            Liquidation Price
-            <InfoTooltip content="If DXY reaches this price, your position will be liquidated" />
+            Debt
+            <InfoTooltip content="Amount borrowed to create the leveraged position" />
           </span>
-          <span className="text-cyber-warning-text">{liquidationPriceDisplay}</span>
+          <span className="text-cyber-warning-text">{debtDisplay}</span>
         </div>
       </div>
 
