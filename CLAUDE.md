@@ -104,6 +104,10 @@ Error types are defined as TaggedErrors in `src/utils/errors.ts`:
 - **Networks**: Mainnet (1), Sepolia (11155111), Anvil local fork (31337)
 - **Slippage**: Max 1% (protocol limit), stored in settingsStore
 
+### Contract Reference
+
+See `API.md` for the complete protocol API reference including all contract functions, parameters, and error types.
+
 ### Adding Contract Integration
 1. Add ABI to `src/contracts/abis/`
 2. Add address to `src/contracts/addresses.ts` (mainnet + sepolia)
