@@ -108,6 +108,12 @@ Error types are defined as TaggedErrors in `src/utils/errors.ts`:
 
 See `API.md` for the complete protocol API reference including all contract functions, parameters, and error types.
 
+### Error Decoding
+
+See `APIERRORS.md` for all contract error selectors. Use this to:
+- **Decode revert errors**: When a contract call fails with a custom error (e.g., `0x50285b92`), look up the selector to find the error name and meaning
+- **Ensure comprehensive error handling**: When implementing new features, review relevant contract errors to handle all possible failure cases with appropriate user messages
+
 ### Adding Contract Integration
 1. Add ABI to `src/contracts/abis/`
 2. Add address to `src/contracts/addresses.ts` (mainnet + sepolia)
