@@ -48,8 +48,8 @@ export function PositionsSection({
               <PositionCard
                 key={position.id}
                 position={position}
-                onAdjust={() => onAdjust(position)}
-                onClose={() => onClose(position)}
+                onAdjust={() => { onAdjust(position) }}
+                onClose={() => { onClose(position) }}
                 isClosing={isClosing}
               />
             ))}
