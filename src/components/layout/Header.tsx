@@ -24,7 +24,7 @@ export function Header() {
           <nav className="hidden md:flex items-center gap-1">
             {navLinks.map(({ path, label }) => {
               const isActive = location.pathname === path ||
-                (path === '/' && ['/', '/leverage', '/yield'].includes(location.pathname))
+                (path === '/' && ['/', '/leverage', '/lending'].includes(location.pathname))
               return (
                 <Link
                   key={path}

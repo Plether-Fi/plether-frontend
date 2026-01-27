@@ -1,4 +1,4 @@
-type TabId = 'trade' | 'leverage' | 'yield'
+type TabId = 'trade' | 'leverage' | 'lending'
 
 interface TabConfig {
   id: TabId
@@ -10,7 +10,7 @@ interface TabConfig {
 const tabs: TabConfig[] = [
   { id: 'trade', label: 'Dollar Hedge', sublabel: 'Spot trading', icon: 'security' },
   { id: 'leverage', label: 'Leverage', sublabel: 'Margin trading', icon: 'trending_up' },
-  { id: 'yield', label: 'Yield', sublabel: 'Liquidity providing', icon: 'grass' },
+  { id: 'lending', label: 'Lending', sublabel: 'Supply and borrow USDC', icon: 'grass' },
 ]
 
 const tabStyles = {
@@ -34,7 +34,7 @@ const tabStyles = {
     hoverText: 'group-hover:text-cyber-electric-fuchsia',
     hoverTextMuted: 'group-hover:text-cyber-electric-fuchsia/70',
   },
-  yield: {
+  lending: {
     border: 'border-cyber-neon-green',
     hoverBorder: 'hover:border-cyber-neon-green',
     shadow: 'shadow-cyber-neon-green/50',

@@ -21,15 +21,15 @@ export function Dashboard() {
   const location = useLocation()
   const navigate = useNavigate()
 
-  type MainTab = 'trade' | 'leverage' | 'yield'
+  type MainTab = 'trade' | 'leverage' | 'lending'
 
   const mainTab: MainTab =
     location.pathname === '/leverage' ? 'leverage' :
-    location.pathname === '/yield' ? 'yield' : 'trade'
+    location.pathname === '/lending' ? 'lending' : 'trade'
 
   const handleTabChange = (tab: MainTab) => {
     if (tab === 'leverage') void navigate('/leverage')
-    else if (tab === 'yield') void navigate('/yield')
+    else if (tab === 'lending') void navigate('/lending')
     else void navigate('/')
   }
 
@@ -196,7 +196,7 @@ export function Dashboard() {
               title="Lending"
               value={lendingValue}
               description="Morpho supplied"
-              link="/yield"
+              link="/lending"
               isLoading={false}
               colorClass="text-cyber-neon-green"
             />
@@ -240,7 +240,7 @@ export function Dashboard() {
                 />
               )}
 
-              {mainTab === 'yield' && (
+              {mainTab === 'lending' && (
                 <YieldCard
                   suppliedAmount={5000n * 10n ** 6n}
                   borrowedAmount={1000n * 10n ** 6n}

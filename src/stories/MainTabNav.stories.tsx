@@ -12,7 +12,7 @@ export default meta
 type Story = StoryObj<typeof MainTabNav>
 
 function InteractiveTabNav() {
-  const [activeTab, setActiveTab] = useState<'trade' | 'leverage' | 'yield'>('trade')
+  const [activeTab, setActiveTab] = useState<'trade' | 'leverage' | 'lending'>('trade')
   return <MainTabNav activeTab={activeTab} onTabChange={setActiveTab} />
 }
 
@@ -34,9 +34,9 @@ export const LeverageActive: Story = {
   },
 }
 
-export const YieldActive: Story = {
+export const LendingActive: Story = {
   args: {
-    activeTab: 'yield',
+    activeTab: 'lending',
     onTabChange: () => {},
   },
 }

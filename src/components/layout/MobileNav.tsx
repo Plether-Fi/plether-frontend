@@ -29,7 +29,7 @@ export function MobileNav() {
       <div className="flex items-center justify-around h-16">
         {navLinks.map(({ path, label, icon, color }) => {
           const isActive = location.pathname === path ||
-            (path === '/' && ['/', '/leverage', '/yield'].includes(location.pathname))
+            (path === '/' && ['/', '/leverage', '/lending'].includes(location.pathname))
           const styles = colorStyles[color]
           return (
             <Link
