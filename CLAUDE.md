@@ -186,6 +186,63 @@ beforeEach(() => {
 - For interactive stories, use `play` function with `step()` for named steps
 - Import from `storybook/test` (Storybook 10+)
 
+## Visual Development & Testing
+
+### Quick Visual Check
+
+**IMMEDIATELY after implementing any front-end change:**
+
+1. **Identify what changed** - Review the modified components/pages
+2. **Navigate to affected pages** - Use `mcp__playwright__browser_navigate` to visit each changed view
+3. **Verify design compliance** - Compare against `/context/design-principles.md`
+4. **Validate feature implementation** - Ensure the change fulfills the user's specific request
+5. **Check acceptance criteria** - Review any provided context files or requirements
+6. **Capture evidence** - Take full page screenshot at desktop viewport (1440px) of each changed view
+7. **Check for errors** - Run `mcp__playwright__browser_console_messages` ⚠️
+
+This verification ensures changes meet design standards and user requirements.
+
+### Playwright MCP Integration
+
+#### Essential Commands for UI Testing
+
+```javascript
+// Navigation & Screenshots
+mcp__playwright__browser_navigate(url); // Navigate to page
+mcp__playwright__browser_take_screenshot(); // Capture visual evidence
+mcp__playwright__browser_resize(
+  width,
+  height
+); // Test responsiveness
+
+// Interaction Testing
+mcp__playwright__browser_click(element); // Test clicks
+mcp__playwright__browser_type(
+  element,
+  text
+); // Test input
+mcp__playwright__browser_hover(element); // Test hover states
+
+// Validation
+mcp__playwright__browser_console_messages(); // Check for errors
+mcp__playwright__browser_snapshot(); // Accessibility check
+mcp__playwright__browser_wait_for(
+  text / element
+); // Ensure loading
+```
+
+### Design Compliance Checklist
+
+When implementing UI features, verify:
+
+- [ ] **Visual Hierarchy**: Clear focus flow, appropriate spacing
+- [ ] **Consistency**: Uses design tokens, follows patterns
+- [ ] **Responsiveness**: Works on mobile (375px), tablet (768px), desktop (1440px)
+- [ ] **Accessibility**: Keyboard navigable, proper contrast, semantic HTML
+- [ ] **Performance**: Fast load times, smooth animations (150-300ms)
+- [ ] **Error Handling**: Clear error states, helpful messages
+- [ ] **Polish**: Micro-interactions, loading states, empty states
+
 ### Source Code Reference
 
 Source code for dependencies is available in `opensrc/` for deeper understanding of implementation details. Use this when you need to understand how a package works internally, not just its types/interface.

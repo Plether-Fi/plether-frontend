@@ -30,3 +30,6 @@ coverage
 # opensrc - source code for packages
 opensrc/
 bundle-stats.html
+
+# Playwright MCP screenshots
+.playwright-mcp/
