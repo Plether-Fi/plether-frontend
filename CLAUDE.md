@@ -243,6 +243,58 @@ When implementing UI features, verify:
 - [ ] **Error Handling**: Clear error states, helpful messages
 - [ ] **Polish**: Micro-interactions, loading states, empty states
 
+### Mock Wallet for MCP Testing
+
+To test with a connected wallet state, inject the mock wallet before navigating. The mock uses EIP-6963 for auto-connection.
+
+```javascript
+// Step 1: Inject mock wallet with EIP-6963 (run ONCE per browser session)
+mcp__playwright__browser_run_code({
+  code: `async (page) => {
+    await page.addInitScript(() => {
+      const MOCK_ADDRESS = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
+      const CHAIN_ID = '0xaa36a7';
+      const mockProvider = {
+        isMetaMask: true,
+        selectedAddress: MOCK_ADDRESS,
+        chainId: CHAIN_ID,
+        networkVersion: '11155111',
+        _metamask: { isUnlocked: () => Promise.resolve(true) },
+        request: async ({ method }) => {
+          if (method === 'eth_requestAccounts' || method === 'eth_accounts') return [MOCK_ADDRESS];
+          if (method === 'eth_chainId') return CHAIN_ID;
+          if (method === 'eth_getBalance') return '0x8ac7230489e80000';
+          if (method === 'eth_call') return '0x' + '0'.repeat(64);
+          return null;
+        },
+        on: (event, cb) => {
+          if (event === 'accountsChanged') setTimeout(() => cb([MOCK_ADDRESS]), 100);
+          if (event === 'chainChanged') setTimeout(() => cb(CHAIN_ID), 100);
+        },
+        removeListener: () => {},
+      };
+      Object.defineProperty(window, 'ethereum', { value: mockProvider, writable: false });
+      // EIP-6963: Auto-announce as MetaMask
+      const announce = () => window.dispatchEvent(new CustomEvent('eip6963:announceProvider', {
+        detail: Object.freeze({
+          info: { uuid: 'mock', name: 'MetaMask', icon: '', rdns: 'io.metamask' },
+          provider: mockProvider
+        })
+      }));
+      window.addEventListener('eip6963:requestProvider', announce);
+      announce();
+      setTimeout(announce, 100);
+    });
+    return 'Mock wallet ready';
+  }`
+});
+
+// Step 2: Navigate to page (wallet will auto-connect via EIP-6963)
+mcp__playwright__browser_navigate({ url: "http://localhost:5173" });
+```
+
+Full implementation: `e2e/fixtures/mockWallet.ts`
+
 ### Source Code Reference
 
 Source code for dependencies is available in `opensrc/` for deeper understanding of implementation details. Use this when you need to understand how a package works internally, not just its types/interface.
