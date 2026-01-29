@@ -75,7 +75,7 @@ export function Mint() {
     <div className="space-y-10 max-w-xl mx-auto">
       <div className="mb-8">
         <h1 className="text-3xl font-semibold text-cyber-text-primary mb-1">Mint & Redeem</h1>
-        <p className="text-cyber-text-secondary font-light">Create or redeem DXY-BEAR + DXY-BULL pairs</p>
+        <p className="text-cyber-text-secondary font-light">Create or redeem plDXY-BEAR + plDXY-BULL pairs</p>
       </div>
 
       <div className="bg-cyber-surface-dark border border-cyber-border-glow/30 shadow-lg shadow-cyber-border-glow/10 overflow-hidden">
@@ -108,7 +108,7 @@ export function Mint() {
           {mode === 'mint' ? (
             <>
               <Alert variant="info">
-                Mint equal amounts of DXY-BEAR and DXY-BULL from USDC.
+                Mint equal amounts of plDXY-BEAR and plDXY-BULL from USDC.
                 You'll receive both tokens in a 1:1 ratio.
               </Alert>
 
@@ -131,14 +131,14 @@ export function Mint() {
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
                     <TokenIcon side="BULL" size="sm" />
-                    <span className="text-cyber-neon-green font-medium">DXY-BULL</span>
+                    <span className="text-cyber-neon-green font-medium">plDXY-BULL</span>
                   </div>
                   <span className="text-cyber-text-primary font-semibold">{inputAmount || '0'}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
                     <TokenIcon side="BEAR" size="sm" />
-                    <span className="text-cyber-electric-fuchsia font-medium">DXY-BEAR</span>
+                    <span className="text-cyber-electric-fuchsia font-medium">plDXY-BEAR</span>
                   </div>
                   <span className="text-cyber-text-primary font-semibold">{inputAmount || '0'}</span>
                 </div>
@@ -174,7 +174,7 @@ export function Mint() {
           ) : (
             <>
               <Alert variant="warning" icon="info">
-                Redeem equal amounts of DXY-BEAR and DXY-BULL to get back USDC.
+                Redeem equal amounts of plDXY-BEAR and plDXY-BULL to get back USDC.
                 You need equal amounts of both tokens.
               </Alert>
 
@@ -183,14 +183,14 @@ export function Mint() {
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
                     <TokenIcon side="BULL" size="sm" />
-                    <span className="text-cyber-neon-green font-medium">DXY-BULL</span>
+                    <span className="text-cyber-neon-green font-medium">plDXY-BULL</span>
                   </div>
                   <span className="text-cyber-text-primary font-semibold">{formatAmount(bullBalance, 18)}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
                     <TokenIcon side="BEAR" size="sm" />
-                    <span className="text-cyber-electric-fuchsia font-medium">DXY-BEAR</span>
+                    <span className="text-cyber-electric-fuchsia font-medium">plDXY-BEAR</span>
                   </div>
                   <span className="text-cyber-text-primary font-semibold">{formatAmount(bearBalance, 18)}</span>
                 </div>

@@ -112,13 +112,13 @@ export const DifferentTokens: Story = {
         balance={1000000000n}
       />
       <TokenInputWithState
-        label="DXY-BEAR Amount"
-        token={{ symbol: 'DXY-BEAR', decimals: 18 }}
+        label="plDXY-BEAR Amount"
+        token={{ symbol: 'plDXY-BEAR', decimals: 18 }}
         balance={500000000000000000000n}
       />
       <TokenInputWithState
-        label="DXY-BULL Amount"
-        token={{ symbol: 'DXY-BULL', decimals: 18 }}
+        label="plDXY-BULL Amount"
+        token={{ symbol: 'plDXY-BULL', decimals: 18 }}
         balance={750000000000000000000n}
       />
     </div>

@@ -4,7 +4,7 @@
 [![Storybook](https://img.shields.io/badge/storybook-deployed-ff4785)](https://plether-fi.github.io/plether-frontend/)
 [![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue)](LICENSE)
 
-DeFi frontend for trading DXY-BEAR and DXY-BULL tokens on Ethereum.
+DeFi frontend for trading plDXY-BEAR and plDXY-BULL tokens on Ethereum.
 
 ## Tech Stack
 

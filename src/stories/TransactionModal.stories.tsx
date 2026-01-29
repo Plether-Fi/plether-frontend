@@ -27,14 +27,14 @@ type Story = StoryObj<typeof meta>
 const buySteps: LoadingStep[] = [
   { label: 'Approve USDC', status: 'completed' },
   { label: 'Confirming approval', status: 'completed' },
-  { label: 'Buy DXY-BEAR', status: 'in_progress' },
+  { label: 'Buy plDXY-BEAR', status: 'in_progress' },
   { label: 'Awaiting confirmation', status: 'pending' },
 ]
 
 export const InProgress: Story = {
   render: () => (
     <LoadingScreen
-      title="Buying DXY-BEAR"
+      title="Buying plDXY-BEAR"
       steps={buySteps}
     />
   ),
@@ -43,9 +43,9 @@ export const InProgress: Story = {
 export const SwapInProgress: Story = {
   render: () => (
     <LoadingScreen
-      title="Selling DXY-BULL"
+      title="Selling plDXY-BULL"
       steps={[
-        { label: 'Sell DXY-BULL', status: 'in_progress' },
+        { label: 'Sell plDXY-BULL', status: 'in_progress' },
         { label: 'Awaiting confirmation', status: 'pending' },
       ]}
     />
@@ -59,7 +59,7 @@ export const Success: Story = {
       steps={[
         { label: 'Approve USDC', status: 'completed' },
         { label: 'Confirming approval', status: 'completed' },
-        { label: 'Buy DXY-BEAR', status: 'completed' },
+        { label: 'Buy plDXY-BEAR', status: 'completed' },
         { label: 'Awaiting confirmation', status: 'completed' },
       ]}
       transactionUrl="https://sepolia.etherscan.io/tx/0x1234567890abcdef"
@@ -75,7 +75,7 @@ export const Error: Story = {
       steps={[
         { label: 'Approve USDC', status: 'completed' },
         { label: 'Confirming approval', status: 'completed' },
-        { label: 'Buy DXY-BEAR', status: 'error' },
+        { label: 'Buy plDXY-BEAR', status: 'error' },
         { label: 'Awaiting confirmation', status: 'pending' },
       ]}
       errorMessage="Transaction reverted: insufficient liquidity in the pool."
@@ -88,10 +88,10 @@ export const Error: Story = {
 export const StakingFlow: Story = {
   render: () => (
     <LoadingScreen
-      title="Staking DXY-BEAR"
+      title="Staking plDXY-BEAR"
       steps={[
         { label: 'Sign permit', status: 'completed' },
-        { label: 'Stake DXY-BEAR', status: 'in_progress' },
+        { label: 'Stake plDXY-BEAR', status: 'in_progress' },
         { label: 'Awaiting confirmation', status: 'pending' },
       ]}
     />
@@ -117,9 +117,9 @@ export const RedeemFlow: Story = {
     <LoadingScreen
       title="Redeeming token pairs"
       steps={[
-        { label: 'Approve DXY-BEAR', status: 'completed' },
+        { label: 'Approve plDXY-BEAR', status: 'completed' },
         { label: 'Confirming approval', status: 'completed' },
-        { label: 'Approve DXY-BULL', status: 'in_progress' },
+        { label: 'Approve plDXY-BULL', status: 'in_progress' },
         { label: 'Confirming approval', status: 'pending' },
         { label: 'Redeem pairs', status: 'pending' },
         { label: 'Awaiting confirmation', status: 'pending' },
@@ -160,8 +160,8 @@ export const AnimatedSuccess: Story = {
 
     await step('Open modal', async () => {
       modal.open({
-        title: 'Buying DXY-BEAR',
-        steps: ['Approve USDC', 'Confirming approval', 'Buy DXY-BEAR', 'Awaiting confirmation'],
+        title: 'Buying plDXY-BEAR',
+        steps: ['Approve USDC', 'Confirming approval', 'Buy plDXY-BEAR', 'Awaiting confirmation'],
       })
       await sleep(500)
     })
@@ -176,7 +176,7 @@ export const AnimatedSuccess: Story = {
       await sleep(1500)
     })
 
-    await step('Buy DXY-BEAR', async () => {
+    await step('Buy plDXY-BEAR', async () => {
       modal.setStepInProgress(2)
       await sleep(1000)
     })
@@ -200,8 +200,8 @@ export const AnimatedError: Story = {
 
     await step('Open modal', async () => {
       modal.open({
-        title: 'Buying DXY-BEAR',
-        steps: ['Approve USDC', 'Confirming approval', 'Buy DXY-BEAR', 'Awaiting confirmation'],
+        title: 'Buying plDXY-BEAR',
+        steps: ['Approve USDC', 'Confirming approval', 'Buy plDXY-BEAR', 'Awaiting confirmation'],
       })
       await sleep(500)
     })

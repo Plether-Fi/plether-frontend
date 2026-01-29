@@ -111,7 +111,7 @@ export function useMintFlow(pairAmount: bigint, options: UseMintFlowOptions = {}
         addresses.DXY_BEAR,
         addresses.SYNTHETIC_SPLITTER,
         pairAmount,
-        'Approve DXY-BEAR',
+        'Approve plDXY-BEAR',
         refetchBearAllowance
       ))
     }
@@ -121,7 +121,7 @@ export function useMintFlow(pairAmount: bigint, options: UseMintFlowOptions = {}
         addresses.DXY_BULL,
         addresses.SYNTHETIC_SPLITTER,
         pairAmount,
-        'Approve DXY-BULL',
+        'Approve plDXY-BULL',
         refetchBullAllowance
       ))
     }

@@ -20,7 +20,7 @@ export const Default: Story = {}
 
 export const CustomDescription: Story = {
   args: {
-    description: 'Connect your wallet to stake DXY-BEAR and DXY-BULL tokens.',
+    description: 'Connect your wallet to stake plDXY-BEAR and plDXY-BULL tokens.',
   },
 }
 

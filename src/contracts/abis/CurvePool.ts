@@ -1,4 +1,4 @@
-// Curve StableSwap Pool ABI - USDC/DXY-BEAR trading
+// Curve StableSwap Pool ABI - USDC/plDXY-BEAR trading
 // Note: Using uint256 for indices (newer Curve pools)
 export const CURVE_POOL_ABI = [
   {

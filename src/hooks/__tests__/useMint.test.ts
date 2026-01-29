@@ -62,7 +62,7 @@ describe('useMint', () => {
     const { pendingTransactions } = useTransactionStore.getState()
     expect(pendingTransactions).toHaveLength(1)
     expect(pendingTransactions[0].type).toBe('mint')
-    expect(pendingTransactions[0].description).toBe('Minting DXY-BEAR + DXY-BULL')
+    expect(pendingTransactions[0].description).toBe('Minting plDXY-BEAR + plDXY-BULL')
   })
 
   it('calls writeContract with correct arguments', async () => {

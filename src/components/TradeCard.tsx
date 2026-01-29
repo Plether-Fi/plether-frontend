@@ -258,7 +258,7 @@ export function TradeCard({ usdcBalance, bearBalance, bullBalance, refetchBalanc
                 : 'border border-cyber-border-glow/30 bg-cyber-surface-dark hover:border-cyber-neon-green/50 opacity-60 hover:opacity-100'
             }`}
           >
-            <div className={`font-semibold ${selectedToken === 'BULL' ? 'text-cyber-neon-green' : 'text-cyber-text-primary'}`}>DXY-BULL</div>
+            <div className={`font-semibold ${selectedToken === 'BULL' ? 'text-cyber-neon-green' : 'text-cyber-text-primary'}`}>plDXY-BULL</div>
             <div className={`text-xs mt-1 ${selectedToken === 'BULL' ? 'text-cyber-neon-green/70' : 'text-cyber-text-secondary'}`}>Bullish on USD</div>
           </button>
           <button
@@ -269,7 +269,7 @@ export function TradeCard({ usdcBalance, bearBalance, bullBalance, refetchBalanc
                 : 'border border-cyber-border-glow/30 bg-cyber-surface-dark hover:border-cyber-electric-fuchsia/50 opacity-60 hover:opacity-100'
             }`}
           >
-            <div className={`font-semibold ${selectedToken === 'BEAR' ? 'text-cyber-electric-fuchsia' : 'text-cyber-text-primary'}`}>DXY-BEAR</div>
+            <div className={`font-semibold ${selectedToken === 'BEAR' ? 'text-cyber-electric-fuchsia' : 'text-cyber-text-primary'}`}>plDXY-BEAR</div>
             <div className={`text-xs mt-1 ${selectedToken === 'BEAR' ? 'text-cyber-electric-fuchsia/70' : 'text-cyber-text-secondary'}`}>Bearish on USD</div>
           </button>
         </div>
@@ -319,8 +319,8 @@ export function TradeCard({ usdcBalance, bearBalance, bullBalance, refetchBalanc
             <span className="text-cyber-text-secondary">Route</span>
             <span className="text-cyber-text-primary">
               {selectedToken === 'BEAR'
-                ? (mode === 'buy' ? 'USDC → Curve → DXY-BEAR' : 'DXY-BEAR → Curve → USDC')
-                : (mode === 'buy' ? 'USDC → ZapRouter → DXY-BULL' : 'DXY-BULL → ZapRouter → USDC')}
+                ? (mode === 'buy' ? 'USDC → Curve → plDXY-BEAR' : 'plDXY-BEAR → Curve → USDC')
+                : (mode === 'buy' ? 'USDC → ZapRouter → plDXY-BULL' : 'plDXY-BULL → ZapRouter → USDC')}
             </span>
           </div>
           <div className="flex justify-between">

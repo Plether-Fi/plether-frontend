@@ -113,7 +113,7 @@ export function useCurveSwap() {
       type: 'swap',
       status: 'pending',
       hash: undefined,
-      description: tokenIn === 'USDC' ? 'Swapping USDC for DXY-BEAR' : 'Swapping DXY-BEAR for USDC',
+      description: tokenIn === 'USDC' ? 'Swapping USDC for plDXY-BEAR' : 'Swapping plDXY-BEAR for USDC',
     })
 
     return Result.tryPromise({
@@ -287,7 +287,7 @@ export function useZapSwap() {
       type: 'swap',
       status: 'pending',
       hash: undefined,
-      description: 'Swapping USDC for DXY-BULL',
+      description: 'Swapping USDC for plDXY-BULL',
     })
 
     return Result.tryPromise({
@@ -348,7 +348,7 @@ export function useZapSwap() {
       type: 'swap',
       status: 'pending',
       hash: undefined,
-      description: 'Swapping DXY-BULL for USDC',
+      description: 'Swapping plDXY-BULL for USDC',
     })
 
     return Result.tryPromise({
@@ -469,7 +469,7 @@ export function useZapBuyWithPermit() {
         type: 'swap',
         status: 'pending',
         hash: undefined,
-        description: 'Swapping USDC for DXY-BULL',
+        description: 'Swapping USDC for plDXY-BULL',
       })
 
       return Result.tryPromise({
@@ -624,7 +624,7 @@ export function useZapSellWithPermit() {
         type: 'swap',
         status: 'pending',
         hash: undefined,
-        description: 'Swapping DXY-BULL for USDC',
+        description: 'Swapping plDXY-BULL for USDC',
       })
 
       return Result.tryPromise({

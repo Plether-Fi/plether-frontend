@@ -77,10 +77,10 @@ export const AllVariants: Story = {
   render: () => (
     <div className="space-y-4">
       <Alert variant="info">
-        Mint equal amounts of DXY-BEAR and DXY-BULL from USDC.
+        Mint equal amounts of plDXY-BEAR and plDXY-BULL from USDC.
       </Alert>
       <Alert variant="warning" icon="info">
-        Redeem equal amounts of DXY-BEAR and DXY-BULL to get back USDC.
+        Redeem equal amounts of plDXY-BEAR and plDXY-BULL to get back USDC.
       </Alert>
       <Alert variant="success">
         Transaction confirmed successfully.

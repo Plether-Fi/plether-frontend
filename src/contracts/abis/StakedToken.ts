@@ -1,4 +1,4 @@
-// StakedToken ABI - ERC-4626 vault for staking DXY-BEAR/BULL
+// StakedToken ABI - ERC-4626 vault for staking plDXY-BEAR/BULL
 export const STAKED_TOKEN_ABI = [
   // ERC-4626 Core
   {

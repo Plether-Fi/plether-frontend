@@ -151,7 +151,7 @@ export function useMint() {
       type: 'mint',
       status: 'pending',
       hash: undefined,
-      description: 'Minting DXY-BEAR + DXY-BULL',
+      description: 'Minting plDXY-BEAR + plDXY-BULL',
     })
 
     return Result.tryPromise({
@@ -250,7 +250,7 @@ export function useBurn() {
       type: 'burn',
       status: 'pending',
       hash: undefined,
-      description: 'Redeeming DXY-BEAR + DXY-BULL for USDC',
+      description: 'Redeeming plDXY-BEAR + plDXY-BULL for USDC',
     })
 
     return Result.tryPromise({

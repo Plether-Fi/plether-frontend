@@ -162,7 +162,7 @@ export function useStake(side: 'BEAR' | 'BULL') {
       type: 'stake',
       status: 'pending',
       hash: undefined,
-      description: `Staking DXY-${side}`,
+      description: `Staking plDXY-${side}`,
     })
 
     return Result.tryPromise({
@@ -262,7 +262,7 @@ export function useUnstake(side: 'BEAR' | 'BULL') {
       type: 'unstake',
       status: 'pending',
       hash: undefined,
-      description: `Unstaking sDXY-${side}`,
+      description: `Unstaking splDXY-${side}`,
     })
 
     return Result.tryPromise({
@@ -386,7 +386,7 @@ export function useStakeWithPermit(side: 'BEAR' | 'BULL') {
         type: 'stake',
         status: 'pending',
         hash: undefined,
-        description: `Staking DXY-${side}`,
+        description: `Staking plDXY-${side}`,
       })
 
       return Result.tryPromise({

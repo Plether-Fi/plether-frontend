@@ -1,4 +1,4 @@
-// SyntheticSplitter ABI - mint/burn DXY-BEAR + DXY-BULL pairs
+// SyntheticSplitter ABI - mint/burn plDXY-BEAR + plDXY-BULL pairs
 export const PLETH_CORE_ABI = [
   {
     type: 'function',

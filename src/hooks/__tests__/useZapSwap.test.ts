@@ -67,7 +67,7 @@ describe('useZapSwap', () => {
       const { pendingTransactions } = useTransactionStore.getState()
       expect(pendingTransactions).toHaveLength(1)
       expect(pendingTransactions[0].type).toBe('swap')
-      expect(pendingTransactions[0].description).toBe('Swapping DXY-BULL for USDC')
+      expect(pendingTransactions[0].description).toBe('Swapping plDXY-BULL for USDC')
     })
 
     it('calls writeContract with correct arguments for zapSell', async () => {

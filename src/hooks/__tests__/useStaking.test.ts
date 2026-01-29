@@ -287,7 +287,7 @@ describe('useStake', () => {
     const { pendingTransactions } = useTransactionStore.getState()
     expect(pendingTransactions).toHaveLength(1)
     expect(pendingTransactions[0].type).toBe('stake')
-    expect(pendingTransactions[0].description).toBe('Staking DXY-BEAR')
+    expect(pendingTransactions[0].description).toBe('Staking plDXY-BEAR')
   })
 
   it('returns Result.ok with hash on success', async () => {
@@ -412,7 +412,7 @@ describe('useUnstake', () => {
     const { pendingTransactions } = useTransactionStore.getState()
     expect(pendingTransactions).toHaveLength(1)
     expect(pendingTransactions[0].type).toBe('unstake')
-    expect(pendingTransactions[0].description).toBe('Unstaking sDXY-BULL')
+    expect(pendingTransactions[0].description).toBe('Unstaking splDXY-BULL')
   })
 
   it('returns Result.ok with hash on success', async () => {
@@ -534,7 +534,7 @@ describe('useStakeWithPermit', () => {
       if (readCallCount === 1) {
         return { data: 0n }
       }
-      return { data: 'DXY-BEAR' }
+      return { data: 'plDXY-BEAR' }
     })
 
     mockSignTypedDataAsync.mockResolvedValue(
@@ -557,7 +557,7 @@ describe('useStakeWithPermit', () => {
     expect(mockSignTypedDataAsync).toHaveBeenCalled()
 
     const { pendingTransactions } = useTransactionStore.getState()
-    expect(pendingTransactions[0].description).toBe('Staking DXY-BEAR')
+    expect(pendingTransactions[0].description).toBe('Staking plDXY-BEAR')
   })
 
   it('handles signature rejection', async () => {
@@ -567,7 +567,7 @@ describe('useStakeWithPermit', () => {
       if (readCallCount === 1) {
         return { data: 0n }
       }
-      return { data: 'DXY-BULL' }
+      return { data: 'plDXY-BULL' }
     })
 
     mockSignTypedDataAsync.mockRejectedValue(new Error('User rejected'))
@@ -593,7 +593,7 @@ describe('useStakeWithPermit', () => {
       if (readCallCount === 1) {
         return { data: 0n }
       }
-      return { data: 'DXY-BEAR' }
+      return { data: 'plDXY-BEAR' }
     })
 
     mockSignTypedDataAsync.mockRejectedValue(new Error('User rejected'))

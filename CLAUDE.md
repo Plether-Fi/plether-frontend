@@ -52,7 +52,7 @@ Dev server runs at http://localhost:5173.
 
 ## Architecture
 
-Plether is a DeFi frontend for trading DXY-BEAR and DXY-BULL tokens on Ethereum.
+Plether is a DeFi frontend for trading plDXY-BEAR and plDXY-BULL tokens on Ethereum.
 
 ### Tech Stack
 - **Framework**: Vite + React 19 + TypeScript
@@ -122,8 +122,8 @@ See `APIERRORS.md` for all contract error selectors. Use this to:
 
 ### Theme Colors
 Defined in `src/index.css` via `@theme`:
-- `cyber-neon-green` (#00FF99) - Primary accent, DXY-BULL
-- `cyber-electric-fuchsia` (#FF00CC) - DXY-BEAR, secondary actions
+- `cyber-neon-green` (#00FF99) - Primary accent, plDXY-BULL
+- `cyber-electric-fuchsia` (#FF00CC) - plDXY-BEAR, secondary actions
 - `bear` / `bull` - Aliases for token-specific styling
 
 ### Testing Strategy

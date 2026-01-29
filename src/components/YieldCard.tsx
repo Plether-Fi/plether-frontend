@@ -167,7 +167,7 @@ export function YieldCard({
           />
           {borrowMode === 'borrow' && (
             <p className="text-xs text-cyber-text-secondary">
-              Borrowing requires staked collateral (sDXY-BEAR or sDXY-BULL)
+              Borrowing requires staked collateral (splDXY-BEAR or splDXY-BULL)
             </p>
           )}
           <button

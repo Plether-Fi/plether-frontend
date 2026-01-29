@@ -18,11 +18,11 @@ const meta: Meta<TradeCardArgs> = {
     },
     bearBalance: {
       control: { type: 'number', min: 0 },
-      description: 'DXY-BEAR wallet balance',
+      description: 'plDXY-BEAR wallet balance',
     },
     bullBalance: {
       control: { type: 'number', min: 0 },
-      description: 'DXY-BULL wallet balance',
+      description: 'plDXY-BULL wallet balance',
     },
   },
 }
@@ -104,8 +104,8 @@ export const BuyBearFlow: Story = {
       expect(buyButton).toHaveClass('bg-cyber-surface-dark')
     })
 
-    await step('Select DXY-BEAR token', async () => {
-      const bearButton = canvas.getByRole('button', { name: /dxy-bear/i })
+    await step('Select plDXY-BEAR token', async () => {
+      const bearButton = canvas.getByRole('button', { name: /pldxy-bear/i })
       await userEvent.click(bearButton)
       expect(bearButton).toHaveClass('border-cyber-electric-fuchsia')
     })
@@ -147,8 +147,8 @@ export const SellBullFlow: Story = {
       expect(sellButton).toHaveClass('bg-cyber-surface-dark')
     })
 
-    await step('Select DXY-BULL token', async () => {
-      const bullButton = canvas.getByRole('button', { name: /dxy-bull/i })
+    await step('Select plDXY-BULL token', async () => {
+      const bullButton = canvas.getByRole('button', { name: /pldxy-bull/i })
       await userEvent.click(bullButton)
       expect(bullButton).toHaveClass('border-cyber-neon-green')
     })
@@ -179,18 +179,18 @@ export const TokenToggle: Story = {
     const canvas = within(canvasElement)
 
     await step('Start with BULL selected', async () => {
-      const bullButton = canvas.getByRole('button', { name: /dxy-bull/i })
+      const bullButton = canvas.getByRole('button', { name: /pldxy-bull/i })
       expect(bullButton).toHaveClass('border-cyber-neon-green')
     })
 
     await step('Switch to BULL', async () => {
-      const bullButton = canvas.getByRole('button', { name: /dxy-bull/i })
+      const bullButton = canvas.getByRole('button', { name: /pldxy-bull/i })
       await userEvent.click(bullButton)
       expect(bullButton).toHaveClass('border-cyber-neon-green')
     })
 
     await step('Switch back to BEAR', async () => {
-      const bearButton = canvas.getByRole('button', { name: /dxy-bear/i })
+      const bearButton = canvas.getByRole('button', { name: /pldxy-bear/i })
       await userEvent.click(bearButton)
       expect(bearButton).toHaveClass('border-cyber-electric-fuchsia')
     })

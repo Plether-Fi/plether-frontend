@@ -49,7 +49,7 @@ export const SpotHoldings: Story = {
   args: {
     title: 'Spot Holdings',
     value: 12500,
-    description: '5,000 DXY-BEAR • 7,500 DXY-BULL',
+    description: '5,000 plDXY-BEAR • 7,500 plDXY-BULL',
     colorClass: 'text-cyber-bright-blue',
     isLoading: false,
   },
@@ -73,7 +73,7 @@ export const StakedTokens: Story = {
   args: {
     title: 'Staked',
     value: 8000,
-    description: '3,000 sDXY-BEAR • 5,000 sDXY-BULL',
+    description: '3,000 splDXY-BEAR • 5,000 splDXY-BULL',
     colorClass: 'text-cyber-bright-blue',
     isLoading: false,
   },
@@ -148,7 +148,7 @@ export const AllCards: Story = {
         <PortfolioCard
           title="Spot Holdings"
           value={toUsdBigint(12500)}
-          description="5,000 DXY-BEAR • 7,500 DXY-BULL"
+          description="5,000 plDXY-BEAR • 7,500 plDXY-BULL"
           link="/"
           isLoading={false}
           colorClass="text-cyber-bright-blue"
@@ -156,7 +156,7 @@ export const AllCards: Story = {
         <PortfolioCard
           title="Staked"
           value={toUsdBigint(8000)}
-          description="3,000 sDXY-BEAR • 5,000 sDXY-BULL"
+          description="3,000 splDXY-BEAR • 5,000 splDXY-BULL"
           link="/stake"
           isLoading={false}
           colorClass="text-cyber-bright-blue"

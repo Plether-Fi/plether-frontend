@@ -23,7 +23,7 @@ export const config = createConfig({
       projectId: WALLETCONNECT_PROJECT_ID,
       metadata: {
         name: 'Plether',
-        description: 'DXY-BEAR and DXY-BULL trading protocol',
+        description: 'plDXY-BEAR and plDXY-BULL trading protocol',
         url: 'https://app.plether.com',
         icons: ['https://app.plether.com/logo.png'],
       },

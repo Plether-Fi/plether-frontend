@@ -20,7 +20,7 @@ const mockTransactions: HistoricalTransaction[] = [
     type: 'stake_bear',
     timestamp: Date.now() / 1000 - 7200,
     amount: 500n * 10n ** 18n,
-    tokenSymbol: 'DXY-BEAR',
+    tokenSymbol: 'plDXY-BEAR',
     status: 'success',
   },
   {

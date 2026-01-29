@@ -19,14 +19,14 @@ Generate the frontend app that interacts with the Plether protocol routers and c
 * Sepolia testnet (for testing)
 
 ## Core Protocol
-* Mint DXY-BEAR + DXY-BULL pairs from USDC
-* Burn DXY-BEAR + DXY-BULL pairs to redeem USDC
+* Mint plDXY-BEAR + plDXY-BULL pairs from USDC
+* Burn plDXY-BEAR + plDXY-BULL pairs to redeem USDC
 
 ## Spot Trading
-* Buy DXY-BEAR on Curve (USDC → DXY-BEAR)
-* Buy DXY-BULL via ZapRouter (single-sided entry) - abstract away flash mint mechanics
-* Sell DXY-BEAR on Curve (DXY-BEAR → USDC)
-* Sell DXY-BULL via ZapRouter (single-sided exit) - abstract away flash mint mechanics
+* Buy plDXY-BEAR on Curve (USDC → plDXY-BEAR)
+* Buy plDXY-BULL via ZapRouter (single-sided entry) - abstract away flash mint mechanics
+* Sell plDXY-BEAR on Curve (plDXY-BEAR → USDC)
+* Sell plDXY-BULL via ZapRouter (single-sided exit) - abstract away flash mint mechanics
 * Market orders only (no limit orders)
 * Slippage settings: Presets (0.5%, 1%) + custom input (capped at 1% protocol max)
 * Swap details: Simple by default with expandable "show details" toggle (route, price impact, fees)
@@ -45,9 +45,9 @@ Generate the frontend app that interacts with the Plether protocol routers and c
 * In-app warnings only when health factor is low (no push/email notifications)
 
 ## Staking
-* Stake DXY-BEAR → sDXY-BEAR
-* Stake DXY-BULL → sDXY-BULL
-* Unstake from sDXY-BEAR / sDXY-BULL
+* Stake plDXY-BEAR → splDXY-BEAR
+* Stake plDXY-BULL → splDXY-BULL
+* Unstake from splDXY-BEAR / splDXY-BULL
 * Display: Current staked balance and pending rewards only (no historical APY charts)
 
 ## Morpho Lending

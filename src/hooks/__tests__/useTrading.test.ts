@@ -145,7 +145,7 @@ describe('useCurveSwap', () => {
     const { pendingTransactions } = useTransactionStore.getState()
     expect(pendingTransactions).toHaveLength(1)
     expect(pendingTransactions[0].type).toBe('swap')
-    expect(pendingTransactions[0].description).toBe('Swapping USDC for DXY-BEAR')
+    expect(pendingTransactions[0].description).toBe('Swapping USDC for plDXY-BEAR')
   })
 
   it('returns Result.ok with hash when swap succeeds', async () => {
@@ -220,7 +220,7 @@ describe('useCurveSwap', () => {
     const { pendingTransactions } = useTransactionStore.getState()
     expect(pendingTransactions[0].status).toBe('confirming')
     expect(pendingTransactions[0].hash).toBe('0xhash')
-    expect(pendingTransactions[0].description).toBe('Swapping DXY-BEAR for USDC')
+    expect(pendingTransactions[0].description).toBe('Swapping plDXY-BEAR for USDC')
   })
 
   it('updates transaction to success when receipt confirms', async () => {
@@ -347,7 +347,7 @@ describe('useZapSwap', () => {
     expect(Result.isOk(zapResult!)).toBe(true)
 
     const { pendingTransactions } = useTransactionStore.getState()
-    expect(pendingTransactions[0].description).toBe('Swapping USDC for DXY-BULL')
+    expect(pendingTransactions[0].description).toBe('Swapping USDC for plDXY-BULL')
   })
 
   it('executes zapSell and returns Result.ok on success', async () => {
@@ -367,7 +367,7 @@ describe('useZapSwap', () => {
     expect(Result.isOk(zapResult!)).toBe(true)
 
     const { pendingTransactions } = useTransactionStore.getState()
-    expect(pendingTransactions[0].description).toBe('Swapping DXY-BULL for USDC')
+    expect(pendingTransactions[0].description).toBe('Swapping plDXY-BULL for USDC')
   })
 
   it('returns NotConnectedError when chainId is missing', async () => {
@@ -556,7 +556,7 @@ describe('useZapSellWithPermit', () => {
       if (readCallCount === 1) {
         return { data: 0n }
       }
-      return { data: 'DXY-BULL' }
+      return { data: 'plDXY-BULL' }
     })
 
     mockSignTypedDataAsync.mockResolvedValue(
@@ -574,6 +574,6 @@ describe('useZapSellWithPermit', () => {
     })
 
     const { pendingTransactions } = useTransactionStore.getState()
-    expect(pendingTransactions[0].description).toBe('Swapping DXY-BULL for USDC')
+    expect(pendingTransactions[0].description).toBe('Swapping plDXY-BULL for USDC')
   })
 })

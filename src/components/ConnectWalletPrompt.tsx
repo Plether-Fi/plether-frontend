@@ -14,7 +14,7 @@ export function ConnectWalletPrompt({ description }: ConnectWalletPromptProps) {
       ) : (
         <>
           <p className="text-cyber-text-secondary mb-6 max-w-md mx-auto">
-            Connect your wallet to view your portfolio, trade DXY-BEAR and DXY-BULL,
+            Connect your wallet to view your portfolio, trade plDXY-BEAR and plDXY-BULL,
             and access all Plether features.
           </p>
           <p className="text-sm text-cyber-text-secondary">

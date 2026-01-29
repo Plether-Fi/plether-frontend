@@ -171,7 +171,7 @@ export function Dashboard() {
             <PortfolioCard
               title="Spot Holdings"
               value={spotValue}
-              description="USDC, DXY-BEAR, DXY-BULL"
+              description="USDC, plDXY-BEAR, plDXY-BULL"
               link="/"
               isLoading={balancesLoading}
               colorClass="text-cyber-bright-blue"
@@ -179,7 +179,7 @@ export function Dashboard() {
             <PortfolioCard
               title="Staked"
               value={stakedValue}
-              description="sDXY-BEAR, sDXY-BULL"
+              description="splDXY-BEAR, splDXY-BULL"
               link="/stake"
               isLoading={stakedBearLoading || stakedBullLoading}
               colorClass="text-cyber-bright-blue"

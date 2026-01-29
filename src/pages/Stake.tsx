@@ -26,7 +26,7 @@ export function Stake() {
           />
         </div>
       ) : (
-        <ConnectWalletPrompt description="Connect your wallet to stake DXY-BEAR and DXY-BULL tokens." />
+        <ConnectWalletPrompt description="Connect your wallet to stake plDXY-BEAR and plDXY-BULL tokens." />
       )}
     </div>
   )
