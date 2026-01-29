@@ -30,6 +30,103 @@ export interface WalletFixtures {
  * Playwright MCP init script - copy this into browser_run_code.
  * Must be run BEFORE navigating to the page.
  */
+/**
+ * Anvil-proxied mock wallet - proxies contract reads to local Anvil node.
+ * Use this when you need real contract state (balances, allowances, etc.)
+ */
+export const MOCK_WALLET_ANVIL_SCRIPT = `async (page) => {
+  await page.addInitScript(() => {
+    const MOCK_ADDRESS = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
+    const CHAIN_ID = '0x7a69'; // 31337 in hex (Anvil)
+    const ANVIL_RPC = 'http://127.0.0.1:8545';
+
+    async function proxyToAnvil(method, params) {
+      const res = await fetch(ANVIL_RPC, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error.message);
+      return data.result;
+    }
+
+    const mockProvider = {
+      isMetaMask: true,
+      selectedAddress: MOCK_ADDRESS,
+      chainId: CHAIN_ID,
+      networkVersion: '31337',
+      _metamask: { isUnlocked: () => Promise.resolve(true) },
+      request: async ({ method, params }) => {
+        console.log('[MockWallet]', method, params);
+        switch (method) {
+          case 'eth_requestAccounts':
+          case 'eth_accounts':
+            return [MOCK_ADDRESS];
+          case 'eth_chainId':
+            return CHAIN_ID;
+          case 'net_version':
+            return '31337';
+          case 'wallet_switchEthereumChain':
+          case 'wallet_addEthereumChain':
+            return null;
+          case 'wallet_getPermissions':
+          case 'wallet_requestPermissions':
+            return [{ parentCapability: 'eth_accounts' }];
+          case 'eth_call':
+          case 'eth_getBalance':
+          case 'eth_estimateGas':
+          case 'eth_gasPrice':
+          case 'eth_blockNumber':
+          case 'eth_getTransactionCount':
+          case 'eth_getCode':
+          case 'eth_getLogs':
+          case 'eth_sendRawTransaction':
+            return proxyToAnvil(method, params);
+          default:
+            console.warn('[MockWallet] Unhandled:', method);
+            return null;
+        }
+      },
+      on: (event, cb) => {
+        if (event === 'accountsChanged') setTimeout(() => cb([MOCK_ADDRESS]), 100);
+        if (event === 'chainChanged') setTimeout(() => cb(CHAIN_ID), 100);
+        if (event === 'connect') setTimeout(() => cb({ chainId: CHAIN_ID }), 100);
+      },
+      removeListener: () => {},
+      removeAllListeners: () => {},
+    };
+
+    Object.defineProperty(window, 'ethereum', {
+      value: mockProvider,
+      writable: false,
+      configurable: true,
+    });
+
+    const announceProvider = () => {
+      window.dispatchEvent(new CustomEvent('eip6963:announceProvider', {
+        detail: Object.freeze({
+          info: {
+            uuid: 'mock-wallet-anvil',
+            name: 'MetaMask',
+            icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><rect fill="%23f6851b" width="32" height="32" rx="6"/></svg>',
+            rdns: 'io.metamask',
+          },
+          provider: mockProvider,
+        }),
+      }));
+    };
+
+    window.addEventListener('eip6963:requestProvider', announceProvider);
+    announceProvider();
+    setTimeout(announceProvider, 100);
+    setTimeout(announceProvider, 500);
+
+    console.log('[MockWallet] Anvil-proxied wallet ready');
+  });
+  return 'Anvil-proxied mock wallet ready - navigate to page now';
+}`
+
 export const MOCK_WALLET_INIT_SCRIPT = `async (page) => {
   await page.addInitScript(() => {
     const MOCK_ADDRESS = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
