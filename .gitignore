@@ -36,3 +36,6 @@ bundle-stats.html
 
 # Playwright test reports
 playwright-report/
+
+# Story screenshots
+screenshots/

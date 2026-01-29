@@ -295,6 +295,44 @@ mcp__playwright__browser_navigate({ url: "http://localhost:5173" });
 
 Full implementation: `e2e/fixtures/mockWallet.ts`
 
+### Documentation Screenshots
+
+Screenshots for documentation live in `screenshots/`. Use consistent settings:
+
+**Resolution:** 1024x1000 pixels (set with `mcp__playwright__browser_resize`)
+
+**Setup for Real Transactions:**
+1. Move `addresses.local.json` to `.bak` so app uses Sepolia addresses
+2. Change wagmi config to use port 8546 (`http://127.0.0.1:8546`)
+3. Use `MOCK_WALLET_ANVIL_SCRIPT` from `e2e/fixtures/mockWallet.ts` which proxies to Anvil
+4. Start Anvil fork: `npm run anvil` (uses port 8546 with Sepolia fork)
+
+**Key Lessons:**
+- `addInitScript` only runs on NEW page loads - close browser and reopen to apply changes
+- Hide TanStack devtools before screenshots: `document.querySelector('.tsqd-open-btn-container').style.display = 'none'`
+- Mock wallet needs `eth_sendTransaction` handler to proxy transactions to Anvil
+- Anvil test account `0xf39F...2266` is pre-funded and unlocked for direct tx sending
+- Screenshots save to `.playwright-mcp/` - copy to `screenshots/` directory
+- Always verify dimensions with `file screenshots/*.png` for consistency
+
+**Workflow:**
+```bash
+# 1. Setup
+mv src/contracts/addresses.local.json src/contracts/addresses.local.json.bak
+# Edit wagmi.ts: change anvil port to 8546
+
+# 2. Take screenshots with Playwright MCP
+mcp__playwright__browser_resize(1024, 1000)
+mcp__playwright__browser_run_code(MOCK_WALLET_ANVIL_SCRIPT)
+mcp__playwright__browser_navigate("http://localhost:5173/mint")
+# ... interact and screenshot ...
+
+# 3. Cleanup
+cp .playwright-mcp/*.png screenshots/
+mv src/contracts/addresses.local.json.bak src/contracts/addresses.local.json
+# Revert wagmi.ts port change
+```
+
 ### Source Code Reference
 
 Source code for dependencies is available in `opensrc/` for deeper understanding of implementation details. Use this when you need to understand how a package works internally, not just its types/interface.
