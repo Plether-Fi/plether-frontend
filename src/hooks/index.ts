@@ -31,6 +31,17 @@ export {
   useCloseLeverage,
   useAdjustCollateral,
 } from './useLeverage'
+export {
+  useLendingPosition,
+  useCombinedLendingPosition,
+  useLendingMarketInfo,
+  useAvailableToBorrow,
+  useSupply,
+  useWithdraw,
+  useBorrow,
+  useRepay,
+  useUsdcAllowanceForMorpho,
+} from './useLending'
 export { useBasketOraclePrice } from './useBasketOracle'
 export { useTokenPrices } from './useTokenPrices'
 export { useTransactionModal } from './useTransactionModal'

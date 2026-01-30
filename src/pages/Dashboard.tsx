@@ -9,7 +9,7 @@ import { LeverageCard } from '../components/LeverageCard'
 import { MainTabNav } from '../components/MainTabNav'
 import { ConnectWalletPrompt } from '../components/ConnectWalletPrompt'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { useTokenBalances, useLeveragePosition, useStakedBalance, useTokenPrices, useTransactionSequence, type TransactionStep } from '../hooks'
+import { useTokenBalances, useLeveragePosition, useStakedBalance, useTokenPrices, useTransactionSequence, useCombinedLendingPosition, useAvailableToBorrow, type TransactionStep } from '../hooks'
 import { useWriteContract } from 'wagmi'
 import { LEVERAGE_ROUTER_ABI } from '../contracts/abis'
 import { getAddresses, DEFAULT_CHAIN_ID } from '../contracts/addresses'
@@ -51,6 +51,10 @@ export function Dashboard() {
 
   const bearPosition = useLeveragePosition('BEAR')
   const bullPosition = useLeveragePosition('BULL')
+
+  const lendingPosition = useCombinedLendingPosition()
+  const bearBorrowable = useAvailableToBorrow('BEAR')
+  const bullBorrowable = useAvailableToBorrow('BULL')
 
   const slippage = useSettingsStore((s) => s.slippage)
   const addresses = getAddresses(chainId ?? DEFAULT_CHAIN_ID)
@@ -154,7 +158,12 @@ export function Dashboard() {
   const stakedValue = stakedBearValue + stakedBullValue
 
   const leverageValue = positions.reduce((acc, p) => acc + p.collateral, 0n)
-  const lendingValue = 0n
+
+  const totalSupplied = lendingPosition.totalSupplied
+  const totalBorrowed = lendingPosition.totalBorrowed
+  const totalAvailableToBorrow = bearBorrowable.availableToBorrow + bullBorrowable.availableToBorrow
+  const hasCollateral = bearBorrowable.collateral > 0n || bullBorrowable.collateral > 0n
+  const lendingValue = totalSupplied > totalBorrowed ? totalSupplied - totalBorrowed : 0n
 
   return (
     <div className="space-y-10">
@@ -197,7 +206,7 @@ export function Dashboard() {
               value={lendingValue}
               description="Morpho supplied"
               link="/lending"
-              isLoading={false}
+              isLoading={lendingPosition.isLoading}
               colorClass="text-cyber-neon-green"
             />
           </div>
@@ -242,13 +251,15 @@ export function Dashboard() {
 
               {mainTab === 'lending' && (
                 <YieldCard
-                  suppliedAmount={5000n * 10n ** 6n}
-                  borrowedAmount={1000n * 10n ** 6n}
-                  availableToBorrow={3000n * 10n ** 6n}
+                  suppliedAmount={totalSupplied}
+                  borrowedAmount={totalBorrowed}
+                  availableToBorrow={totalAvailableToBorrow}
                   supplyApy={3.5}
                   borrowApy={5.2}
                   usdcBalance={usdcBalance}
-                  suppliedBalance={5000n * 10n ** 6n}
+                  suppliedBalance={totalSupplied}
+                  hasCollateral={hasCollateral}
+                  onSuccess={() => void lendingPosition.refetch()}
                 />
               )}
             </div>

@@ -3,7 +3,7 @@ import { devtools, persist } from 'zustand/middleware'
 import { STORAGE_KEYS } from '../config/constants'
 
 export type TransactionStatus = 'pending' | 'confirming' | 'success' | 'failed'
-export type TransactionType = 'mint' | 'burn' | 'swap' | 'stake' | 'unstake' | 'leverage' | 'lend' | 'approve'
+export type TransactionType = 'mint' | 'burn' | 'swap' | 'stake' | 'unstake' | 'leverage' | 'lend' | 'approve' | 'supply' | 'withdraw' | 'borrow' | 'repay'
 
 export interface PendingTransaction {
   id: string

@@ -9,6 +9,7 @@ interface YieldCardArgs {
   borrowApy: number
   usdcBalance: number
   suppliedBalance: number
+  hasCollateral: boolean
 }
 
 const meta: Meta<YieldCardArgs> = {
@@ -43,6 +44,10 @@ const meta: Meta<YieldCardArgs> = {
       control: { type: 'number', min: 0 },
       description: 'User supplied balance (for withdraw)',
     },
+    hasCollateral: {
+      control: 'boolean',
+      description: 'Whether user has staked collateral for borrowing',
+    },
   },
 }
 
@@ -62,6 +67,7 @@ export const Default: Story = {
     borrowApy: 5.2,
     usdcBalance: 10000,
     suppliedBalance: 5000,
+    hasCollateral: true,
   },
   render: (args) => (
     <YieldCard
@@ -72,6 +78,7 @@ export const Default: Story = {
       borrowApy={args.borrowApy}
       usdcBalance={toUsdBigint(args.usdcBalance)}
       suppliedBalance={toUsdBigint(args.suppliedBalance)}
+      hasCollateral={args.hasCollateral}
     />
   ),
 }
@@ -85,6 +92,7 @@ export const NewUser: Story = {
     borrowApy: 5.2,
     usdcBalance: 10000,
     suppliedBalance: 0,
+    hasCollateral: false,
   },
   render: (args) => (
     <YieldCard
@@ -95,6 +103,7 @@ export const NewUser: Story = {
       borrowApy={args.borrowApy}
       usdcBalance={toUsdBigint(args.usdcBalance)}
       suppliedBalance={toUsdBigint(args.suppliedBalance)}
+      hasCollateral={args.hasCollateral}
     />
   ),
 }
@@ -108,6 +117,7 @@ export const HighUtilization: Story = {
     borrowApy: 12.2,
     usdcBalance: 2000,
     suppliedBalance: 10000,
+    hasCollateral: true,
   },
   render: (args) => (
     <YieldCard
@@ -118,6 +128,57 @@ export const HighUtilization: Story = {
       borrowApy={args.borrowApy}
       usdcBalance={toUsdBigint(args.usdcBalance)}
       suppliedBalance={toUsdBigint(args.suppliedBalance)}
+      hasCollateral={args.hasCollateral}
+    />
+  ),
+}
+
+export const NoCollateral: Story = {
+  args: {
+    suppliedAmount: 5000,
+    borrowedAmount: 0,
+    availableToBorrow: 0,
+    supplyApy: 3.5,
+    borrowApy: 5.2,
+    usdcBalance: 10000,
+    suppliedBalance: 5000,
+    hasCollateral: false,
+  },
+  render: (args) => (
+    <YieldCard
+      suppliedAmount={toUsdBigint(args.suppliedAmount)}
+      borrowedAmount={toUsdBigint(args.borrowedAmount)}
+      availableToBorrow={toUsdBigint(args.availableToBorrow)}
+      supplyApy={args.supplyApy}
+      borrowApy={args.borrowApy}
+      usdcBalance={toUsdBigint(args.usdcBalance)}
+      suppliedBalance={toUsdBigint(args.suppliedBalance)}
+      hasCollateral={args.hasCollateral}
+    />
+  ),
+}
+
+export const AtBorrowLimit: Story = {
+  args: {
+    suppliedAmount: 0,
+    borrowedAmount: 5000,
+    availableToBorrow: 100,
+    supplyApy: 3.5,
+    borrowApy: 5.2,
+    usdcBalance: 500,
+    suppliedBalance: 0,
+    hasCollateral: true,
+  },
+  render: (args) => (
+    <YieldCard
+      suppliedAmount={toUsdBigint(args.suppliedAmount)}
+      borrowedAmount={toUsdBigint(args.borrowedAmount)}
+      availableToBorrow={toUsdBigint(args.availableToBorrow)}
+      supplyApy={args.supplyApy}
+      borrowApy={args.borrowApy}
+      usdcBalance={toUsdBigint(args.usdcBalance)}
+      suppliedBalance={toUsdBigint(args.suppliedBalance)}
+      hasCollateral={args.hasCollateral}
     />
   ),
 }
