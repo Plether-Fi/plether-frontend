@@ -2,48 +2,117 @@ import { TaggedError, matchErrorPartial } from 'better-result'
 
 const ERROR_SELECTORS: Record<string, string> = {
   // LeverageRouter errors
-  '0x80fd91ce': 'Swap output too low - try increasing slippage',
-  '0x0fe775ae': 'Slippage exceeds maximum (1%)',
-  '0x82793d5a': 'Curve price query failed',
   '0x02e83603': 'Splitter not active',
-  '0x5ea9fe39': 'Transaction deadline expired',
-  '0x50285b92': 'Leverage must be greater than 1x',
+  '0x0fe775ae': 'Slippage exceeds maximum (1%)',
   '0x3431b67c': 'Principal amount is zero',
+  '0x50285b92': 'Leverage must be greater than 1x',
+  '0x5ea9fe39': 'Transaction deadline expired',
+  '0x80fd91ce': 'Swap output too low - try increasing slippage',
+  '0x82793d5a': 'Curve price query failed',
   '0x970faf44': 'Collateral amount is zero',
   '0xbcc16562': 'Invalid address (zero)',
   '0xf4d5ee4b': 'Not authorized - approve Morpho first',
 
   // ZapRouter errors
-  '0x1e82378b': 'Swap output too low - try increasing slippage',
-  '0xaaf6a5c7': 'Slippage exceeds maximum (1%)',
   '0x1b18b763': 'Curve price query failed',
+  '0x1e82378b': 'Swap output too low - try increasing slippage',
+  '0x238f1686': 'BEAR price above cap - market conditions unfavorable',
   '0x7ec11d1d': 'Splitter not active',
   '0x97a66649': 'Transaction deadline expired',
-  '0x238f1686': 'BEAR price above cap - market conditions unfavorable',
+  '0xaaf6a5c7': 'Slippage exceeds maximum (1%)',
   '0xd7f35b86': 'Solvency check failed',
-  '0xf471c493': 'Amount is zero',
   '0xe0479991': 'Invalid address (zero)',
+  '0xf471c493': 'Amount is zero',
 
   // Splitter errors
-  '0x583fe571': 'Amount is zero',
-  '0x1d2a620e': 'Burn would return zero USDC',
   '0x0d6ff717': 'Protocol is in liquidation mode',
+  '0x1d2a620e': 'Burn would return zero USDC',
   '0x2e686365': 'Insufficient liquidity in yield adapter',
+  '0x4a4a2ca4': 'Protocol not in liquidation',
+  '0x4f2ab8e9': 'No yield surplus to harvest',
+  '0x583fe571': 'Amount is zero',
+  '0x71e7e49a': 'No pending proposal',
+  '0x8b871441': 'Invalid CAP value',
+  '0xa573750e': 'Yield adapter not configured',
+  '0xad473ba8': 'Harvest below threshold',
+  '0xafc4799e': 'Adapter withdrawal failed',
+  '0xc17870e6': 'Timelock not expired',
+  '0xc43f1901': 'Cannot rescue core assets',
+  '0xcf144b7e': 'Invalid address (zero)',
+  '0xe0146c26': 'Adapter migration lost funds',
   '0xe2cbebc9': 'Protocol is insolvent',
+  '0xe901888d': 'Governance locked - 7 day cooldown after unpause',
+  '0xfe41b1b8': 'Operation requires pause',
 
   // Oracle errors
   '0x08744fae': 'Price data is stale',
+  '0x090bc858': 'Sequencer grace period active',
+  '0x2bb5b1b3': 'Invalid component price feed',
+  '0x4e630da3': 'No pending proposal',
+  '0x593fc1f4': 'Max deviation is zero',
+  '0x5f0ad3d9': 'Invalid address (zero)',
+  '0x6eb3202d': 'Array lengths mismatch',
+  '0x92d64d06': 'Invalid oracle price',
+  '0x9e0bffb6': 'Timelock not expired',
+  '0x9f4269de': 'Invalid underlying oracle price',
+  '0xb1596697': 'Base price is zero',
   '0xbb02674c': 'Price exceeds cap - liquidation triggered',
   '0xc4a1093a': 'Oracle price is stale',
+  '0xd536a664': 'Invalid address (zero)',
   '0xd67540f3': 'Invalid oracle price',
+  '0xdfe9bde3': 'L2 sequencer is down',
+  '0xe4b0ed2b': 'Curve pool already set',
+  '0xfbe44393': 'Price deviation exceeds threshold',
+
+  // MorphoAdapter errors
+  '0x10a713ca': 'Invalid address (zero)',
+  '0x55e52988': 'Caller is not Splitter',
+  '0xac2d6075': 'Cannot rescue underlying asset',
+  '0xb0e1b4f9': 'Invalid Morpho market',
+
+  // FlashLoan errors
+  '0x31473b82': 'Invalid flash loan operation',
+  '0x4ea8ea0b': 'Flash loan not self-initiated',
+  '0xeb9e1f78': 'Invalid flash loan lender',
+
+  // ERC4626 errors
+  '0x284ff667': 'Exceeds maximum mint amount',
+  '0x79012fb2': 'Exceeds maximum deposit amount',
+  '0xb94abeec': 'Exceeds maximum redeem amount - position may be locked or insufficient liquidity',
+  '0xfe9cceec': 'Exceeds maximum withdraw amount',
 
   // ERC20 errors
+  '0x94280d62': 'Invalid spender address',
+  '0x96c6fd1e': 'Invalid sender address',
   '0xe450d38c': 'Insufficient token balance',
+  '0xe602df05': 'Invalid approver address',
+  '0xec442f05': 'Invalid receiver address',
   '0xfb8f41b2': 'Insufficient token allowance',
 
+  // ERC2612/ERC3156 errors
+  '0x4b800e46': 'Invalid permit signer',
+  '0x62791302': 'Permit signature expired',
+  '0x678c5b00': 'Invalid flash loan receiver',
+  '0x752d88c0': 'Invalid account nonce',
+  '0xb5a7db92': 'Unsupported token for flash loan',
+  '0xfd9a7609': 'Exceeds maximum flash loan amount',
+
+  // Signature errors
+  '0xd78bce0c': 'Invalid signature S value',
+  '0xf645eedf': 'Invalid ECDSA signature',
+  '0xfce698f7': 'Invalid signature length',
+
   // Common errors
-  '0xd93c0665': 'Contract is paused',
+  '0x118cdaa7': 'Not authorized - caller is not owner',
+  '0x1e4fbdf7': 'Invalid owner address',
+  '0x305a27a9': 'String too long',
   '0x3ee5aeb5': 'Reentrancy detected',
+  '0x3f84e836': 'Caller is not Splitter',
+  '0x5274afe7': 'Token transfer failed',
+  '0x7b63ec3e': 'Invalid address (zero)',
+  '0x8dfc202b': 'Contract should be paused',
+  '0xb3512b0c': 'Invalid short string',
+  '0xd93c0665': 'Contract is paused',
 }
 
 function decodeErrorSelector(data: string): string | null {
@@ -77,10 +146,11 @@ export class InsufficientFundsError extends TaggedError('InsufficientFundsError'
 export class ContractRevertError extends TaggedError('ContractRevertError')<{
   reason: string
   message: string
+  rawData?: string
 }>() {
-  constructor(args: { reason?: string }) {
+  constructor(args: { reason?: string; rawData?: string }) {
     const reason = args.reason ?? 'Unknown reason'
-    super({ reason, message: reason })
+    super({ reason, message: reason, rawData: args.rawData })
   }
 }
 
@@ -128,16 +198,12 @@ function extractMessage(error: unknown): string {
     cause?: { shortMessage?: string; message?: string }
   }
 
-  if (errorObj.shortMessage) return truncateMessage(errorObj.shortMessage)
-  if (errorObj.cause?.shortMessage) return truncateMessage(errorObj.cause.shortMessage)
-  if (errorObj.message) return truncateMessage(errorObj.message)
-  if (typeof error === 'string') return truncateMessage(error)
+  if (errorObj.shortMessage) return errorObj.shortMessage
+  if (errorObj.cause?.shortMessage) return errorObj.cause.shortMessage
+  if (errorObj.message) return errorObj.message
+  if (typeof error === 'string') return error
 
   return 'Transaction failed'
-}
-
-function truncateMessage(message: string): string {
-  return message.length > 100 ? message.slice(0, 100) + '...' : message
 }
 
 const USER_REJECTION_PATTERNS = [
@@ -235,8 +301,14 @@ export function parseTransactionError(error: unknown): TransactionError {
   if (errorData) {
     const decodedError = decodeErrorSelector(errorData)
     if (decodedError) {
-      return new ContractRevertError({ reason: decodedError })
+      return new ContractRevertError({ reason: decodedError, rawData: errorData })
     }
+    // Unknown selector - show full error data
+    const selector = errorData.slice(0, 10)
+    return new ContractRevertError({
+      reason: `Unknown error ${selector}`,
+      rawData: errorData
+    })
   }
 
   const revertMatch = /execution reverted: (.+?)(?:\n|$|")/i.exec(message)
