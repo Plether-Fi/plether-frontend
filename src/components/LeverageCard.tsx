@@ -38,24 +38,22 @@ export function LeverageCard({ usdcBalance, refetchBalances, onPositionOpened }:
     : null
   const isRunning = currentTx?.status === 'pending' || currentTx?.status === 'confirming'
 
-  const { bearPrice, bullPrice, cap } = useTokenPrices()
+  const { bearPrice, bullPrice } = useTokenPrices()
   const tokenPrice = selectedSide === 'BEAR' ? bearPrice : bullPrice
 
   const maxEffectiveLeverage = 11.76
 
-  const contractLeverage = selectedSide === 'BULL' && tokenPrice > 0n && cap > 0n
-    ? BigInt(Math.floor(targetLeverage * 1e18)) * cap / tokenPrice
-    : BigInt(Math.floor(targetLeverage * 1e18))
+  const contractLeverage = BigInt(Math.floor(targetLeverage * 1e18))
 
   const collateralBigInt = collateralAmount ? parseUnits(collateralAmount, 6) : 0n
 
-  const { expectedCollateralTokens, expectedDebt, isLoading: previewLoading } = usePreviewOpenLeverage(
+  const { totalUSDC, expectedDebt, isLoading: previewLoading } = usePreviewOpenLeverage(
     selectedSide,
     collateralBigInt,
     contractLeverage
   )
 
-  const expectedPositionValue = expectedCollateralTokens * tokenPrice / 10n ** 20n
+  const expectedPositionValue = totalUSDC
 
   const { data: morphoAddress } = useReadContract({
     address: routerAddress,
@@ -115,10 +113,13 @@ export function LeverageCard({ usdcBalance, refetchBalances, onPositionOpened }:
 
   const isDisabled = !collateralAmount || parseFloat(collateralAmount) <= 0 || isRunning || insufficientBalance
 
-  const collateralNum = parseFloat(collateralAmount) || 0
+  const expectedEquity = expectedPositionValue > expectedDebt ? expectedPositionValue - expectedDebt : 0n
   const positionSizeDisplay = previewLoading && collateralBigInt > 0n
     ? '...'
     : formatUsd(expectedPositionValue)
+  const equityDisplay = previewLoading && collateralBigInt > 0n
+    ? '...'
+    : formatUsd(expectedEquity)
   const debtDisplay = previewLoading && collateralBigInt > 0n
     ? '...'
     : formatUsd(expectedDebt)
@@ -192,7 +193,7 @@ export function LeverageCard({ usdcBalance, refetchBalances, onPositionOpened }:
         </div>
         <div className="flex justify-between">
           <span className="text-cyber-text-secondary text-sm">Your Equity</span>
-          <span className="text-cyber-text-primary">{formatUsd(BigInt(Math.floor(collateralNum * 1e6)))}</span>
+          <span className="text-cyber-text-primary">{equityDisplay}</span>
         </div>
         <div className="flex justify-between">
           <span className="text-cyber-text-secondary text-sm flex items-center gap-1">

@@ -24,7 +24,6 @@ export function useTokenPrices() {
     },
   })
 
-  // Oracle price has 8 decimals
   const oraclePrice = roundData?.[1] ?? 0n
   const capValue = cap ?? 0n
 
