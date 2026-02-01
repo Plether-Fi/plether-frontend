@@ -23,20 +23,29 @@ export function LeverageCard({ usdcBalance, refetchBalances, onPositionOpened }:
   const { isConnected, address, chainId } = useAccount()
   const addresses = getAddresses(chainId ?? DEFAULT_CHAIN_ID)
   const slippage = useSettingsStore((s) => s.slippage)
-  const txStore = useTransactionStore()
+  const transactions = useTransactionStore((s) => s.transactions)
+  const activeOperations = useTransactionStore((s) => s.activeOperations)
 
   const [selectedSide, setSelectedSide] = useState<TokenSide>('BULL')
   const [collateralAmount, setCollateralAmount] = useState('')
   const [targetLeverage, setTargetLeverage] = useState(2)
+  const [trackedTxId, setTrackedTxId] = useState<string | null>(null)
 
   const routerAddress = selectedSide === 'BEAR' ? addresses.LEVERAGE_ROUTER : addresses.BULL_LEVERAGE_ROUTER
   const operationKey = `leverage-open-${selectedSide}`
 
-  const transactionId = txStore.activeOperations[operationKey]
-  const currentTx = transactionId
-    ? txStore.transactions.find(t => t.id === transactionId)
+  const activeTransactionId = activeOperations[operationKey]
+  const currentTxId = activeTransactionId ?? trackedTxId
+  const currentTx = currentTxId
+    ? transactions.find(t => t.id === currentTxId)
     : null
   const isRunning = currentTx?.status === 'pending' || currentTx?.status === 'confirming'
+
+  useEffect(() => {
+    if (activeTransactionId && activeTransactionId !== trackedTxId) {
+      setTrackedTxId(activeTransactionId)
+    }
+  }, [activeTransactionId, trackedTxId])
 
   const { bearPrice, bullPrice } = useTokenPrices()
   const tokenPrice = selectedSide === 'BEAR' ? bearPrice : bullPrice
@@ -90,6 +99,7 @@ export function LeverageCard({ usdcBalance, refetchBalances, onPositionOpened }:
       void refetchUsdcAllowance()
       setCollateralAmount('')
       setTargetLeverage(2)
+      setTrackedTxId(null)
     }
   }, [currentTx?.status, refetchBalances, onPositionOpened, refetchAuthorization, refetchUsdcAllowance])
 
