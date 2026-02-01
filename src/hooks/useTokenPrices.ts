@@ -27,10 +27,10 @@ export function useTokenPrices() {
   const oraclePrice = roundData?.[1] ?? 0n
   const capValue = cap ?? 0n
 
-  // BEAR price = CAP - oracle (bearish = profits when plDXY falls)
-  // BULL price = oracle (bullish = profits when plDXY rises)
-  const bearPrice = capValue > oraclePrice ? capValue - oraclePrice : 0n
-  const bullPrice = oraclePrice > 0n ? oraclePrice : 0n
+  // Basket oracle returns BEAR price directly (foreign currency basket value)
+  // BULL price = CAP - BEAR (inverse exposure)
+  const bearPrice = oraclePrice > 0n ? oraclePrice : 0n
+  const bullPrice = capValue > oraclePrice ? capValue - oraclePrice : 0n
 
   return {
     bearPrice,  // 8 decimals

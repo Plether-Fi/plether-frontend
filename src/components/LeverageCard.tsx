@@ -47,13 +47,14 @@ export function LeverageCard({ usdcBalance, refetchBalances, onPositionOpened }:
 
   const collateralBigInt = collateralAmount ? parseUnits(collateralAmount, 6) : 0n
 
-  const { totalUSDC, expectedDebt, isLoading: previewLoading } = usePreviewOpenLeverage(
+  const { expectedCollateralTokens, expectedDebt, isLoading: previewLoading } = usePreviewOpenLeverage(
     selectedSide,
     collateralBigInt,
     contractLeverage
   )
 
-  const expectedPositionValue = totalUSDC
+  // Position value = collateral tokens (18 dec) * token price (8 dec) / 10^20 = USDC (6 dec)
+  const expectedPositionValue = expectedCollateralTokens * tokenPrice / 10n ** 20n
 
   const { data: morphoAddress } = useReadContract({
     address: routerAddress,

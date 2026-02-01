@@ -99,20 +99,19 @@ export function useLeveragePosition(side: 'BEAR' | 'BULL') {
     },
   })
 
-  // Calculate token price: BEAR = CAP - oracle, BULL = oracle (8 decimals)
+  // Basket oracle returns BEAR price directly, BULL = CAP - BEAR (8 decimals)
   const oraclePrice = roundData?.[1] ?? 0n
   const capValue = cap ?? 0n
   const tokenPrice = side === 'BEAR'
-    ? (capValue > oraclePrice ? capValue - oraclePrice : 0n)
-    : oraclePrice
+    ? oraclePrice
+    : (capValue > oraclePrice ? capValue - oraclePrice : 0n)
 
   // Collateral is the third field in Morpho position struct (staked token units, 21 decimals)
   const collateral = morphoPosition?.[2] ?? 0n
   const actualDebt = debt ?? 0n
   const hasPosition = collateral > 0n
 
-  // Calculate collateral USD value: shares * price / 10^23 (gives 6-decimal USDC)
-  // Shares have 21 effective decimals (18 + 1000x offset), price has 8 decimals
+  // Calculate collateral USD value: shares (21 dec) * price (8 dec) / 10^23 = USDC (6 dec)
   const collateralUsdc = collateral * tokenPrice / 10n ** 23n
   const equity = collateralUsdc > actualDebt ? collateralUsdc - actualDebt : 1n
   const leverage = hasPosition && equity > 0n

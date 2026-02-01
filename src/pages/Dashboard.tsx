@@ -103,8 +103,7 @@ export function Dashboard() {
 
   if (bearPosition.hasPosition) {
     const leverageNum = Number(bearPosition.leverage) / 100
-    // Convert collateral to USD: shares * price / 10^23 (gives 6-decimal USDC)
-    // Shares have 21 effective decimals (18 + 1000x offset), price has 8 decimals
+    // Convert collateral to USD: shares (21 dec) * price (8 dec) / 10^23 = USDC (6 dec)
     const positionValue = bearPosition.collateral * bearPrice / 10n ** 23n
     const equity = positionValue > bearPosition.debt ? positionValue - bearPosition.debt : 0n
     positions.push({
@@ -123,7 +122,7 @@ export function Dashboard() {
 
   if (bullPosition.hasPosition) {
     const leverageNum = Number(bullPosition.leverage) / 100
-    // Convert collateral to USD: shares * price / 10^23 (gives 6-decimal USDC)
+    // Convert collateral to USD: shares (21 dec) * price (8 dec) / 10^23 = USDC (6 dec)
     const positionValue = bullPosition.collateral * bullPrice / 10n ** 23n
     const equity = positionValue > bullPosition.debt ? positionValue - bullPosition.debt : 0n
     console.log('[Dashboard BULL]', {
