@@ -159,8 +159,6 @@ export function Dashboard() {
   const leverageValue = positions.reduce((acc, p) => acc + p.collateral, 0n)
 
   const totalSupplied = lendingPosition.totalSupplied
-  const totalBorrowed = lendingPosition.totalBorrowed
-  const lendingValue = totalSupplied > totalBorrowed ? totalSupplied - totalBorrowed : 0n
 
   return (
     <div className="space-y-10">
@@ -200,7 +198,7 @@ export function Dashboard() {
             />
             <PortfolioCard
               title="Lending"
-              value={lendingValue}
+              value={totalSupplied}
               description="Morpho supplied"
               link="/lending"
               isLoading={lendingPosition.isLoading}
@@ -261,7 +259,12 @@ export function Dashboard() {
                     collateral: bullBorrowable.collateralUsd,
                   }}
                   usdcBalance={usdcBalance}
-                  onSuccess={() => void lendingPosition.refetch()}
+                  onSuccess={() => {
+                    void lendingPosition.refetch()
+                    void bearPosition.refetch()
+                    void bullPosition.refetch()
+                    void refetchBalances()
+                  }}
                 />
               )}
             </div>

@@ -3,7 +3,7 @@ import { useAccount, useWriteContract, useReadContract } from 'wagmi'
 import { parseUnits, zeroAddress, type Address } from 'viem'
 import { TokenInput } from './TokenInput'
 import { formatUsd } from '../utils/formatters'
-import { useTransactionSequence, useAllowance, type TransactionStep } from '../hooks'
+import { useTransactionSequence, useAllowance, useMorphoApy, type TransactionStep } from '../hooks'
 import { getAddresses, DEFAULT_CHAIN_ID } from '../contracts/addresses'
 import { ERC20_ABI, LEVERAGE_ROUTER_ABI, MORPHO_ABI } from '../contracts/abis'
 
@@ -76,6 +76,7 @@ function MarketColumn({ side, market, usdcBalance, onSuccess }: MarketColumnProp
   const { isConnected, address, chainId } = useAccount()
   const addresses = getAddresses(chainId ?? DEFAULT_CHAIN_ID)
   const { morphoAddress, marketParams } = useMarketConfig(side)
+  const { supplyApy, borrowApy, utilization } = useMorphoApy(side)
 
   const [supplyMode, setSupplyMode] = useState<SupplyMode>('supply')
   const [borrowMode, setBorrowMode] = useState<BorrowMode>('borrow')
@@ -275,8 +276,20 @@ function MarketColumn({ side, market, usdcBalance, onSuccess }: MarketColumnProp
           <span className="text-cyber-text-primary font-medium">{formatUsd(market.suppliedAmount)}</span>
         </div>
         <div className="flex justify-between text-sm">
+          <span className="text-cyber-text-secondary">Supply APY</span>
+          <span className="text-cyber-neon-green font-medium">{(supplyApy * 100).toFixed(2)}%</span>
+        </div>
+        <div className="flex justify-between text-sm">
           <span className="text-cyber-text-secondary">Borrowed</span>
           <span className="text-cyber-text-primary font-medium">{formatUsd(market.borrowedAmount)}</span>
+        </div>
+        <div className="flex justify-between text-sm">
+          <span className="text-cyber-text-secondary">Borrow APY</span>
+          <span className="text-cyber-warning-text font-medium">{(borrowApy * 100).toFixed(2)}%</span>
+        </div>
+        <div className="flex justify-between text-sm">
+          <span className="text-cyber-text-secondary">Utilization</span>
+          <span className="text-cyber-text-primary font-medium">{(utilization * 100).toFixed(1)}%</span>
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-cyber-text-secondary">Collateral</span>
