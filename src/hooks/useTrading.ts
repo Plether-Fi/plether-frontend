@@ -19,6 +19,25 @@ export type SwapError = NotConnectedError | TransactionError
 
 const USDC_INDEX = 0n
 const BEAR_INDEX = 1n
+const PRECISION = 10n ** 18n
+
+function calculatePriceImpact(
+  actualOutput: bigint,
+  actualInput: bigint,
+  refOutput: bigint,
+  refInput: bigint
+): number {
+  if (actualInput === 0n || refInput === 0n || refOutput === 0n) return 0
+
+  const spotRateScaled = refOutput * PRECISION / refInput
+  const actualRateScaled = actualOutput * PRECISION / actualInput
+
+  if (spotRateScaled === 0n) return 0
+  if (actualRateScaled >= spotRateScaled) return 0
+
+  const impactBps = (spotRateScaled - actualRateScaled) * 10000n / spotRateScaled
+  return Number(impactBps) / 100
+}
 
 export function useCurveQuote(tokenIn: 'USDC' | 'BEAR', amountIn: bigint) {
   const { chainId } = useAccount()
@@ -50,12 +69,9 @@ export function useCurveQuote(tokenIn: 'USDC' | 'BEAR', amountIn: bigint) {
   })
 
   const amountOut = data ?? 0n
-  let priceImpact = 0
-  if (amountIn > 0n && amountOut > 0n && refData) {
-    const spotRate = Number(refData) / Number(refAmount)
-    const actualRate = Number(amountOut) / Number(amountIn)
-    priceImpact = ((spotRate - actualRate) / spotRate) * 100
-  }
+  const priceImpact = refData
+    ? calculatePriceImpact(amountOut, amountIn, refData, refAmount)
+    : 0
 
   return {
     amountOut,
@@ -167,14 +183,10 @@ export function useZapQuote(direction: 'buy' | 'sell', amount: bigint) {
     : (sellData?.[2] ?? 0n)
 
   let priceImpact = 0
-  if (direction === 'buy' && amount > 0n && buyData?.[3] && buyRefData?.[3]) {
-    const spotRate = Number(buyRefData[3]) / Number(refAmount)
-    const actualRate = Number(buyData[3]) / Number(amount)
-    priceImpact = ((spotRate - actualRate) / spotRate) * 100
-  } else if (direction === 'sell' && amount > 0n && sellData?.[2] && sellRefData?.[2]) {
-    const spotRate = Number(sellRefData[2]) / Number(refAmount)
-    const actualRate = Number(sellData[2]) / Number(amount)
-    priceImpact = ((spotRate - actualRate) / spotRate) * 100
+  if (direction === 'buy' && buyData?.[3] && buyRefData?.[3]) {
+    priceImpact = calculatePriceImpact(buyData[3], amount, buyRefData[3], refAmount)
+  } else if (direction === 'sell' && sellData?.[2] && sellRefData?.[2]) {
+    priceImpact = calculatePriceImpact(sellData[2], amount, sellRefData[2], refAmount)
   }
 
   return {
