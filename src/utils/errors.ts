@@ -121,6 +121,24 @@ function decodeErrorSelector(data: string): string | null {
   return ERROR_SELECTORS[selector] ?? null
 }
 
+export function decodeContractError(error: unknown): string {
+  if (!error) return 'Unknown error'
+
+  const errorStr = typeof error === 'object' && error !== null
+    ? (error as { message?: string; shortMessage?: string }).message ??
+      (error as { message?: string; shortMessage?: string }).shortMessage ??
+      String(error)
+    : String(error)
+
+  const selectorMatch = /0x[a-fA-F0-9]{8}/.exec(errorStr)
+  if (selectorMatch) {
+    const decoded = ERROR_SELECTORS[selectorMatch[0].toLowerCase()]
+    if (decoded) return decoded
+  }
+
+  return errorStr.length > 100 ? errorStr.slice(0, 100) + '...' : errorStr
+}
+
 export class UserRejectedError extends TaggedError('UserRejectedError')<{
   message: string
 }>() {

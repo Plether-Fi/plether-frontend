@@ -1,7 +1,8 @@
 import { formatUnits } from 'viem'
-import { Skeleton } from './ui'
+import { Skeleton, Tooltip } from './ui'
 import { useBasketOraclePrice } from '../hooks'
 import { usePlethCoreStatus } from '../hooks'
+import { decodeContractError } from '../utils/errors'
 import type { ProtocolStatus } from '../config/constants'
 
 interface PriceDisplayProps {
@@ -11,11 +12,13 @@ interface PriceDisplayProps {
 export function PriceDisplay({
   variant = 'compact',
 }: PriceDisplayProps) {
-  const { price: rawPrice, decimals, isLoading: priceLoading } = useBasketOraclePrice()
+  const { price: rawPrice, decimals, isLoading: priceLoading, error: priceError } = useBasketOraclePrice()
   const { status: contractStatus, isLoading: statusLoading } = usePlethCoreStatus()
 
   const isLoading = priceLoading || statusLoading
+  const priceUnknown = !!priceError || rawPrice === 0n
   const price = rawPrice > 0n ? parseFloat(formatUnits(rawPrice, decimals)) : 0
+  const errorReason = priceError ? decodeContractError(priceError) : 'Price unavailable'
 
   const status: ProtocolStatus = contractStatus === 0
     ? 'Active'
@@ -43,6 +46,10 @@ export function PriceDisplay({
           <span className="text-cyber-text-secondary text-sm">plDXY</span>
           {isLoading ? (
             <Skeleton width={60} height={20} />
+          ) : priceUnknown ? (
+            <Tooltip content={errorReason} position="bottom">
+              <span className="text-cyber-text-secondary font-semibold cursor-help">Unknown</span>
+            </Tooltip>
           ) : (
             <span className="text-cyber-text-primary font-semibold">{price.toFixed(2)} USDC</span>
           )}
@@ -64,6 +71,12 @@ export function PriceDisplay({
       </div>
       {isLoading ? (
         <Skeleton width={120} height={36} />
+      ) : priceUnknown ? (
+        <Tooltip content={errorReason} position="bottom">
+          <div className="flex items-baseline gap-2 cursor-help">
+            <span className="text-3xl font-bold text-cyber-text-secondary">Unknown</span>
+          </div>
+        </Tooltip>
       ) : (
         <div className="flex items-baseline gap-2">
           <span className="text-3xl font-bold text-cyber-text-primary">{price.toFixed(2)} USDC</span>
