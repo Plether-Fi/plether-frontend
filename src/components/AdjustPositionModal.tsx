@@ -4,7 +4,7 @@ import { parseUnits } from 'viem'
 import { Modal } from './ui'
 import { useAdjustCollateral, useApprovalFlow, useTokenBalances } from '../hooks'
 import { getAddresses, DEFAULT_CHAIN_ID } from '../contracts/addresses'
-import { formatAmount } from '../utils/formatters'
+import { formatUsd } from '../utils/formatters'
 import type { LeveragePosition } from '../types'
 
 export interface AdjustPositionModalProps {
@@ -103,13 +103,13 @@ export function AdjustPositionModal({ isOpen, onClose, position, onSuccess }: Ad
           {action === 'add' && (
             <div className="flex justify-between text-sm mb-2">
               <span className="text-cyber-text-secondary">Available USDC</span>
-              <span className="text-cyber-text-primary">{formatAmount(usdcBalance, 6)}</span>
+              <span className="text-cyber-text-primary">{formatUsd(usdcBalance)} USDC</span>
             </div>
           )}
           {action === 'remove' && (
             <div className="flex justify-between text-sm mb-2">
               <span className="text-cyber-text-secondary">Current Collateral</span>
-              <span className="text-cyber-text-primary">{formatAmount(position.collateral, 6)}</span>
+              <span className="text-cyber-text-primary">{formatUsd(position.collateral)} USDC</span>
             </div>
           )}
           <div className="relative">

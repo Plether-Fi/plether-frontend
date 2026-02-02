@@ -56,6 +56,12 @@ describe('formatUsd', () => {
   it('formats large amounts with separators', () => {
     expect(formatUsd(1000000000000n, 6)).toBe('1,000,000.00')
   })
+
+  it('formats small non-zero amounts as <0.01', () => {
+    expect(formatUsd(1n, 6)).toBe('<0.01')
+    expect(formatUsd(9999n, 6)).toBe('<0.01')
+    expect(formatUsd(10000n, 6)).toBe('0.01')
+  })
 })
 
 describe('formatPercent', () => {

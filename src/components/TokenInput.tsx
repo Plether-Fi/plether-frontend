@@ -1,5 +1,5 @@
 import { type ChangeEvent } from 'react'
-import { formatAmount } from '../utils/formatters'
+import { formatAmount, formatUsd } from '../utils/formatters'
 
 interface TokenInputProps {
   value: string
@@ -84,7 +84,7 @@ export function TokenInput({
         <div className="flex justify-between mt-2 text-sm">
           <span className="text-cyber-text-secondary">{balanceLabel}</span>
           <span className="text-cyber-text-primary">
-            {formatAmount(balance, token.decimals)} {token.symbol}
+            {token.symbol === 'USDC' ? formatUsd(balance) : formatAmount(balance, token.decimals)} {token.symbol}
           </span>
         </div>
       )}

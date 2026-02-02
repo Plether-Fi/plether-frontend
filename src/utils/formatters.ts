@@ -22,9 +22,14 @@ export function formatAmount(
 
 /**
  * Format USDC value (without $ symbol - use "USDC" suffix where needed)
+ * Always shows 2 decimal places. Values < 0.01 but > 0 display as "<0.01"
  */
 export function formatUsd(amount: bigint, decimals = 6): string {
   const num = parseFloat(formatUnits(amount, decimals))
+
+  if (num > 0 && num < 0.01) {
+    return '<0.01'
+  }
 
   return new Intl.NumberFormat('en-US', {
     minimumFractionDigits: 2,

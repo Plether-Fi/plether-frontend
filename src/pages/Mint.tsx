@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { useAccount } from 'wagmi'
 import { parseUnits } from 'viem'
-import { formatAmount } from '../utils/formatters'
+import { formatAmount, formatUsd } from '../utils/formatters'
 import { getMinBalance } from '../utils/mint'
 import { Alert, TokenIcon } from '../components/ui'
 import { TokenInput } from '../components/TokenInput'
@@ -101,7 +101,7 @@ export function Mint() {
   const previewAmount = mode === 'mint' ? usdcRequired : usdcToReturn
   const outputDisplay = isPreviewLoading && parseFloat(inputAmount) > 0
     ? '...'
-    : formatAmount(previewAmount, 6)
+    : formatUsd(previewAmount)
   const minBalance = getMinBalance(bearBalance, bullBalance)
 
   const getMintButtonText = () => {
@@ -202,7 +202,7 @@ export function Mint() {
                   </div>
                   <div className="flex justify-between items-center text-sm mt-1">
                     <span className="text-cyber-text-secondary">Your balance</span>
-                    <span className="text-cyber-text-secondary">{formatAmount(usdcBalance, 6)} USDC</span>
+                    <span className="text-cyber-text-secondary">{formatUsd(usdcBalance)} USDC</span>
                   </div>
                 </div>
               </div>

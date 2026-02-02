@@ -130,6 +130,8 @@ Defined in `src/index.css` via `@theme`:
 - **Never use dollar sign ($)** to represent USDC values
 - Use `formatUsd()` from `src/utils/formatters.ts` which formats numbers without $
 - Append "USDC" suffix where appropriate (e.g., "100.00 USDC" not "$100.00")
+- Always use 2 decimal places for USDC values
+- Values less than 0.01 but greater than 0 display as "<0.01 USDC"
 
 ### Testing Strategy
 
