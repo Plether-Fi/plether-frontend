@@ -56,6 +56,7 @@ describe('useLeveragePosition', () => {
       error: null,
       refetch: vi.fn(),
     })
+
   })
 
   it('returns position data when available', () => {
@@ -100,7 +101,7 @@ describe('useLeveragePosition', () => {
     expect(result.current.collateral).toBe(0n)
     expect(result.current.debt).toBe(0n)
     expect(result.current.leverage).toBe(0n)
-    expect(result.current.healthFactor).toBe(0n)
+    expect(result.current.healthFactor).toBe(0)
     expect(result.current.liquidationPrice).toBe(0n)
     expect(result.current.hasPosition).toBe(false)
   })
@@ -156,6 +157,7 @@ describe('usePreviewOpenLeverage', () => {
       error: null,
       refetch: vi.fn(),
     })
+
   })
 
   it('returns preview data when available', () => {
@@ -225,6 +227,7 @@ describe('useOpenLeverage', () => {
       isSuccess: false,
       isError: false,
     })
+
   })
 
   it('adds pending transaction when openPosition is called', async () => {
@@ -370,6 +373,7 @@ describe('useCloseLeverage', () => {
       isSuccess: false,
       isError: false,
     })
+
   })
 
   it('adds pending transaction for close position', async () => {
@@ -439,6 +443,7 @@ describe('useAdjustCollateral', () => {
       isSuccess: false,
       isError: false,
     })
+
   })
 
   it('adds collateral and creates transaction', async () => {

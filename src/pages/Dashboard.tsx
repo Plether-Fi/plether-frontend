@@ -103,18 +103,15 @@ export function Dashboard() {
 
   if (bearPosition.hasPosition) {
     const leverageNum = Number(bearPosition.leverage) / 100
-    // Convert collateral to USD: shares (21 dec) * price (8 dec) / 10^23 = USDC (6 dec)
-    const positionValue = bearPosition.collateral * bearPrice / 10n ** 23n
-    const equity = positionValue > bearPosition.debt ? positionValue - bearPosition.debt : 0n
     positions.push({
       id: 'bear-position',
       side: 'BEAR',
-      size: positionValue,
-      collateral: equity,
+      size: bearPosition.collateralUsdc,
+      collateral: bearPosition.collateralUsdc > bearPosition.debt ? bearPosition.collateralUsdc - bearPosition.debt : 0n,
       leverage: leverageNum,
       entryPrice: 0n,
       liquidationPrice: bearPosition.liquidationPrice,
-      healthFactor: Number(bearPosition.healthFactor) / 1e18,
+      healthFactor: bearPosition.healthFactor,
       pnl: 0n,
       pnlPercentage: 0,
     })
@@ -122,25 +119,15 @@ export function Dashboard() {
 
   if (bullPosition.hasPosition) {
     const leverageNum = Number(bullPosition.leverage) / 100
-    // Convert collateral to USD: shares (21 dec) * price (8 dec) / 10^23 = USDC (6 dec)
-    const positionValue = bullPosition.collateral * bullPrice / 10n ** 23n
-    const equity = positionValue > bullPosition.debt ? positionValue - bullPosition.debt : 0n
-    console.log('[Dashboard BULL]', {
-      collateral: bullPosition.collateral.toString(),
-      bullPrice: bullPrice.toString(),
-      positionValue: positionValue.toString(),
-      debt: bullPosition.debt.toString(),
-      equity: equity.toString(),
-    })
     positions.push({
       id: 'bull-position',
       side: 'BULL',
-      size: positionValue,
-      collateral: equity,
+      size: bullPosition.collateralUsdc,
+      collateral: bullPosition.collateralUsdc > bullPosition.debt ? bullPosition.collateralUsdc - bullPosition.debt : 0n,
       leverage: leverageNum,
       entryPrice: 0n,
       liquidationPrice: bullPosition.liquidationPrice,
-      healthFactor: Number(bullPosition.healthFactor) / 1e18,
+      healthFactor: bullPosition.healthFactor,
       pnl: 0n,
       pnlPercentage: 0,
     })

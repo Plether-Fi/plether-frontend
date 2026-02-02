@@ -124,11 +124,24 @@ function decodeErrorSelector(data: string): string | null {
 export function decodeContractError(error: unknown): string {
   if (!error) return 'Unknown error'
 
-  const errorStr = typeof error === 'object' && error !== null
-    ? (error as { message?: string; shortMessage?: string }).message ??
-      (error as { message?: string; shortMessage?: string }).shortMessage ??
-      String(error)
-    : String(error)
+  let errorStr: string
+  if (typeof error === 'string') {
+    errorStr = error
+  } else if (error instanceof Error) {
+    errorStr = error.message
+  } else if (typeof error === 'object') {
+    const errObj = error as Record<string, unknown>
+    if (typeof errObj.message === 'string') {
+      errorStr = errObj.message
+    } else if (typeof errObj.shortMessage === 'string') {
+      errorStr = errObj.shortMessage
+    } else {
+      errorStr = 'Unknown error'
+    }
+  } else {
+    // eslint-disable-next-line @typescript-eslint/no-base-to-string -- primitives stringify safely
+    errorStr = String(error)
+  }
 
   const selectorMatch = /0x[a-fA-F0-9]{8}/.exec(errorStr)
   if (selectorMatch) {

@@ -106,6 +106,9 @@ export function useLeveragePosition(side: 'BEAR' | 'BULL') {
     ? oraclePrice
     : (capValue > oraclePrice ? capValue - oraclePrice : 0n)
 
+  // LLTV from market params (18 decimals, e.g., 915000000000000000 = 91.5%)
+  const lltv = marketParams?.[4] ?? 0n
+
   // Collateral is the third field in Morpho position struct (staked token units, 21 decimals)
   const collateral = morphoPosition?.[2] ?? 0n
   const actualDebt = debt ?? 0n
@@ -118,14 +121,25 @@ export function useLeveragePosition(side: 'BEAR' | 'BULL') {
     ? (collateralUsdc * 100n) / equity
     : 0n
 
-  console.log(`[useLeveragePosition ${side}]`, {
-    collateral: collateral.toString(),
-    tokenPrice: tokenPrice.toString(),
-    collateralUsdc: collateralUsdc.toString(),
-    debt: actualDebt.toString(),
-    equity: equity.toString(),
-    leverage: leverage.toString(),
-  })
+  // Health Factor = (collateralUsdc * LLTV) / (debt * 10^18)
+  // Multiply by 100 first to preserve 2 decimal places
+  const healthFactorScaled = actualDebt > 0n && lltv > 0n
+    ? (collateralUsdc * lltv * 100n) / (actualDebt * 10n ** 18n)
+    : 0n
+  const healthFactor = Number(healthFactorScaled) / 100
+
+  // Liquidation Price: price at which health = 1
+  // collateral * liqPrice * LLTV / 10^23 = debt * 10^18
+  // liqPrice = debt * 10^41 / (collateral * LLTV)
+  // Result is in 8 decimals (oracle format), convert to 6 decimals (USDC) by dividing by 100
+  const liquidationPriceRaw = hasPosition && collateral > 0n && lltv > 0n
+    ? (actualDebt * 10n ** 41n) / (collateral * lltv)
+    : 0n
+  // For BULL, liquidation happens when BULL price drops, which means BEAR price rises
+  // BULL liqPrice = CAP - BEAR liqPrice (but we want the BULL price threshold)
+  const liquidationPrice = side === 'BEAR'
+    ? liquidationPriceRaw / 100n  // Convert 8 dec to 6 dec for display
+    : (capValue > liquidationPriceRaw ? (capValue - liquidationPriceRaw) / 100n : 0n)
 
   const refetch = async () => {
     await Promise.all([refetchPosition(), refetchDebt()])
@@ -133,10 +147,11 @@ export function useLeveragePosition(side: 'BEAR' | 'BULL') {
 
   return {
     collateral,
+    collateralUsdc,
     debt: actualDebt,
     leverage,
-    healthFactor: 0n, // TODO: Calculate from Morpho oracle prices
-    liquidationPrice: 0n, // TODO: Calculate from Morpho oracle prices
+    healthFactor,
+    liquidationPrice,
     hasPosition,
     isLoading: positionLoading || debtLoading,
     error,
