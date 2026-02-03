@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useAccount } from 'wagmi'
 import { parseUnits } from 'viem'
 import { Modal } from './ui'
@@ -42,23 +42,21 @@ export function AdjustPositionModal({ isOpen, onClose, position, onSuccess }: Ad
   useEffect(() => {
     if (isSuccess) {
       onSuccess?.()
-      setAmount('')
       reset()
-      onClose()
     }
-  }, [isSuccess, onSuccess, reset, onClose])
+  }, [isSuccess, onSuccess, reset])
 
-  const executeAddCollateral = useCallback(async (amt: bigint) => {
-    await addCollateral(amt)
-  }, [addCollateral])
-
-  const handleConfirm = async () => {
+  const handleConfirm = () => {
     if (!amountBigInt || amountBigInt <= 0n) return
 
+    // Close modal immediately - transaction modal will show progress
+    setAmount('')
+    onClose()
+
     if (action === 'add') {
-      await executeWithApproval(amountBigInt, executeAddCollateral)
+      void executeWithApproval(amountBigInt, addCollateral)
     } else {
-      await removeCollateral(amountBigInt)
+      void removeCollateral(amountBigInt)
     }
   }
 
@@ -138,7 +136,7 @@ export function AdjustPositionModal({ isOpen, onClose, position, onSuccess }: Ad
         </div>
 
         <button
-          onClick={() => void handleConfirm()}
+          onClick={handleConfirm}
           disabled={isDisabled}
           className="w-full bg-cyber-neon-green hover:bg-cyber-neon-green/90 text-cyber-bg font-semibold py-3 px-6 shadow-lg shadow-cyber-neon-green/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
