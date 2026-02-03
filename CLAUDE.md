@@ -14,6 +14,10 @@ bd close <id>         # Complete work
 bd sync               # Sync with git
 ```
 
+## Git Policy
+
+**Do not commit unless explicitly asked.** Wait for the user to request a commit before staging or committing changes.
+
 ## Session Completion
 
 **When ending a work session**, complete ALL steps below. Work is NOT complete until `git push` succeeds.
@@ -119,6 +123,41 @@ See `APIERRORS.md` for all contract error selectors. Use this to:
 2. Add address to `src/contracts/addresses.ts` (mainnet + sepolia)
 3. Create hook in `src/hooks/` using wagmi's `useReadContract`/`useWriteContract`
 4. Return `Result<T, TransactionError>` from async operations
+
+### Backend API Client
+
+The `src/api/` directory contains the typed client for the Plether backend API. This layer provides:
+- **Aggregated data fetching** - Single API call returns all dashboard data
+- **Server-side caching** - Reduces RPC costs and improves load times
+- **Real-time updates** - WebSocket connection for price streaming
+- **Transaction history** - Event-indexed historical data
+
+See `specs/backend-api.md` for the full API specification.
+
+**Usage:**
+```typescript
+// React Query hooks (preferred for components)
+import { useUserDashboard, useProtocolStatus, useMintQuote } from '../api';
+
+function Dashboard() {
+  const { data: protocol } = useProtocolStatus();
+  const { data: user } = useUserDashboard(address);
+  const { data: quote } = useMintQuote(amount);
+}
+
+// Direct client (for non-React code)
+import { plethApi } from '../api';
+
+const result = await plethApi.getUserDashboard(address);
+if (Result.isOk(result)) {
+  console.log(result.value.data);
+}
+```
+
+**Migration Strategy:**
+- Read operations: Migrate to API hooks (when backend is deployed)
+- Write operations: Keep using wagmi hooks (transactions stay client-side)
+- Approvals: Keep using wagmi hooks (user wallet interaction required)
 
 ### Theme Colors
 Defined in `src/index.css` via `@theme`:
