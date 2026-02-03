@@ -82,6 +82,8 @@ export const MOCK_WALLET_ANVIL_SCRIPT = `async (page) => {
           case 'eth_getCode':
           case 'eth_getLogs':
           case 'eth_sendRawTransaction':
+          case 'eth_sendTransaction':
+          case 'eth_getTransactionReceipt':
             return proxyToAnvil(method, params);
           default:
             console.warn('[MockWallet] Unhandled:', method);
