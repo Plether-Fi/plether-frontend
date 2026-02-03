@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useAccount } from 'wagmi'
-import { parseUnits } from 'viem'
+import { parseUnits, formatUnits } from 'viem'
 import { Modal } from './ui'
-import { useAdjustCollateral, useApprovalFlow, useTokenBalances } from '../hooks'
+import { useAdjustCollateral, useApprovalFlow, useTokenBalances, useLeveragePosition } from '../hooks'
 import { getAddresses, DEFAULT_CHAIN_ID } from '../contracts/addresses'
 import { formatUsd } from '../utils/formatters'
 import type { LeveragePosition } from '../types'
@@ -22,7 +22,7 @@ export function AdjustPositionModal({ isOpen, onClose, position, onSuccess }: Ad
   const [amount, setAmount] = useState('')
 
   const { usdcBalance } = useTokenBalances()
-  const amountBigInt = amount ? parseUnits(amount, 6) : 0n
+  const { collateral: collateralShares } = useLeveragePosition(position.side)
 
   const routerAddress = position.side === 'BEAR' ? addresses.LEVERAGE_ROUTER : addresses.BULL_LEVERAGE_ROUTER
   const { addCollateral, removeCollateral, isPending, isSuccess, reset } = useAdjustCollateral(position.side)
@@ -37,7 +37,29 @@ export function AdjustPositionModal({ isOpen, onClose, position, onSuccess }: Ad
     spenderAddress: routerAddress,
   })
 
-  const insufficientBalance = action === 'add' && amountBigInt > usdcBalance
+  // For add: amount in USDC (6 decimals)
+  // For remove: amount in tokens (18 decimals), then convert to shares (* 1000)
+  const getAmountBigInt = () => {
+    if (!amount) return 0n
+    if (action === 'add') {
+      return parseUnits(amount, 6)
+    } else {
+      // User enters token amount, convert to staked shares (1000x offset)
+      return parseUnits(amount, 18) * 1000n
+    }
+  }
+
+  const amountBigInt = getAmountBigInt()
+
+  // For add: check against USDC balance
+  // For remove: check against collateral shares
+  const insufficientBalance = action === 'add'
+    ? amountBigInt > usdcBalance
+    : amountBigInt > (collateralShares ?? 0n)
+
+  // Format collateral shares to token amount for display (divide by 1000 offset, then format as 18 decimals)
+  const collateralTokens = collateralShares ? collateralShares / 1000n : 0n
+  const formattedCollateral = formatUnits(collateralTokens, 18)
 
   useEffect(() => {
     if (isSuccess) {
@@ -53,21 +75,26 @@ export function AdjustPositionModal({ isOpen, onClose, position, onSuccess }: Ad
     setAmount('')
     onClose()
 
+    const maxSlippageBps = 100n // 1% slippage
+    const deadline = BigInt(Math.floor(Date.now() / 1000) + 3600) // 1 hour
+
     if (action === 'add') {
-      void executeWithApproval(amountBigInt, addCollateral)
+      const addWithSlippage = (usdcAmount: bigint) => addCollateral(usdcAmount, maxSlippageBps, deadline)
+      void executeWithApproval(amountBigInt, addWithSlippage)
     } else {
-      void removeCollateral(amountBigInt)
+      void removeCollateral(amountBigInt, maxSlippageBps, deadline)
     }
   }
 
   const getButtonText = () => {
     if (isPending) return action === 'add' ? 'Adding...' : 'Removing...'
     if (approvePending) return 'Approving USDC...'
-    if (insufficientBalance) return 'Insufficient USDC'
+    if (insufficientBalance) return action === 'add' ? 'Insufficient USDC' : 'Insufficient Collateral'
     if (action === 'add' && needsApproval(amountBigInt)) return 'Approve USDC'
     return `Confirm ${action === 'add' ? 'Add' : 'Remove'}`
   }
 
+  const tokenSymbol = position.side === 'BEAR' ? 'plDXY-BEAR' : 'plDXY-BULL'
   const isActionPending = isPending || isApproving
   const isDisabled = !amount || parseFloat(amount) <= 0 || isActionPending || insufficientBalance
 
@@ -106,8 +133,10 @@ export function AdjustPositionModal({ isOpen, onClose, position, onSuccess }: Ad
           )}
           {action === 'remove' && (
             <div className="flex justify-between text-sm mb-2">
-              <span className="text-cyber-text-secondary">Current Collateral</span>
-              <span className="text-cyber-text-primary">{formatUsd(position.collateral)} USDC</span>
+              <span className="text-cyber-text-secondary">Available Collateral</span>
+              <span className="text-cyber-text-primary">
+                {parseFloat(formattedCollateral).toFixed(2)} {tokenSymbol}
+              </span>
             </div>
           )}
           <div className="relative">
@@ -116,10 +145,12 @@ export function AdjustPositionModal({ isOpen, onClose, position, onSuccess }: Ad
               value={amount}
               onChange={(e) => { setAmount(e.target.value); }}
               placeholder="0.00"
-              className="w-full bg-cyber-surface-light border border-cyber-border-glow/30 py-3 pl-4 pr-20 text-lg font-medium text-cyber-text-primary focus:ring-1 focus:ring-cyber-bright-blue focus:border-cyber-bright-blue outline-none"
+              className="w-full bg-cyber-surface-light border border-cyber-border-glow/30 py-3 pl-4 pr-24 text-lg font-medium text-cyber-text-primary focus:ring-1 focus:ring-cyber-bright-blue focus:border-cyber-bright-blue outline-none"
             />
             <div className="absolute right-4 top-1/2 -translate-y-1/2">
-              <span className="font-medium text-cyber-text-secondary">USDC</span>
+              <span className="font-medium text-cyber-text-secondary">
+                {action === 'add' ? 'USDC' : tokenSymbol.replace('plDXY-', '')}
+              </span>
             </div>
           </div>
         </div>

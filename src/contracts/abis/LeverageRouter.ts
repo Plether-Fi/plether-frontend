@@ -1,4 +1,6 @@
 // LeverageRouter ABI - Open/close leveraged positions
+// Used for both BEAR (LeverageRouter) and BULL (BullLeverageRouter)
+
 export const LEVERAGE_ROUTER_ABI = [
   {
     type: 'function',
@@ -30,15 +32,30 @@ export const LEVERAGE_ROUTER_ABI = [
     type: 'function',
     name: 'addCollateral',
     stateMutability: 'nonpayable',
-    inputs: [{ name: 'amount', type: 'uint256' }],
+    inputs: [
+      { name: 'usdcAmount', type: 'uint256' },
+      { name: 'maxSlippageBps', type: 'uint256' },
+      { name: 'deadline', type: 'uint256' },
+    ],
     outputs: [],
   },
   {
     type: 'function',
     name: 'removeCollateral',
     stateMutability: 'nonpayable',
-    inputs: [{ name: 'amount', type: 'uint256' }],
+    inputs: [
+      { name: 'collateralToWithdraw', type: 'uint256' },
+      { name: 'maxSlippageBps', type: 'uint256' },
+      { name: 'deadline', type: 'uint256' },
+    ],
     outputs: [],
+  },
+  {
+    type: 'function',
+    name: 'getCollateral',
+    stateMutability: 'view',
+    inputs: [{ name: 'user', type: 'address' }],
+    outputs: [{ type: 'uint256', name: 'collateral' }],
   },
   {
     type: 'function',
@@ -121,7 +138,10 @@ export const LEVERAGE_ROUTER_ABI = [
     name: 'CollateralAdded',
     inputs: [
       { name: 'user', type: 'address', indexed: true },
-      { name: 'amount', type: 'uint256', indexed: false },
+      { name: 'usdcAmount', type: 'uint256', indexed: false },
+      { name: 'usdcReturned', type: 'uint256', indexed: false },
+      { name: 'collateralAdded', type: 'uint256', indexed: false },
+      { name: 'maxSlippageBps', type: 'uint256', indexed: false },
     ],
   },
   {
@@ -130,6 +150,37 @@ export const LEVERAGE_ROUTER_ABI = [
     inputs: [
       { name: 'user', type: 'address', indexed: true },
       { name: 'amount', type: 'uint256', indexed: false },
+    ],
+  },
+] as const
+
+// BEAR Router specific - previewAddCollateral returns 2 values
+export const BEAR_LEVERAGE_ROUTER_ABI = [
+  ...LEVERAGE_ROUTER_ABI,
+  {
+    type: 'function',
+    name: 'previewAddCollateral',
+    stateMutability: 'view',
+    inputs: [{ name: 'usdcAmount', type: 'uint256' }],
+    outputs: [
+      { type: 'uint256', name: 'expectedPlDxyBear' },
+      { type: 'uint256', name: 'expectedStakedShares' },
+    ],
+  },
+] as const
+
+// BULL Router specific - previewAddCollateral returns 3 values
+export const BULL_LEVERAGE_ROUTER_ABI = [
+  ...LEVERAGE_ROUTER_ABI,
+  {
+    type: 'function',
+    name: 'previewAddCollateral',
+    stateMutability: 'view',
+    inputs: [{ name: 'usdcAmount', type: 'uint256' }],
+    outputs: [
+      { type: 'uint256', name: 'tokensToMint' },
+      { type: 'uint256', name: 'expectedUsdcFromBearSale' },
+      { type: 'uint256', name: 'expectedStakedShares' },
     ],
   },
 ] as const

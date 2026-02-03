@@ -1,10 +1,11 @@
-import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
-import { useRef, useEffect, useMemo } from 'react'
+import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt, usePublicClient } from 'wagmi'
+import { useRef, useEffect, useMemo, useState, useCallback } from 'react'
 import { zeroAddress, keccak256, encodeAbiParameters } from 'viem'
 import { Result } from 'better-result'
 import { LEVERAGE_ROUTER_ABI, MORPHO_ABI, PLETH_CORE_ABI, BASKET_ORACLE_ABI } from '../contracts/abis'
 import { getAddresses } from '../contracts/addresses'
 import { useTransactionStore } from '../stores/transactionStore'
+import { useTransactionModal } from './useTransactionModal'
 import {
   parseTransactionError,
   getErrorMessage,
@@ -401,40 +402,28 @@ export function useAdjustCollateral(side: 'BEAR' | 'BULL') {
   const addresses = chainId ? getAddresses(chainId) : null
   const routerAddress = side === 'BEAR' ? addresses?.LEVERAGE_ROUTER : addresses?.BULL_LEVERAGE_ROUTER
   const addTransaction = useTransactionStore((s) => s.addTransaction)
-  const updateTransaction = useTransactionStore((s) => s.updateTransaction)
-  const txIdRef = useRef<string | null>(null)
+  const setStepInProgress = useTransactionStore((s) => s.setStepInProgress)
+  const setStepSuccess = useTransactionStore((s) => s.setStepSuccess)
+  const setStepError = useTransactionStore((s) => s.setStepError)
+  const txModal = useTransactionModal()
+  const publicClient = usePublicClient()
 
-  const { writeContract, data: hash, isPending, error, reset } = useWriteContract()
+  const { writeContractAsync, isPending, error, reset: resetWrite } = useWriteContract()
 
-  const { isLoading: isConfirming, isSuccess, isError, error: receiptError } = useWaitForTransactionReceipt({
-    hash,
-  })
+  const [isConfirming, setIsConfirming] = useState(false)
+  const [isSuccess, setIsSuccess] = useState(false)
+  const [hash, setHash] = useState<`0x${string}` | undefined>(undefined)
 
-  useEffect(() => {
-    if (isSuccess && txIdRef.current) {
-      updateTransaction(txIdRef.current, { status: 'success' })
-      txIdRef.current = null
-    }
-  }, [isSuccess, updateTransaction])
-
-  useEffect(() => {
-    if (isError && txIdRef.current) {
-      const txError = parseTransactionError(receiptError)
-      updateTransaction(txIdRef.current, {
-        status: 'failed',
-        errorMessage: getErrorMessage(txError),
-      })
-      txIdRef.current = null
-    }
-  }, [isError, receiptError, updateTransaction])
-
-  const addCollateral = async (amount: bigint): Promise<Result<`0x${string}`, LeverageError>> => {
+  const addCollateral = useCallback(async (
+    usdcAmount: bigint,
+    maxSlippageBps: bigint,
+    deadline: bigint
+  ): Promise<Result<`0x${string}`, LeverageError>> => {
     if (!routerAddress) {
       return Result.err(new NotConnectedError())
     }
 
     const txId = crypto.randomUUID()
-    txIdRef.current = txId
     addTransaction({
       id: txId,
       type: 'leverage',
@@ -443,56 +432,58 @@ export function useAdjustCollateral(side: 'BEAR' | 'BULL') {
       title: 'Adding collateral',
       steps: [{ label: 'Add collateral', status: 'pending' }],
     })
+    txModal.open({ transactionId: txId })
+    setStepInProgress(txId, 0)
+
+    setIsSuccess(false)
+    setIsConfirming(false)
+    setHash(undefined)
 
     return Result.tryPromise({
-      try: () =>
-        new Promise<`0x${string}`>((resolve, reject) => {
-          writeContract(
-            {
-              address: routerAddress,
-              abi: LEVERAGE_ROUTER_ABI,
-              functionName: 'addCollateral',
-              args: [amount],
-            },
-            {
-              onSuccess: (hash) => {
-                updateTransaction(txId, { hash, status: 'confirming' })
-                resolve(hash)
-              },
-              onError: (err) => {
-                const txError = parseTransactionError(err)
-                updateTransaction(txId, {
-                  status: 'failed',
-                  errorMessage: getErrorMessage(txError),
-                })
-                txIdRef.current = null
-                reject(txError)
-              },
-            }
-          )
-        }),
-      catch: (err) => {
-        if (err instanceof Error && '_tag' in err) {
-          return err as TransactionError
-        }
-        const txError = parseTransactionError(err)
-        updateTransaction(txId, {
-          status: 'failed',
-          errorMessage: getErrorMessage(txError),
+      try: async () => {
+        const txHash = await writeContractAsync({
+          address: routerAddress,
+          abi: LEVERAGE_ROUTER_ABI,
+          functionName: 'addCollateral',
+          args: [usdcAmount, maxSlippageBps, deadline],
         })
-        txIdRef.current = null
+
+        setHash(txHash)
+        setIsConfirming(true)
+
+        const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash })
+
+        if (receipt.status === 'reverted') {
+          throw new Error('Transaction reverted')
+        }
+
+        setStepSuccess(txId, txHash)
+        setIsConfirming(false)
+        setIsSuccess(true)
+
+        return txHash
+      },
+      catch: (err) => {
+        setIsConfirming(false)
+        const txError = err instanceof Error && '_tag' in err
+          ? err as TransactionError
+          : parseTransactionError(err)
+        setStepError(txId, 0, getErrorMessage(txError))
         return txError
       },
     })
-  }
+  }, [routerAddress, addTransaction, setStepInProgress, setStepSuccess, setStepError, txModal, writeContractAsync, publicClient])
 
-  const removeCollateral = async (amount: bigint): Promise<Result<`0x${string}`, LeverageError>> => {
+  const removeCollateral = useCallback(async (
+    collateralToWithdraw: bigint,
+    maxSlippageBps: bigint,
+    deadline: bigint
+  ): Promise<Result<`0x${string}`, LeverageError>> => {
     if (!routerAddress) {
       return Result.err(new NotConnectedError())
     }
 
     const txId = crypto.randomUUID()
-    txIdRef.current = txId
     addTransaction({
       id: txId,
       type: 'leverage',
@@ -501,48 +492,54 @@ export function useAdjustCollateral(side: 'BEAR' | 'BULL') {
       title: 'Removing collateral',
       steps: [{ label: 'Remove collateral', status: 'pending' }],
     })
+    txModal.open({ transactionId: txId })
+    setStepInProgress(txId, 0)
+
+    setIsSuccess(false)
+    setIsConfirming(false)
+    setHash(undefined)
 
     return Result.tryPromise({
-      try: () =>
-        new Promise<`0x${string}`>((resolve, reject) => {
-          writeContract(
-            {
-              address: routerAddress,
-              abi: LEVERAGE_ROUTER_ABI,
-              functionName: 'removeCollateral',
-              args: [amount],
-            },
-            {
-              onSuccess: (hash) => {
-                updateTransaction(txId, { hash, status: 'confirming' })
-                resolve(hash)
-              },
-              onError: (err) => {
-                const txError = parseTransactionError(err)
-                updateTransaction(txId, {
-                  status: 'failed',
-                  errorMessage: getErrorMessage(txError),
-                })
-                txIdRef.current = null
-                reject(txError)
-              },
-            }
-          )
-        }),
-      catch: (err) => {
-        if (err instanceof Error && '_tag' in err) {
-          return err as TransactionError
-        }
-        const txError = parseTransactionError(err)
-        updateTransaction(txId, {
-          status: 'failed',
-          errorMessage: getErrorMessage(txError),
+      try: async () => {
+        const txHash = await writeContractAsync({
+          address: routerAddress,
+          abi: LEVERAGE_ROUTER_ABI,
+          functionName: 'removeCollateral',
+          args: [collateralToWithdraw, maxSlippageBps, deadline],
         })
-        txIdRef.current = null
+
+        setHash(txHash)
+        setIsConfirming(true)
+
+        const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash })
+
+        if (receipt.status === 'reverted') {
+          throw new Error('Transaction reverted')
+        }
+
+        setStepSuccess(txId, txHash)
+        setIsConfirming(false)
+        setIsSuccess(true)
+
+        return txHash
+      },
+      catch: (err) => {
+        setIsConfirming(false)
+        const txError = err instanceof Error && '_tag' in err
+          ? err as TransactionError
+          : parseTransactionError(err)
+        setStepError(txId, 0, getErrorMessage(txError))
         return txError
       },
     })
-  }
+  }, [routerAddress, addTransaction, setStepInProgress, setStepSuccess, setStepError, txModal, writeContractAsync, publicClient])
+
+  const reset = useCallback(() => {
+    resetWrite()
+    setIsConfirming(false)
+    setIsSuccess(false)
+    setHash(undefined)
+  }, [resetWrite])
 
   return {
     addCollateral,
