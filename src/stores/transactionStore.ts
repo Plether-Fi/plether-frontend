@@ -7,7 +7,7 @@ export type TransactionType = 'mint' | 'burn' | 'swap' | 'stake' | 'unstake' | '
 
 export interface TransactionStep {
   label: string
-  status: 'pending' | 'in_progress' | 'completed' | 'error'
+  status: 'pending' | 'in_progress' | 'confirming' | 'completed' | 'error'
 }
 
 export interface Transaction {
@@ -33,6 +33,7 @@ interface TransactionState {
   cleanupOldTransactions: () => void
 
   setStepInProgress: (id: string, stepIndex: number) => void
+  setStepConfirming: (id: string, stepIndex: number, hash: string) => void
   setStepError: (id: string, stepIndex: number, errorMessage: string) => void
   setStepSuccess: (id: string, hash: string) => void
 
@@ -100,6 +101,23 @@ export const useTransactionStore = create<TransactionState>()(
           set((state) => ({
             transactions: state.transactions.map((t) =>
               t.id === id ? { ...t, steps: newSteps, status: 'confirming' } : t
+            ),
+          }))
+        },
+
+        setStepConfirming: (id, stepIndex, hash) => {
+          const tx = get().transactions.find((t) => t.id === id)
+          if (!tx) return
+
+          const newSteps = tx.steps.map((step, i) => {
+            if (i < stepIndex) return { ...step, status: 'completed' as const }
+            if (i === stepIndex) return { ...step, status: 'confirming' as const }
+            return step
+          })
+
+          set((state) => ({
+            transactions: state.transactions.map((t) =>
+              t.id === id ? { ...t, steps: newSteps, status: 'confirming', hash } : t
             ),
           }))
         },

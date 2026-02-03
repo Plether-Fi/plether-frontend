@@ -440,7 +440,10 @@ export function useAdjustCollateral(side: 'BEAR' | 'BULL', onSuccessCallback?: (
         status: 'pending',
         hash: undefined,
         title: 'Adding collateral',
-        steps: [{ label: 'Add collateral', status: 'pending' }],
+        steps: [
+          { label: 'Add collateral', status: 'pending' },
+          { label: 'Confirming...', status: 'pending' },
+        ],
       })
       txModal.open({ transactionId: txId })
       setStepInProgress(txId, stepIndex)
@@ -461,6 +464,9 @@ export function useAdjustCollateral(side: 'BEAR' | 'BULL', onSuccessCallback?: (
 
         setHash(txHash)
         setIsConfirming(true)
+        // Move to "Awaiting confirmation" step
+        const confirmStepIndex = txContext ? stepIndex + 1 : 1
+        setStepInProgress(txId, confirmStepIndex)
 
         const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash })
 
@@ -502,7 +508,10 @@ export function useAdjustCollateral(side: 'BEAR' | 'BULL', onSuccessCallback?: (
       status: 'pending',
       hash: undefined,
       title: 'Removing collateral',
-      steps: [{ label: 'Remove collateral', status: 'pending' }],
+      steps: [
+        { label: 'Remove collateral', status: 'pending' },
+        { label: 'Confirming...', status: 'pending' },
+      ],
     })
     txModal.open({ transactionId: txId })
     setStepInProgress(txId, 0)
@@ -522,6 +531,8 @@ export function useAdjustCollateral(side: 'BEAR' | 'BULL', onSuccessCallback?: (
 
         setHash(txHash)
         setIsConfirming(true)
+        // Move to "Awaiting confirmation" step
+        setStepInProgress(txId, 1)
 
         const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash })
 

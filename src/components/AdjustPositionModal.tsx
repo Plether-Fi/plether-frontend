@@ -64,6 +64,13 @@ export function AdjustPositionModal({ isOpen, onClose, position, onSuccess }: Ad
   const collateralTokens = collateralShares ? collateralShares / 1000n : 0n
   const formattedCollateral = formatUnits(collateralTokens, 18)
 
+  // Reset hidden state when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setIsHidden(false)
+    }
+  }, [isOpen])
+
   // Close modal when transaction succeeds
   useEffect(() => {
     if (isSuccess) {

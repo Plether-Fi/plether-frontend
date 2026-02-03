@@ -56,10 +56,15 @@ export function useApprovalFlow({
 
     const steps = needsApproval
       ? [
-          { label: 'Approve spending', status: 'pending' as const },
+          { label: 'Approve USDC', status: 'pending' as const },
+          { label: 'Confirming...', status: 'pending' as const },
           { label: actionStepLabel, status: 'pending' as const },
+          { label: 'Confirming...', status: 'pending' as const },
         ]
-      : [{ label: actionStepLabel, status: 'pending' as const }]
+      : [
+          { label: actionStepLabel, status: 'pending' as const },
+          { label: 'Confirming...', status: 'pending' as const },
+        ]
 
     addTransaction({
       id: txId,
@@ -85,6 +90,9 @@ export function useApprovalFlow({
             args: [spenderAddress, amount],
           })
 
+          // Move to "Confirming approval" step
+          setStepInProgress(txId, 1)
+
           const receipt = await publicClient.waitForTransactionReceipt({ hash })
           if (receipt.status === 'reverted') {
             throw new Error('Approval reverted')
@@ -105,11 +113,10 @@ export function useApprovalFlow({
 
       void refetchAllowance()
 
-      // Don't call setStepSuccess here - it marks ALL steps complete
-      // setStepInProgress(1) will mark step 0 as completed and step 1 as in_progress
+      // Move to action step (index 2)
       setFlowState('executing')
-      setStepInProgress(txId, 1)
-      await action(amount, { txId, stepIndex: 1 })
+      setStepInProgress(txId, 2)
+      await action(amount, { txId, stepIndex: 2 })
     } else {
       setFlowState('executing')
       setStepInProgress(txId, 0)

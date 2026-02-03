@@ -3,7 +3,7 @@ import { Spinner } from './Spinner'
 
 export interface LoadingStep {
   label: string
-  status: 'pending' | 'in_progress' | 'completed' | 'error'
+  status: 'pending' | 'in_progress' | 'confirming' | 'completed' | 'error'
 }
 
 interface LoadingScreenProps {
@@ -76,7 +76,9 @@ export function LoadingScreen({
                         ? 'text-cyber-text-secondary'
                         : step.status === 'error'
                           ? 'text-cyber-electric-fuchsia'
-                          : 'text-cyber-text-primary'
+                          : step.status === 'confirming'
+                            ? 'text-cyber-neon-green'
+                            : 'text-cyber-text-primary'
                     }
                   >
                     {index + 1}. {step.label}
@@ -141,6 +143,10 @@ function StepIndicator({ status }: { status: LoadingStep['status'] }) {
 
   if (status === 'in_progress') {
     return <Spinner size="md" />
+  }
+
+  if (status === 'confirming') {
+    return <Spinner size="md" variant="confirming" />
   }
 
   return (

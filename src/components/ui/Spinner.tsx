@@ -1,5 +1,6 @@
 interface SpinnerProps {
   size?: 'sm' | 'md' | 'lg'
+  variant?: 'default' | 'confirming'
   className?: string
 }
 
@@ -9,10 +10,15 @@ const sizeStyles = {
   lg: 'h-8 w-8',
 }
 
-export function Spinner({ size = 'md', className = '' }: SpinnerProps) {
+const variantStyles = {
+  default: 'border-cyber-bright-blue/30 border-t-cyber-bright-blue',
+  confirming: 'border-cyber-neon-green/30 border-t-cyber-neon-green',
+}
+
+export function Spinner({ size = 'md', variant = 'default', className = '' }: SpinnerProps) {
   return (
     <div className={`${sizeStyles[size]} ${className} relative`}>
-      <div className="absolute inset-0 rounded-full border-2 border-cyber-bright-blue/30 border-t-cyber-bright-blue animate-spin" />
+      <div className={`absolute inset-0 rounded-full border-2 ${variantStyles[variant]} animate-spin`} />
     </div>
   )
 }
