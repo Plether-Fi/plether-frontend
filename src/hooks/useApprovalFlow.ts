@@ -37,7 +37,6 @@ export function useApprovalFlow({
 
   const addTransaction = useTransactionStore((s) => s.addTransaction)
   const setStepInProgress = useTransactionStore((s) => s.setStepInProgress)
-  const setStepSuccess = useTransactionStore((s) => s.setStepSuccess)
   const setStepError = useTransactionStore((s) => s.setStepError)
   const txModal = useTransactionModal()
 
@@ -125,7 +124,7 @@ export function useApprovalFlow({
 
     setFlowState('idle')
     txIdRef.current = null
-  }, [allowance, actionTitle, actionStepLabel, addTransaction, setStepInProgress, setStepSuccess, setStepError, txModal, writeContractAsync, publicClient, tokenAddress, spenderAddress, refetchAllowance])
+  }, [allowance, actionTitle, actionStepLabel, addTransaction, setStepInProgress, setStepError, txModal, writeContractAsync, publicClient, tokenAddress, spenderAddress, refetchAllowance])
 
   const reset = useCallback(() => {
     setFlowState('idle')

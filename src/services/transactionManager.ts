@@ -1,4 +1,4 @@
-import { type Config, getPublicClient, getWalletClient, signTypedData, waitForTransactionReceipt, writeContract, readContract } from '@wagmi/core'
+import { type Config, getWalletClient, waitForTransactionReceipt, writeContract, readContract } from '@wagmi/core'
 import { useTransactionStore } from '../stores/transactionStore'
 import { useTransactionModal } from '../hooks/useTransactionModal'
 import { getAddresses } from '../contracts/addresses'
@@ -64,7 +64,7 @@ class TransactionManager {
     return hash
   }
 
-  async executeStakeWithPermit(
+  async executeStake(
     side: 'BEAR' | 'BULL',
     amount: bigint,
     options?: { onRetry?: () => void }
@@ -72,7 +72,6 @@ class TransactionManager {
     const config = this.getConfig()
     const operationKey = `stake-${side}`
 
-    // Check if there's already a pending operation
     const existing = this.pendingOperations.get(operationKey)
     if (existing && existing.status !== 'success' && existing.status !== 'error') {
       console.warn(`[TxManager] Operation ${operationKey} already in progress`)
@@ -80,27 +79,27 @@ class TransactionManager {
     }
 
     const chainId = config.state.chainId
-    if (!chainId) {
-      throw new Error('No chain connected')
-    }
+    if (!chainId) throw new Error('No chain connected')
 
     const walletClient = await getWalletClient(config)
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- defensive runtime check
-    if (!walletClient) {
-      throw new Error('No wallet connected')
-    }
+    if (!walletClient) throw new Error('No wallet connected')
 
     const address = walletClient.account.address
     const addresses = getAddresses(chainId)
     const tokenAddress = side === 'BEAR' ? addresses.DXY_BEAR : addresses.DXY_BULL
     const stakingAddress = side === 'BEAR' ? addresses.STAKING_BEAR : addresses.STAKING_BULL
 
-    // Create transaction in store
+    const hasAllowance = await this.checkAllowance(tokenAddress, stakingAddress, address, amount)
+
     const transactionId = crypto.randomUUID()
     const txStore = useTransactionStore.getState()
     const txModal = useTransactionModal.getState()
 
-    const steps = ['Sign permit', `Stake plDXY-${side}`, 'Awaiting confirmation']
+    const steps = hasAllowance
+      ? [`Stake plDXY-${side}`, 'Confirming onchain (~12s)']
+      : [`Approve plDXY-${side}`, 'Confirming onchain (~12s)', `Stake plDXY-${side}`, 'Confirming onchain (~12s)']
+
     txStore.addTransaction({
       id: transactionId,
       type: 'stake',
@@ -111,96 +110,47 @@ class TransactionManager {
     })
 
     txStore.setActiveOperation(operationKey, transactionId)
-
     txModal.open({
       transactionId,
-      onRetry: options?.onRetry ?? (() => void this.executeStakeWithPermit(side, amount, options)),
+      onRetry: options?.onRetry ?? (() => void this.executeStake(side, amount, options)),
     })
 
     const operation: PendingOperation = {
       id: operationKey,
       transactionId,
-      status: 'signing',
+      status: hasAllowance ? 'submitted' : 'approving',
     }
     this.pendingOperations.set(operationKey, operation)
 
     try {
-      // Step 1: Sign permit
-      txStore.setStepInProgress(transactionId, 0)
+      let stepOffset = 0
 
-      const nonce = await readContract(config, {
-        address: tokenAddress,
-        abi: ERC20_ABI,
-        functionName: 'nonces',
-        args: [address],
-      })
+      if (!hasAllowance) {
+        txStore.setStepInProgress(transactionId, 0)
+        const maxApproval = 2n ** 256n - 1n
+        await this.executeApproval(tokenAddress, stakingAddress, maxApproval, () => {
+          txStore.setStepInProgress(transactionId, 1)
+        })
+        stepOffset = 2
+      }
 
-      const tokenName = await readContract(config, {
-        address: tokenAddress,
-        abi: ERC20_ABI,
-        functionName: 'name',
-      })
-
-      const deadline = BigInt(Math.floor(Date.now() / 1000) + 3600)
-
-      const signature = await signTypedData(config, {
-        domain: {
-          name: tokenName,
-          version: '1',
-          chainId: chainId,
-          verifyingContract: tokenAddress,
-        },
-        types: {
-          Permit: [
-            { name: 'owner', type: 'address' },
-            { name: 'spender', type: 'address' },
-            { name: 'value', type: 'uint256' },
-            { name: 'nonce', type: 'uint256' },
-            { name: 'deadline', type: 'uint256' },
-          ],
-        },
-        primaryType: 'Permit',
-        message: {
-          owner: address,
-          spender: stakingAddress,
-          value: amount,
-          nonce: nonce,
-          deadline: deadline,
-        },
-      })
-
-      // Step 2: Send stake transaction
       operation.status = 'submitted'
-      txStore.setStepInProgress(transactionId, 1)
-
-      const r: `0x${string}` = signature.slice(0, 66) as `0x${string}`
-      const s: `0x${string}` = `0x${signature.slice(66, 130)}`
-      const v = parseInt(signature.slice(130, 132), 16)
+      txStore.setStepInProgress(transactionId, stepOffset)
 
       const hash = await writeContract(config, {
         address: stakingAddress,
         abi: STAKED_TOKEN_ABI,
-        functionName: 'depositWithPermit',
-        args: [amount, address, deadline, v, r, s],
+        functionName: 'deposit',
+        args: [amount, address],
       })
 
       operation.hash = hash
       operation.status = 'confirming'
-
-      // Store hash immediately in case of navigation
       txStore.updateTransaction(transactionId, { hash })
-
-      // Step 3: Wait for confirmation
-      txStore.setStepInProgress(transactionId, 2)
-
-      const publicClient = getPublicClient(config)
-      if (!publicClient) {
-        throw new Error('No public client')
-      }
+      txStore.setStepInProgress(transactionId, stepOffset + 1)
 
       await waitForTransactionReceipt(config, { hash })
 
-      // Success
       operation.status = 'success'
       txStore.setStepSuccess(transactionId, hash)
       txStore.clearActiveOperation(operationKey)
@@ -213,7 +163,7 @@ class TransactionManager {
       const error = parseTransactionError(err)
       const message = getErrorMessage(error)
 
-      const stepIndex = previousStatus === 'signing' ? 0 : previousStatus === 'submitted' ? 1 : 2
+      const stepIndex = previousStatus === 'approving' ? 0 : (hasAllowance ? 0 : 2)
       txStore.setStepError(transactionId, stepIndex, message)
       txStore.clearActiveOperation(operationKey)
     }
@@ -254,7 +204,7 @@ class TransactionManager {
     const txStore = useTransactionStore.getState()
     const txModal = useTransactionModal.getState()
 
-    const steps = [`Unstake splDXY-${side}`, 'Awaiting confirmation']
+    const steps = [`Unstake splDXY-${side}`, 'Confirming onchain (~12s)']
     txStore.addTransaction({
       id: transactionId,
       type: 'unstake',
@@ -353,8 +303,8 @@ class TransactionManager {
     const txModal = useTransactionModal.getState()
 
     const steps = hasAllowance
-      ? [mode === 'buy' ? 'Buy plDXY-BEAR' : 'Sell plDXY-BEAR', 'Awaiting confirmation']
-      : [`Approve ${tokenSymbol}`, 'Confirming approval', mode === 'buy' ? 'Buy plDXY-BEAR' : 'Sell plDXY-BEAR', 'Awaiting confirmation']
+      ? [mode === 'buy' ? 'Buy plDXY-BEAR' : 'Sell plDXY-BEAR', 'Confirming onchain (~12s)']
+      : [`Approve ${tokenSymbol}`, 'Confirming onchain (~12s)', mode === 'buy' ? 'Buy plDXY-BEAR' : 'Sell plDXY-BEAR', 'Confirming onchain (~12s)']
 
     txStore.addTransaction({
       id: transactionId,
@@ -461,8 +411,8 @@ class TransactionManager {
     const txModal = useTransactionModal.getState()
 
     const steps = hasAllowance
-      ? ['Buy plDXY-BULL', 'Awaiting confirmation']
-      : ['Approve USDC', 'Confirming approval', 'Buy plDXY-BULL', 'Awaiting confirmation']
+      ? ['Buy plDXY-BULL', 'Confirming onchain (~12s)']
+      : ['Approve USDC', 'Confirming onchain (~12s)', 'Buy plDXY-BULL', 'Confirming onchain (~12s)']
 
     txStore.addTransaction({
       id: transactionId,
@@ -565,8 +515,8 @@ class TransactionManager {
     const txModal = useTransactionModal.getState()
 
     const steps = hasAllowance
-      ? ['Sell plDXY-BULL', 'Awaiting confirmation']
-      : ['Approve plDXY-BULL', 'Confirming approval', 'Sell plDXY-BULL', 'Awaiting confirmation']
+      ? ['Sell plDXY-BULL', 'Confirming onchain (~12s)']
+      : ['Approve plDXY-BULL', 'Confirming onchain (~12s)', 'Sell plDXY-BULL', 'Confirming onchain (~12s)']
 
     txStore.addTransaction({
       id: transactionId,

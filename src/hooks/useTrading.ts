@@ -409,7 +409,7 @@ export function useZapBuyWithPermit() {
         },
       })
     },
-    [address, addresses, chainId, nonce, tokenName, signTypedDataAsync, writeContractAsync, addTransaction, updateTransaction]
+    [address, addresses, chainId, nonce, tokenName, signTypedDataAsync, writeContractAsync, addTransaction, updateTransaction, setStepInProgress]
   )
 
   return {
@@ -557,7 +557,7 @@ export function useZapSellWithPermit() {
         },
       })
     },
-    [address, addresses, chainId, nonce, tokenName, signTypedDataAsync, writeContractAsync, addTransaction, updateTransaction]
+    [address, addresses, chainId, nonce, tokenName, signTypedDataAsync, writeContractAsync, addTransaction, updateTransaction, setStepInProgress]
   )
 
   return {

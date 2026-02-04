@@ -43,7 +43,7 @@ export function StakingCard({ side, tokenBalance }: StakingCardProps) {
   const { assets: previewAssets, isLoading: previewRedeemLoading } = usePreviewRedeem(side, mode === 'unstake' ? amountBigInt : 0n)
 
   const handleStake = () => {
-    void transactionManager.executeStakeWithPermit(side, amountBigInt, {
+    void transactionManager.executeStake(side, amountBigInt, {
       onRetry: handleStake,
     }).then(() => {
       refetchStaked()
