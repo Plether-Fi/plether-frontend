@@ -252,6 +252,8 @@ export function useSupply(side: 'BEAR' | 'BULL') {
   const { morphoAddress, marketParams, marketId } = useMarketConfig(side)
   const addTransaction = useTransactionStore((s) => s.addTransaction)
   const updateTransaction = useTransactionStore((s) => s.updateTransaction)
+  const setStepInProgress = useTransactionStore((s) => s.setStepInProgress)
+  const setStepSuccess = useTransactionStore((s) => s.setStepSuccess)
   const txIdRef = useRef<string | null>(null)
 
   const { writeContract, data: hash, isPending, error, reset } = useWriteContract()
@@ -261,11 +263,11 @@ export function useSupply(side: 'BEAR' | 'BULL') {
   })
 
   useEffect(() => {
-    if (isSuccess && txIdRef.current) {
-      updateTransaction(txIdRef.current, { status: 'success' })
+    if (isSuccess && txIdRef.current && hash) {
+      setStepSuccess(txIdRef.current, hash)
       txIdRef.current = null
     }
-  }, [isSuccess, updateTransaction])
+  }, [isSuccess, hash, setStepSuccess])
 
   useEffect(() => {
     if (isError && txIdRef.current) {
@@ -291,8 +293,12 @@ export function useSupply(side: 'BEAR' | 'BULL') {
       status: 'pending',
       hash: undefined,
       title: `Supplying USDC to ${side} market`,
-      steps: [{ label: 'Supply USDC', status: 'pending' }],
+      steps: [
+        { label: 'Supply USDC', status: 'pending' },
+        { label: 'Confirming onchain (~12s)', status: 'pending' },
+      ],
     })
+    setStepInProgress(txId, 0)
 
     return Result.tryPromise({
       try: () =>
@@ -306,6 +312,7 @@ export function useSupply(side: 'BEAR' | 'BULL') {
             },
             {
               onSuccess: (hash) => {
+                setStepInProgress(txId, 1)
                 updateTransaction(txId, { hash, status: 'confirming' })
                 resolve(hash)
               },
@@ -355,6 +362,8 @@ export function useWithdraw(side: 'BEAR' | 'BULL') {
   const { morphoAddress, marketParams } = useMarketConfig(side)
   const addTransaction = useTransactionStore((s) => s.addTransaction)
   const updateTransaction = useTransactionStore((s) => s.updateTransaction)
+  const setStepInProgress = useTransactionStore((s) => s.setStepInProgress)
+  const setStepSuccess = useTransactionStore((s) => s.setStepSuccess)
   const txIdRef = useRef<string | null>(null)
 
   const { writeContract, data: hash, isPending, error, reset } = useWriteContract()
@@ -364,11 +373,11 @@ export function useWithdraw(side: 'BEAR' | 'BULL') {
   })
 
   useEffect(() => {
-    if (isSuccess && txIdRef.current) {
-      updateTransaction(txIdRef.current, { status: 'success' })
+    if (isSuccess && txIdRef.current && hash) {
+      setStepSuccess(txIdRef.current, hash)
       txIdRef.current = null
     }
-  }, [isSuccess, updateTransaction])
+  }, [isSuccess, hash, setStepSuccess])
 
   useEffect(() => {
     if (isError && txIdRef.current) {
@@ -394,8 +403,12 @@ export function useWithdraw(side: 'BEAR' | 'BULL') {
       status: 'pending',
       hash: undefined,
       title: `Withdrawing USDC from ${side} market`,
-      steps: [{ label: 'Withdraw USDC', status: 'pending' }],
+      steps: [
+        { label: 'Withdraw USDC', status: 'pending' },
+        { label: 'Confirming onchain (~12s)', status: 'pending' },
+      ],
     })
+    setStepInProgress(txId, 0)
 
     return Result.tryPromise({
       try: () =>
@@ -409,6 +422,7 @@ export function useWithdraw(side: 'BEAR' | 'BULL') {
             },
             {
               onSuccess: (hash) => {
+                setStepInProgress(txId, 1)
                 updateTransaction(txId, { hash, status: 'confirming' })
                 resolve(hash)
               },
@@ -456,6 +470,8 @@ export function useBorrow(side: 'BEAR' | 'BULL') {
   const { morphoAddress, marketParams } = useMarketConfig(side)
   const addTransaction = useTransactionStore((s) => s.addTransaction)
   const updateTransaction = useTransactionStore((s) => s.updateTransaction)
+  const setStepInProgress = useTransactionStore((s) => s.setStepInProgress)
+  const setStepSuccess = useTransactionStore((s) => s.setStepSuccess)
   const txIdRef = useRef<string | null>(null)
 
   const { writeContract, data: hash, isPending, error, reset } = useWriteContract()
@@ -465,11 +481,11 @@ export function useBorrow(side: 'BEAR' | 'BULL') {
   })
 
   useEffect(() => {
-    if (isSuccess && txIdRef.current) {
-      updateTransaction(txIdRef.current, { status: 'success' })
+    if (isSuccess && txIdRef.current && hash) {
+      setStepSuccess(txIdRef.current, hash)
       txIdRef.current = null
     }
-  }, [isSuccess, updateTransaction])
+  }, [isSuccess, hash, setStepSuccess])
 
   useEffect(() => {
     if (isError && txIdRef.current) {
@@ -495,8 +511,12 @@ export function useBorrow(side: 'BEAR' | 'BULL') {
       status: 'pending',
       hash: undefined,
       title: `Borrowing USDC from ${side} market`,
-      steps: [{ label: 'Borrow USDC', status: 'pending' }],
+      steps: [
+        { label: 'Borrow USDC', status: 'pending' },
+        { label: 'Confirming onchain (~12s)', status: 'pending' },
+      ],
     })
+    setStepInProgress(txId, 0)
 
     return Result.tryPromise({
       try: () =>
@@ -510,6 +530,7 @@ export function useBorrow(side: 'BEAR' | 'BULL') {
             },
             {
               onSuccess: (hash) => {
+                setStepInProgress(txId, 1)
                 updateTransaction(txId, { hash, status: 'confirming' })
                 resolve(hash)
               },
@@ -557,6 +578,8 @@ export function useRepay(side: 'BEAR' | 'BULL') {
   const { morphoAddress, marketParams, marketId } = useMarketConfig(side)
   const addTransaction = useTransactionStore((s) => s.addTransaction)
   const updateTransaction = useTransactionStore((s) => s.updateTransaction)
+  const setStepInProgress = useTransactionStore((s) => s.setStepInProgress)
+  const setStepSuccess = useTransactionStore((s) => s.setStepSuccess)
   const txIdRef = useRef<string | null>(null)
 
   const { data: marketData } = useReadContract({
@@ -577,11 +600,11 @@ export function useRepay(side: 'BEAR' | 'BULL') {
   })
 
   useEffect(() => {
-    if (isSuccess && txIdRef.current) {
-      updateTransaction(txIdRef.current, { status: 'success' })
+    if (isSuccess && txIdRef.current && hash) {
+      setStepSuccess(txIdRef.current, hash)
       txIdRef.current = null
     }
-  }, [isSuccess, updateTransaction])
+  }, [isSuccess, hash, setStepSuccess])
 
   useEffect(() => {
     if (isError && txIdRef.current) {
@@ -614,8 +637,12 @@ export function useRepay(side: 'BEAR' | 'BULL') {
       status: 'pending',
       hash: undefined,
       title: `Repaying USDC to ${side} market`,
-      steps: [{ label: 'Repay USDC', status: 'pending' }],
+      steps: [
+        { label: 'Repay USDC', status: 'pending' },
+        { label: 'Confirming onchain (~12s)', status: 'pending' },
+      ],
     })
+    setStepInProgress(txId, 0)
 
     return Result.tryPromise({
       try: () =>
@@ -629,6 +656,7 @@ export function useRepay(side: 'BEAR' | 'BULL') {
             },
             {
               onSuccess: (hash) => {
+                setStepInProgress(txId, 1)
                 updateTransaction(txId, { hash, status: 'confirming' })
                 resolve(hash)
               },

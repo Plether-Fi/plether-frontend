@@ -277,6 +277,8 @@ export function useZapBuyWithPermit() {
   const addresses = chainId ? getAddresses(chainId) : null
   const addTransaction = useTransactionStore((s) => s.addTransaction)
   const updateTransaction = useTransactionStore((s) => s.updateTransaction)
+  const setStepInProgress = useTransactionStore((s) => s.setStepInProgress)
+  const setStepSuccess = useTransactionStore((s) => s.setStepSuccess)
   const txIdRef = useRef<string | null>(null)
   const [isSigningPermit, setIsSigningPermit] = useState(false)
   const queryAddress = address ?? zeroAddress
@@ -302,11 +304,11 @@ export function useZapBuyWithPermit() {
   const { isLoading: isConfirming, isSuccess, isError, error: receiptError } = useWaitForTransactionReceipt({ hash })
 
   useEffect(() => {
-    if (isSuccess && txIdRef.current) {
-      updateTransaction(txIdRef.current, { status: 'success' })
+    if (isSuccess && txIdRef.current && hash) {
+      setStepSuccess(txIdRef.current, hash)
       txIdRef.current = null
     }
-  }, [isSuccess, updateTransaction])
+  }, [isSuccess, hash, setStepSuccess])
 
   useEffect(() => {
     if (isError && txIdRef.current) {
@@ -337,8 +339,13 @@ export function useZapBuyWithPermit() {
         status: 'pending',
         hash: undefined,
         title: 'Swapping USDC for plDXY-BULL',
-        steps: [{ label: 'Sign permit', status: 'pending' }, { label: 'Swap', status: 'pending' }],
+        steps: [
+          { label: 'Sign permit', status: 'pending' },
+          { label: 'Swap', status: 'pending' },
+          { label: 'Confirming onchain (~12s)', status: 'pending' },
+        ],
       })
+      setStepInProgress(txId, 0)
 
       return Result.tryPromise({
         try: async () => {
@@ -371,6 +378,7 @@ export function useZapBuyWithPermit() {
             },
           })
           setIsSigningPermit(false)
+          setStepInProgress(txId, 1)
 
           const r: `0x${string}` = signature.slice(0, 66) as `0x${string}`
           const s: `0x${string}` = `0x${signature.slice(66, 130)}`
@@ -382,6 +390,7 @@ export function useZapBuyWithPermit() {
             functionName: 'zapMintWithPermit',
             args: [usdcAmount, minBullOut, maxSlippageBps, deadline, v, r, s],
           })
+          setStepInProgress(txId, 2)
           updateTransaction(txId, { hash: txHash, status: 'confirming' })
           return txHash
         },
@@ -420,6 +429,8 @@ export function useZapSellWithPermit() {
   const addresses = chainId ? getAddresses(chainId) : null
   const addTransaction = useTransactionStore((s) => s.addTransaction)
   const updateTransaction = useTransactionStore((s) => s.updateTransaction)
+  const setStepInProgress = useTransactionStore((s) => s.setStepInProgress)
+  const setStepSuccess = useTransactionStore((s) => s.setStepSuccess)
   const txIdRef = useRef<string | null>(null)
   const [isSigningPermit, setIsSigningPermit] = useState(false)
   const queryAddress = address ?? zeroAddress
@@ -445,11 +456,11 @@ export function useZapSellWithPermit() {
   const { isLoading: isConfirming, isSuccess, isError, error: receiptError } = useWaitForTransactionReceipt({ hash })
 
   useEffect(() => {
-    if (isSuccess && txIdRef.current) {
-      updateTransaction(txIdRef.current, { status: 'success' })
+    if (isSuccess && txIdRef.current && hash) {
+      setStepSuccess(txIdRef.current, hash)
       txIdRef.current = null
     }
-  }, [isSuccess, updateTransaction])
+  }, [isSuccess, hash, setStepSuccess])
 
   useEffect(() => {
     if (isError && txIdRef.current) {
@@ -476,8 +487,13 @@ export function useZapSellWithPermit() {
         status: 'pending',
         hash: undefined,
         title: 'Swapping plDXY-BULL for USDC',
-        steps: [{ label: 'Sign permit', status: 'pending' }, { label: 'Swap', status: 'pending' }],
+        steps: [
+          { label: 'Sign permit', status: 'pending' },
+          { label: 'Swap', status: 'pending' },
+          { label: 'Confirming onchain (~12s)', status: 'pending' },
+        ],
       })
+      setStepInProgress(txId, 0)
 
       return Result.tryPromise({
         try: async () => {
@@ -510,6 +526,7 @@ export function useZapSellWithPermit() {
             },
           })
           setIsSigningPermit(false)
+          setStepInProgress(txId, 1)
 
           const r: `0x${string}` = signature.slice(0, 66) as `0x${string}`
           const s: `0x${string}` = `0x${signature.slice(66, 130)}`
@@ -521,6 +538,7 @@ export function useZapSellWithPermit() {
             functionName: 'zapBurnWithPermit',
             args: [bullAmount, minUsdcOut, deadline, v, r, s],
           })
+          setStepInProgress(txId, 2)
           updateTransaction(txId, { hash: txHash, status: 'confirming' })
           return txHash
         },

@@ -34,7 +34,10 @@ export function useApprove(tokenAddress: Address, spenderAddress: Address) {
       status: 'pending',
       hash: undefined,
       title: 'Approving USDC',
-      steps: [{ label: 'Approve spending', status: 'pending' }],
+      steps: [
+        { label: 'Approve spending', status: 'pending' },
+        { label: 'Confirming onchain (~12s)', status: 'pending' },
+      ],
     })
     txModal.open({ transactionId: txId })
     setStepInProgress(txId, 0)
@@ -52,6 +55,7 @@ export function useApprove(tokenAddress: Address, spenderAddress: Address) {
         })
 
         setIsConfirming(true)
+        setStepInProgress(txId, 1)
 
         const receipt = await publicClient.waitForTransactionReceipt({ hash })
 

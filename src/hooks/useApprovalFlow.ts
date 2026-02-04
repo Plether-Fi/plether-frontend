@@ -57,13 +57,13 @@ export function useApprovalFlow({
     const steps = needsApproval
       ? [
           { label: 'Approve USDC', status: 'pending' as const },
-          { label: 'Confirming...', status: 'pending' as const },
+          { label: 'Confirming onchain (~12s)', status: 'pending' as const },
           { label: actionStepLabel, status: 'pending' as const },
-          { label: 'Confirming...', status: 'pending' as const },
+          { label: 'Confirming onchain (~12s)', status: 'pending' as const },
         ]
       : [
           { label: actionStepLabel, status: 'pending' as const },
-          { label: 'Confirming...', status: 'pending' as const },
+          { label: 'Confirming onchain (~12s)', status: 'pending' as const },
         ]
 
     addTransaction({

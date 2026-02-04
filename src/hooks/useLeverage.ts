@@ -192,6 +192,8 @@ export function useOpenLeverage(side: 'BEAR' | 'BULL') {
   const routerAddress = side === 'BEAR' ? addresses?.LEVERAGE_ROUTER : addresses?.BULL_LEVERAGE_ROUTER
   const addTransaction = useTransactionStore((s) => s.addTransaction)
   const updateTransaction = useTransactionStore((s) => s.updateTransaction)
+  const setStepInProgress = useTransactionStore((s) => s.setStepInProgress)
+  const setStepSuccess = useTransactionStore((s) => s.setStepSuccess)
   const txIdRef = useRef<string | null>(null)
 
   const { writeContract, data: hash, isPending, error, reset } = useWriteContract()
@@ -201,11 +203,11 @@ export function useOpenLeverage(side: 'BEAR' | 'BULL') {
   })
 
   useEffect(() => {
-    if (isSuccess && txIdRef.current) {
-      updateTransaction(txIdRef.current, { status: 'success' })
+    if (isSuccess && txIdRef.current && hash) {
+      setStepSuccess(txIdRef.current, hash)
       txIdRef.current = null
     }
-  }, [isSuccess, updateTransaction])
+  }, [isSuccess, hash, setStepSuccess])
 
   useEffect(() => {
     if (isError && txIdRef.current) {
@@ -236,8 +238,12 @@ export function useOpenLeverage(side: 'BEAR' | 'BULL') {
       status: 'pending',
       hash: undefined,
       title: `Opening ${side} leverage position`,
-      steps: [{ label: 'Open position', status: 'pending' }],
+      steps: [
+        { label: 'Open position', status: 'pending' },
+        { label: 'Confirming onchain (~12s)', status: 'pending' },
+      ],
     })
+    setStepInProgress(txId, 0)
 
     return Result.tryPromise({
       try: () =>
@@ -251,6 +257,7 @@ export function useOpenLeverage(side: 'BEAR' | 'BULL') {
             },
             {
               onSuccess: (hash) => {
+                setStepInProgress(txId, 1)
                 updateTransaction(txId, { hash, status: 'confirming' })
                 resolve(hash)
               },
@@ -298,6 +305,8 @@ export function useCloseLeverage(side: 'BEAR' | 'BULL') {
   const routerAddress = side === 'BEAR' ? addresses?.LEVERAGE_ROUTER : addresses?.BULL_LEVERAGE_ROUTER
   const addTransaction = useTransactionStore((s) => s.addTransaction)
   const updateTransaction = useTransactionStore((s) => s.updateTransaction)
+  const setStepInProgress = useTransactionStore((s) => s.setStepInProgress)
+  const setStepSuccess = useTransactionStore((s) => s.setStepSuccess)
   const txIdRef = useRef<string | null>(null)
 
   const { writeContract, data: hash, isPending, error, reset } = useWriteContract()
@@ -307,11 +316,11 @@ export function useCloseLeverage(side: 'BEAR' | 'BULL') {
   })
 
   useEffect(() => {
-    if (isSuccess && txIdRef.current) {
-      updateTransaction(txIdRef.current, { status: 'success' })
+    if (isSuccess && txIdRef.current && hash) {
+      setStepSuccess(txIdRef.current, hash)
       txIdRef.current = null
     }
-  }, [isSuccess, updateTransaction])
+  }, [isSuccess, hash, setStepSuccess])
 
   useEffect(() => {
     if (isError && txIdRef.current) {
@@ -341,8 +350,12 @@ export function useCloseLeverage(side: 'BEAR' | 'BULL') {
       status: 'pending',
       hash: undefined,
       title: `Closing ${side} leverage position`,
-      steps: [{ label: 'Close position', status: 'pending' }],
+      steps: [
+        { label: 'Close position', status: 'pending' },
+        { label: 'Confirming onchain (~12s)', status: 'pending' },
+      ],
     })
+    setStepInProgress(txId, 0)
 
     return Result.tryPromise({
       try: () =>
@@ -356,6 +369,7 @@ export function useCloseLeverage(side: 'BEAR' | 'BULL') {
             },
             {
               onSuccess: (hash) => {
+                setStepInProgress(txId, 1)
                 updateTransaction(txId, { hash, status: 'confirming' })
                 resolve(hash)
               },
@@ -442,7 +456,7 @@ export function useAdjustCollateral(side: 'BEAR' | 'BULL', onSuccessCallback?: (
         title: 'Adding collateral',
         steps: [
           { label: 'Add collateral', status: 'pending' },
-          { label: 'Confirming...', status: 'pending' },
+          { label: 'Confirming onchain (~12s)', status: 'pending' },
         ],
       })
       txModal.open({ transactionId: txId })
@@ -510,7 +524,7 @@ export function useAdjustCollateral(side: 'BEAR' | 'BULL', onSuccessCallback?: (
       title: 'Removing collateral',
       steps: [
         { label: 'Remove collateral', status: 'pending' },
-        { label: 'Confirming...', status: 'pending' },
+        { label: 'Confirming onchain (~12s)', status: 'pending' },
       ],
     })
     txModal.open({ transactionId: txId })

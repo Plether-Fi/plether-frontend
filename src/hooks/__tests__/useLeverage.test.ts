@@ -341,6 +341,14 @@ describe('useOpenLeverage', () => {
       await result.current.openPosition(1000000000000000000n, 2000000000000000000n, 100n, deadline)
     })
 
+    // Update mocks to simulate confirmed transaction
+    mockUseWriteContract.mockReturnValue({
+      writeContract: mockWriteContract,
+      data: '0xhash',
+      isPending: false,
+      error: null,
+      reset: mockReset,
+    })
     mockUseWaitForTransactionReceipt.mockReturnValue({
       isLoading: false,
       isSuccess: true,

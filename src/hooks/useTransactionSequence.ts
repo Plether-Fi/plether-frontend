@@ -61,7 +61,7 @@ export function useTransactionSequence() {
     const steps = buildSteps()
     const transactionId = crypto.randomUUID()
 
-    const modalSteps = steps.flatMap(s => [s.label, 'Confirming...'])
+    const modalSteps = steps.flatMap(s => [s.label, 'Confirming onchain (~12s)'])
 
     // Add to transaction store (single source of truth)
     txStore.addTransaction({

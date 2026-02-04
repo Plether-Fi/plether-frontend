@@ -49,7 +49,8 @@ class TransactionManager {
   private async executeApproval(
     tokenAddress: `0x${string}`,
     spenderAddress: `0x${string}`,
-    amount: bigint
+    amount: bigint,
+    onSubmitted?: () => void
   ): Promise<`0x${string}`> {
     const config = this.getConfig()
     const hash = await writeContract(config, {
@@ -58,6 +59,7 @@ class TransactionManager {
       functionName: 'approve',
       args: [spenderAddress, amount],
     })
+    onSubmitted?.()
     await waitForTransactionReceipt(config, { hash })
     return hash
   }
@@ -386,8 +388,9 @@ class TransactionManager {
 
       if (!hasAllowance) {
         txStore.setStepInProgress(transactionId, 0)
-        await this.executeApproval(tokenAddress, addresses.CURVE_POOL, amount)
-        txStore.setStepInProgress(transactionId, 1)
+        await this.executeApproval(tokenAddress, addresses.CURVE_POOL, amount, () => {
+          txStore.setStepInProgress(transactionId, 1)
+        })
         stepOffset = 2
       }
 
@@ -490,8 +493,9 @@ class TransactionManager {
 
       if (!hasAllowance) {
         txStore.setStepInProgress(transactionId, 0)
-        await this.executeApproval(addresses.USDC, addresses.ZAP_ROUTER, usdcAmount)
-        txStore.setStepInProgress(transactionId, 1)
+        await this.executeApproval(addresses.USDC, addresses.ZAP_ROUTER, usdcAmount, () => {
+          txStore.setStepInProgress(transactionId, 1)
+        })
         stepOffset = 2
       }
 
@@ -593,8 +597,9 @@ class TransactionManager {
 
       if (!hasAllowance) {
         txStore.setStepInProgress(transactionId, 0)
-        await this.executeApproval(addresses.DXY_BULL, addresses.ZAP_ROUTER, bullAmount)
-        txStore.setStepInProgress(transactionId, 1)
+        await this.executeApproval(addresses.DXY_BULL, addresses.ZAP_ROUTER, bullAmount, () => {
+          txStore.setStepInProgress(transactionId, 1)
+        })
         stepOffset = 2
       }
 
@@ -664,8 +669,8 @@ class TransactionManager {
     const txModal = useTransactionModal.getState()
 
     const steps = hasUsdcAllowance
-      ? ['Mint pairs', 'Confirming...']
-      : ['Approve USDC', 'Confirming...', 'Mint pairs', 'Confirming...']
+      ? ['Mint pairs', 'Confirming onchain (~12s)']
+      : ['Approve USDC', 'Confirming onchain (~12s)', 'Mint pairs', 'Confirming onchain (~12s)']
 
     txStore.addTransaction({
       id: transactionId,
@@ -694,8 +699,9 @@ class TransactionManager {
 
       if (!hasUsdcAllowance) {
         txStore.setStepInProgress(transactionId, 0)
-        await this.executeApproval(addresses.USDC, addresses.SYNTHETIC_SPLITTER, usdcRequired)
-        txStore.setStepInProgress(transactionId, 1)
+        await this.executeApproval(addresses.USDC, addresses.SYNTHETIC_SPLITTER, usdcRequired, () => {
+          txStore.setStepInProgress(transactionId, 1)
+        })
         stepOffset = 2
       }
 
@@ -765,9 +771,9 @@ class TransactionManager {
     const txModal = useTransactionModal.getState()
 
     const steps: string[] = []
-    if (!hasBearAllowance) steps.push('Approve plDXY-BEAR', 'Confirming...')
-    if (!hasBullAllowance) steps.push('Approve plDXY-BULL', 'Confirming...')
-    steps.push('Redeem pairs', 'Confirming...')
+    if (!hasBearAllowance) steps.push('Approve plDXY-BEAR', 'Confirming onchain (~12s)')
+    if (!hasBullAllowance) steps.push('Approve plDXY-BULL', 'Confirming onchain (~12s)')
+    steps.push('Redeem pairs', 'Confirming onchain (~12s)')
 
     txStore.addTransaction({
       id: transactionId,
@@ -795,16 +801,20 @@ class TransactionManager {
       let stepIndex = 0
 
       if (!hasBearAllowance) {
+        const confirmStep = stepIndex + 1
         txStore.setStepInProgress(transactionId, stepIndex)
-        await this.executeApproval(addresses.DXY_BEAR, addresses.SYNTHETIC_SPLITTER, pairAmount)
-        txStore.setStepInProgress(transactionId, stepIndex + 1)
+        await this.executeApproval(addresses.DXY_BEAR, addresses.SYNTHETIC_SPLITTER, pairAmount, () => {
+          txStore.setStepInProgress(transactionId, confirmStep)
+        })
         stepIndex += 2
       }
 
       if (!hasBullAllowance) {
+        const confirmStep = stepIndex + 1
         txStore.setStepInProgress(transactionId, stepIndex)
-        await this.executeApproval(addresses.DXY_BULL, addresses.SYNTHETIC_SPLITTER, pairAmount)
-        txStore.setStepInProgress(transactionId, stepIndex + 1)
+        await this.executeApproval(addresses.DXY_BULL, addresses.SYNTHETIC_SPLITTER, pairAmount, () => {
+          txStore.setStepInProgress(transactionId, confirmStep)
+        })
         stepIndex += 2
       }
 
@@ -888,9 +898,9 @@ class TransactionManager {
     const txModal = useTransactionModal.getState()
 
     const steps: string[] = []
-    if (!isAuthorized) steps.push('Authorize Morpho', 'Confirming...')
-    if (!hasUsdcAllowance) steps.push('Approve USDC', 'Confirming...')
-    steps.push(`Open ${side} position`, 'Confirming...')
+    if (!isAuthorized) steps.push('Authorize Morpho', 'Confirming onchain (~12s)')
+    if (!hasUsdcAllowance) steps.push('Approve USDC', 'Confirming onchain (~12s)')
+    steps.push(`Open ${side} position`, 'Confirming onchain (~12s)')
 
     txStore.addTransaction({
       id: transactionId,
@@ -927,15 +937,16 @@ class TransactionManager {
           functionName: 'setAuthorization',
           args: [routerAddress, true],
         })
-        await waitForTransactionReceipt(config, { hash: authHash })
         txStore.setStepInProgress(transactionId, stepIndex + 1)
+        await waitForTransactionReceipt(config, { hash: authHash })
         stepIndex += 2
       }
 
       if (!hasUsdcAllowance) {
         txStore.setStepInProgress(transactionId, stepIndex)
-        await this.executeApproval(addresses.USDC, routerAddress, principal)
-        txStore.setStepInProgress(transactionId, stepIndex + 1)
+        await this.executeApproval(addresses.USDC, routerAddress, principal, () => {
+          txStore.setStepInProgress(transactionId, stepIndex + 1)
+        })
         stepIndex += 2
       }
 
@@ -1001,7 +1012,7 @@ class TransactionManager {
     const txStore = useTransactionStore.getState()
     const txModal = useTransactionModal.getState()
 
-    const steps = [`Close ${side} position`, 'Confirming...']
+    const steps = [`Close ${side} position`, 'Confirming onchain (~12s)']
 
     txStore.addTransaction({
       id: transactionId,
