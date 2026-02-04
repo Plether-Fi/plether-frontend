@@ -33,6 +33,7 @@ export function AdjustPositionModal({ isOpen, onClose, position, onSuccess }: Ad
     needsApproval,
     isApproving,
     approvePending,
+    isPending: approvalFlowPending,
   } = useApprovalFlow({
     tokenAddress: addresses.USDC,
     spenderAddress: routerAddress,
@@ -70,6 +71,14 @@ export function AdjustPositionModal({ isOpen, onClose, position, onSuccess }: Ad
       setIsHidden(false)
     }
   }, [isOpen])
+
+  // Close modal when approval flow completes without success (e.g., user rejected)
+  useEffect(() => {
+    if (isHidden && !approvalFlowPending && !isPending && !isSuccess) {
+      setIsHidden(false)
+      onClose()
+    }
+  }, [isHidden, approvalFlowPending, isPending, isSuccess, onClose])
 
   // Close modal when transaction succeeds
   useEffect(() => {
