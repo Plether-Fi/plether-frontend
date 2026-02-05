@@ -1,27 +1,21 @@
 import { useAccount, useReadContract } from 'wagmi'
 import { PLETH_CORE_ABI, BASKET_ORACLE_ABI } from '../contracts/abis'
-import { getAddresses } from '../contracts/addresses'
+import { getAddresses, DEFAULT_CHAIN_ID } from '../contracts/addresses'
 
 export function useTokenPrices() {
   const { chainId } = useAccount()
-  const addresses = chainId ? getAddresses(chainId) : null
+  const addresses = getAddresses(chainId ?? DEFAULT_CHAIN_ID)
 
   const { data: roundData, isLoading: priceLoading } = useReadContract({
-    address: addresses?.BASKET_ORACLE,
+    address: addresses.BASKET_ORACLE,
     abi: BASKET_ORACLE_ABI,
     functionName: 'latestRoundData',
-    query: {
-      enabled: !!addresses,
-    },
   })
 
   const { data: cap, isLoading: capLoading } = useReadContract({
-    address: addresses?.SYNTHETIC_SPLITTER,
+    address: addresses.SYNTHETIC_SPLITTER,
     abi: PLETH_CORE_ABI,
     functionName: 'CAP',
-    query: {
-      enabled: !!addresses,
-    },
   })
 
   const oraclePrice = roundData?.[1] ?? 0n

@@ -141,60 +141,60 @@ export function Dashboard() {
         <p className="text-cyber-text-secondary font-light">Your portfolio overview</p>
       </div>
 
+      {/* Portfolio tiles - always visible */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+        <DashboardTile
+          variant="bull"
+          title="Total BULL Position"
+          balance={isConnected ? bullBalance + stakedBullAssets : 0n}
+          balanceDecimals={18}
+          balanceToken="plDXY-BULL"
+          secondaryValue={isConnected ? stakedBullAssets : 0n}
+          secondaryLabel="Staked Balance"
+          secondaryDecimals={18}
+          secondaryToken="plDXY-BULL"
+          isLoading={isConnected && (balancesLoading || stakedBullLoading)}
+        />
+        <DashboardTile
+          variant="usdc"
+          title="Total USDC Position"
+          balance={isConnected ? usdcBalance + totalSupplied : 0n}
+          balanceDecimals={6}
+          balanceToken="USDC"
+          secondaryValue={isConnected ? totalSupplied : 0n}
+          secondaryLabel="Total Lending"
+          secondaryDecimals={6}
+          secondaryToken="USDC"
+          isLoading={isConnected && (balancesLoading || lendingPosition.isLoading)}
+        />
+        <DashboardTile
+          variant="bear"
+          title="Total BEAR Position"
+          balance={isConnected ? bearBalance + stakedBearAssets : 0n}
+          balanceDecimals={18}
+          balanceToken="plDXY-BEAR"
+          secondaryValue={isConnected ? stakedBearAssets : 0n}
+          secondaryLabel="Staked Balance"
+          secondaryDecimals={18}
+          secondaryToken="plDXY-BEAR"
+          isLoading={isConnected && (balancesLoading || stakedBearLoading)}
+        />
+      </div>
+
+      {/* Positions section - always visible */}
+      <PositionsSection
+        positions={isConnected ? positions : []}
+        isLoading={isConnected && (bearPosition.isLoading || bullPosition.isLoading)}
+        isClosing={closeSequence.isRunning}
+        onAdjust={(position) => {
+          setSelectedPosition(position)
+          setAdjustModalOpen(true)
+        }}
+        onClose={handleClosePosition}
+      />
+
       {isConnected ? (
         <>
-          {/* Portfolio tiles */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-            <DashboardTile
-              variant="bull"
-              title="Total BULL Position"
-              balance={bullBalance + stakedBullAssets}
-              balanceDecimals={18}
-              balanceToken="plDXY-BULL"
-              secondaryValue={stakedBullAssets}
-              secondaryLabel="Staked Balance"
-              secondaryDecimals={18}
-              secondaryToken="plDXY-BULL"
-              isLoading={balancesLoading || stakedBullLoading}
-            />
-            <DashboardTile
-              variant="usdc"
-              title="Total USDC Position"
-              balance={usdcBalance + totalSupplied}
-              balanceDecimals={6}
-              balanceToken="USDC"
-              secondaryValue={totalSupplied}
-              secondaryLabel="Total Lending"
-              secondaryDecimals={6}
-              secondaryToken="USDC"
-              isLoading={balancesLoading || lendingPosition.isLoading}
-            />
-            <DashboardTile
-              variant="bear"
-              title="Total BEAR Position"
-              balance={bearBalance + stakedBearAssets}
-              balanceDecimals={18}
-              balanceToken="plDXY-BEAR"
-              secondaryValue={stakedBearAssets}
-              secondaryLabel="Staked Balance"
-              secondaryDecimals={18}
-              secondaryToken="plDXY-BEAR"
-              isLoading={balancesLoading || stakedBearLoading}
-            />
-          </div>
-
-          {/* Positions section */}
-          <PositionsSection
-            positions={positions}
-            isLoading={bearPosition.isLoading || bullPosition.isLoading}
-            isClosing={closeSequence.isRunning}
-            onAdjust={(position) => {
-              setSelectedPosition(position)
-              setAdjustModalOpen(true)
-            }}
-            onClose={handleClosePosition}
-          />
-
           {/* Trade / Leverage / Yield widget */}
           <div className="bg-cyber-surface-dark border border-cyber-border-glow/30 overflow-hidden shadow-lg shadow-cyber-border-glow/10">
             <MainTabNav activeTab={mainTab} onTabChange={handleTabChange} />

@@ -2,7 +2,7 @@ import { useAccount, useReadContract, useWriteContract, useWaitForTransactionRec
 import { useRef, useEffect } from 'react'
 import { Result } from 'better-result'
 import { PLETH_CORE_ABI } from '../contracts/abis'
-import { getAddresses } from '../contracts/addresses'
+import { getAddresses, DEFAULT_CHAIN_ID } from '../contracts/addresses'
 import { useTransactionStore } from '../stores/transactionStore'
 import {
   parseTransactionError,
@@ -22,15 +22,12 @@ export type BurnError = NotConnectedError | TransactionError
 
 export function usePlethCoreStatus() {
   const { chainId } = useAccount()
-  const addresses = chainId ? getAddresses(chainId) : null
+  const addresses = getAddresses(chainId ?? DEFAULT_CHAIN_ID)
 
   const { data, isLoading, error, refetch } = useReadContract({
-    address: addresses?.SYNTHETIC_SPLITTER,
+    address: addresses.SYNTHETIC_SPLITTER,
     abi: PLETH_CORE_ABI,
     functionName: 'currentStatus',
-    query: {
-      enabled: !!addresses,
-    },
   })
 
   return {

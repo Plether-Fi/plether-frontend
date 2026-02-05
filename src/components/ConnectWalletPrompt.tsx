@@ -1,14 +1,23 @@
+import { useWeb3Modal } from '@web3modal/wagmi/react'
+
 export interface ConnectWalletPromptProps {
   description?: string
 }
 
 export function ConnectWalletPrompt({ description }: ConnectWalletPromptProps) {
+  const { open } = useWeb3Modal()
+
   return (
     <div className="bg-cyber-surface-dark p-12 text-center border border-cyber-border-glow/30 shadow-lg">
       <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-cyber-surface-light flex items-center justify-center">
         <span className="material-symbols-outlined text-3xl text-cyber-text-secondary">lock</span>
       </div>
-      <h2 className="text-xl font-semibold text-cyber-text-primary mb-2">Connect Your Wallet</h2>
+      <button
+        onClick={() => void open()}
+        className="text-xl font-semibold text-cyber-electric-fuchsia hover:text-cyber-electric-fuchsia/80 mb-2 cursor-pointer transition-colors"
+      >
+        Connect Your Wallet
+      </button>
       {description ? (
         <p className="text-cyber-text-secondary">{description}</p>
       ) : (
