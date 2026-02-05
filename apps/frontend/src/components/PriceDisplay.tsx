@@ -1,5 +1,5 @@
 import { formatUnits } from 'viem'
-import { Skeleton } from './ui'
+import { Skeleton, TokenLabel } from './ui'
 import { useTokenPrices } from '../hooks'
 import { usePlethCoreStatus } from '../hooks'
 import type { ProtocolStatus } from '../config/constants'
@@ -41,7 +41,7 @@ export function PriceDisplay({
     return (
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
-          <span className="text-cyber-text-secondary text-sm">plDXY-BULL</span>
+          <TokenLabel token="plDXY-BULL" />
           {isLoading ? (
             <Skeleton width={60} height={20} />
           ) : priceUnknown ? (
