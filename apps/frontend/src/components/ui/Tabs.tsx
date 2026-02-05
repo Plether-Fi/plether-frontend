@@ -17,7 +17,7 @@ export function Tabs({ tabs, activeTab, onChange }: TabsProps) {
           key={tab.id}
           onClick={() => { onChange(tab.id); }}
           className={`
-            flex-1 px-4 py-2 text-sm font-medium  transition-all
+            flex-1 px-4 py-2 text-sm font-medium transition-all cursor-pointer
             ${
               activeTab === tab.id
                 ? 'bg-cyber-surface-dark text-cyber-neon-green shadow-sm shadow-cyber-neon-green/10 border border-cyber-neon-green/50'

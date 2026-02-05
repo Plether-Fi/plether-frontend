@@ -308,7 +308,7 @@ function MarketColumn({ side, market, usdcBalance, onSuccess }: MarketColumnProp
         <div className="flex text-xs font-medium mb-3 border border-cyber-border-glow/30">
           <button
             onClick={() => { setSupplyMode('supply'); setSupplyAmount('') }}
-            className={`flex-1 py-1.5 px-3 transition-all ${
+            className={`flex-1 py-1.5 px-3 transition-all cursor-pointer ${
               supplyMode === 'supply'
                 ? `${bgClass} ${accentColorClass}`
                 : 'text-cyber-text-secondary hover:text-cyber-text-primary'
@@ -318,7 +318,7 @@ function MarketColumn({ side, market, usdcBalance, onSuccess }: MarketColumnProp
           </button>
           <button
             onClick={() => { setSupplyMode('withdraw'); setSupplyAmount('') }}
-            className={`flex-1 py-1.5 px-3 transition-all ${
+            className={`flex-1 py-1.5 px-3 transition-all cursor-pointer ${
               supplyMode === 'withdraw'
                 ? `${bgClass} ${accentColorClass}`
                 : 'text-cyber-text-secondary hover:text-cyber-text-primary'
@@ -354,7 +354,7 @@ function MarketColumn({ side, market, usdcBalance, onSuccess }: MarketColumnProp
         <div className="flex text-xs font-medium mb-3 border border-cyber-border-glow/30">
           <button
             onClick={() => { setBorrowMode('borrow'); setBorrowAmount('') }}
-            className={`flex-1 py-1.5 px-3 transition-all ${
+            className={`flex-1 py-1.5 px-3 transition-all cursor-pointer ${
               borrowMode === 'borrow'
                 ? `${bgClass} ${accentColorClass}`
                 : 'text-cyber-text-secondary hover:text-cyber-text-primary'
@@ -364,7 +364,7 @@ function MarketColumn({ side, market, usdcBalance, onSuccess }: MarketColumnProp
           </button>
           <button
             onClick={() => { setBorrowMode('repay'); setBorrowAmount('') }}
-            className={`flex-1 py-1.5 px-3 transition-all ${
+            className={`flex-1 py-1.5 px-3 transition-all cursor-pointer ${
               borrowMode === 'repay'
                 ? `${bgClass} ${accentColorClass}`
                 : 'text-cyber-text-secondary hover:text-cyber-text-primary'

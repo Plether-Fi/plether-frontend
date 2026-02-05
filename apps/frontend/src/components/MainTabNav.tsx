@@ -64,7 +64,7 @@ export function MainTabNav({ activeTab, onTabChange }: MainTabNavProps) {
             key={tab.id}
             onClick={() => { onTabChange(tab.id); }}
             className={`
-              flex-1 flex items-center gap-3 px-6 py-5 text-left transition-colors -mb-[2px]
+              flex-1 flex items-center gap-3 px-6 py-5 text-left transition-colors -mb-[2px] cursor-pointer
               ${isActive
                 ? `bg-cyber-surface-light border-b-2 ${styles.border}`
                 : `group hover:bg-cyber-surface-light border-b-2 border-transparent ${activeStyles.hoverBorder} opacity-60 hover:opacity-100`

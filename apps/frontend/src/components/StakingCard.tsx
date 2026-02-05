@@ -113,7 +113,7 @@ export function StakingCard({ side, tokenBalance, onSuccess }: StakingCardProps)
         <div className="bg-cyber-surface-light p-1 flex text-sm font-medium border border-cyber-border-glow/30">
           <button
             onClick={() => { setMode('stake'); setAmount('') }}
-            className={`flex-1 py-2 px-4 transition-all ${
+            className={`flex-1 py-2 px-4 transition-all cursor-pointer ${
               mode === 'stake'
                 ? `bg-cyber-surface-dark ${textColor} shadow-sm ${shadowColor}/10 border border-${isBear ? 'cyber-electric-fuchsia' : 'cyber-neon-green'}/50`
                 : 'text-cyber-text-secondary hover:text-cyber-bright-blue'
@@ -123,7 +123,7 @@ export function StakingCard({ side, tokenBalance, onSuccess }: StakingCardProps)
           </button>
           <button
             onClick={() => { setMode('unstake'); setAmount('') }}
-            className={`flex-1 py-2 px-4 transition-all ${
+            className={`flex-1 py-2 px-4 transition-all cursor-pointer ${
               mode === 'unstake'
                 ? `bg-cyber-surface-dark ${textColor} shadow-sm ${shadowColor}/10 border border-${isBear ? 'cyber-electric-fuchsia' : 'cyber-neon-green'}/50`
                 : 'text-cyber-text-secondary hover:text-cyber-bright-blue'

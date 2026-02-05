@@ -152,7 +152,7 @@ export function Mint() {
         <div className="flex border-b border-cyber-border-glow/30">
           <button
             onClick={() => { setMode('mint'); setInputAmount('') }}
-            className={`flex-1 flex items-center justify-center gap-2 px-6 py-4 text-sm font-semibold transition-colors ${
+            className={`flex-1 flex items-center justify-center gap-2 px-6 py-4 text-sm font-semibold transition-colors cursor-pointer ${
               mode === 'mint'
                 ? 'bg-cyber-surface-light text-cyber-neon-green border-b-2 border-cyber-neon-green'
                 : 'text-cyber-text-secondary hover:text-cyber-bright-blue border-b-2 border-transparent'
@@ -163,7 +163,7 @@ export function Mint() {
           </button>
           <button
             onClick={() => { setMode('redeem'); setInputAmount('') }}
-            className={`flex-1 flex items-center justify-center gap-2 px-6 py-4 text-sm font-semibold transition-colors ${
+            className={`flex-1 flex items-center justify-center gap-2 px-6 py-4 text-sm font-semibold transition-colors cursor-pointer ${
               mode === 'redeem'
                 ? 'bg-cyber-surface-light text-cyber-electric-fuchsia border-b-2 border-cyber-electric-fuchsia'
                 : 'text-cyber-text-secondary hover:text-cyber-bright-blue border-b-2 border-transparent'
@@ -190,9 +190,9 @@ export function Mint() {
                 balance={undefined}
               />
 
-              <div className="flex justify-center -my-2 z-10 relative">
-                <div className="bg-cyber-surface-light p-2 rounded-full border border-cyber-border-glow/30">
-                  <span className="material-symbols-outlined text-cyber-bright-blue text-lg block">arrow_downward</span>
+              <div className="flex justify-center z-10 relative">
+                <div className="bg-cyber-surface-light w-9 h-9 rounded-full border border-cyber-border-glow/30 flex items-center justify-center">
+                  <span className="material-symbols-outlined text-cyber-bright-blue text-lg">arrow_downward</span>
                 </div>
               </div>
 
@@ -275,9 +275,9 @@ export function Mint() {
                 balanceLabel="Max:"
               />
 
-              <div className="flex justify-center -my-2 z-10 relative">
-                <div className="bg-cyber-surface-light p-2 rounded-full border border-cyber-border-glow/30">
-                  <span className="material-symbols-outlined text-cyber-bright-blue text-lg block">arrow_downward</span>
+              <div className="flex justify-center z-10 relative">
+                <div className="bg-cyber-surface-light w-9 h-9 rounded-full border border-cyber-border-glow/30 flex items-center justify-center">
+                  <span className="material-symbols-outlined text-cyber-bright-blue text-lg">arrow_downward</span>
                 </div>
               </div>
 

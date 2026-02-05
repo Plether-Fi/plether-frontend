@@ -36,7 +36,7 @@ export function Button({
     <button
       disabled={disabled === true || isLoading}
       className={`
-        inline-flex items-center justify-center gap-2  font-medium
+        inline-flex items-center justify-center gap-2 font-medium cursor-pointer
         transition-all duration-200
         disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none
         ${variantStyles[variant]}

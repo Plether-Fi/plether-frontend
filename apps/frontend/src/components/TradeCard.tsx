@@ -151,7 +151,7 @@ export function TradeCard({ usdcBalance, bearBalance, bullBalance, refetchBalanc
       <div className="bg-cyber-surface-light p-1 flex text-sm font-medium mb-8 border border-cyber-border-glow/30">
         <button
           onClick={() => { setMode('buy'); setInputAmount('') }}
-          className={`flex-1 py-2 px-4 transition-all ${
+          className={`flex-1 py-2 px-4 transition-all cursor-pointer ${
             mode === 'buy'
               ? 'bg-cyber-surface-dark text-cyber-bright-blue shadow-sm shadow-cyber-bright-blue/10 border border-cyber-bright-blue/50'
               : 'text-cyber-text-secondary hover:text-cyber-bright-blue'
@@ -161,7 +161,7 @@ export function TradeCard({ usdcBalance, bearBalance, bullBalance, refetchBalanc
         </button>
         <button
           onClick={() => { setMode('sell'); setInputAmount('') }}
-          className={`flex-1 py-2 px-4 transition-all ${
+          className={`flex-1 py-2 px-4 transition-all cursor-pointer ${
             mode === 'sell'
               ? 'bg-cyber-surface-dark text-cyber-bright-blue shadow-sm shadow-cyber-bright-blue/10 border border-cyber-bright-blue/50'
               : 'text-cyber-text-secondary hover:text-cyber-bright-blue'
@@ -176,7 +176,7 @@ export function TradeCard({ usdcBalance, bearBalance, bullBalance, refetchBalanc
         <div className="grid grid-cols-2 gap-4">
           <button
             onClick={() => { setSelectedToken('BULL'); }}
-            className={`relative p-4 text-center transition-all ${
+            className={`relative p-4 text-center transition-all cursor-pointer ${
               selectedToken === 'BULL'
                 ? 'border-2 border-cyber-neon-green bg-cyber-neon-green/10 shadow-md shadow-cyber-neon-green/20'
                 : 'border border-cyber-border-glow/30 bg-cyber-surface-dark hover:border-cyber-neon-green/50 opacity-60 hover:opacity-100'
@@ -187,7 +187,7 @@ export function TradeCard({ usdcBalance, bearBalance, bullBalance, refetchBalanc
           </button>
           <button
             onClick={() => { setSelectedToken('BEAR'); }}
-            className={`relative p-4 text-center transition-all ${
+            className={`relative p-4 text-center transition-all cursor-pointer ${
               selectedToken === 'BEAR'
                 ? 'border-2 border-cyber-electric-fuchsia bg-cyber-electric-fuchsia/10 shadow-md shadow-cyber-electric-fuchsia/20'
                 : 'border border-cyber-border-glow/30 bg-cyber-surface-dark hover:border-cyber-electric-fuchsia/50 opacity-60 hover:opacity-100'
@@ -208,9 +208,9 @@ export function TradeCard({ usdcBalance, bearBalance, bullBalance, refetchBalanc
           balance={inputBalance}
         />
 
-        <div className="flex justify-center -my-2 z-10 relative">
-          <div className="bg-cyber-surface-light p-2 rounded-full border border-cyber-border-glow/30 shadow-sm shadow-cyber-border-glow/10">
-            <span className="material-symbols-outlined text-cyber-bright-blue text-lg block">arrow_downward</span>
+        <div className="flex justify-center z-10 relative">
+          <div className="bg-cyber-surface-light w-9 h-9 rounded-full border border-cyber-border-glow/30 shadow-sm shadow-cyber-border-glow/10 flex items-center justify-center">
+            <span className="material-symbols-outlined text-cyber-bright-blue text-lg">arrow_downward</span>
           </div>
         </div>
 
@@ -230,7 +230,7 @@ export function TradeCard({ usdcBalance, bearBalance, bullBalance, refetchBalanc
       <div className="border-t border-cyber-border-glow/30 pt-4">
         <button
           onClick={() => { setShowDetails(!showDetails); }}
-          className="w-full flex justify-between items-center text-sm text-cyber-text-secondary hover:text-cyber-bright-blue"
+          className="w-full flex justify-between items-center text-sm text-cyber-text-secondary hover:text-cyber-bright-blue cursor-pointer"
         >
           <span>Swap details</span>
           <span className="material-symbols-outlined text-lg">{showDetails ? 'expand_less' : 'expand_more'}</span>
