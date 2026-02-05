@@ -1,6 +1,7 @@
 import { type ReactNode, useEffect } from 'react'
 import { Header } from './Header'
 import { MobileNav } from './MobileNav'
+import { ApiErrorBanner } from './ApiErrorBanner'
 import { WrongNetworkBanner } from '../wallet/WrongNetworkBanner'
 import { useAccount } from 'wagmi'
 import { useTransactionStore } from '../../stores/transactionStore'
@@ -20,7 +21,10 @@ export function Layout({ children }: LayoutProps) {
   return (
     <div className="min-h-screen flex flex-col bg-cyber-bg text-cyber-text-primary">
       {isConnected && <WrongNetworkBanner />}
-      <Header />
+      <div className="sticky top-0 z-50">
+        <Header />
+        <ApiErrorBanner />
+      </div>
       <main className="flex-grow max-w-7xl mx-auto px-6 lg:px-8 py-10 w-full pb-24 lg:pb-10">
         {children}
       </main>
