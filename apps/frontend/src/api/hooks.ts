@@ -78,7 +78,6 @@ export function useProtocolStatus() {
     queryFn: async () => unwrapResult(await plethApi.getProtocolStatus()),
     staleTime: 30_000,
     refetchInterval: (query) => query.state.status === 'error' ? false : 30_000,
-    retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10_000),
   });
 }

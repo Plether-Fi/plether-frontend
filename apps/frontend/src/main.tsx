@@ -8,8 +8,19 @@ import { config, WALLETCONNECT_PROJECT_ID } from './config/wagmi'
 import './index.css'
 import App from './App'
 
-// Create a query client
-const queryClient = new QueryClient()
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: (failureCount, error) => {
+        const status = (error as { status?: number }).status;
+        if (status && status >= 400 && status < 500) {
+          return false;
+        }
+        return failureCount < 3;
+      },
+    },
+  },
+})
 
 // Create Web3Modal
 createWeb3Modal({

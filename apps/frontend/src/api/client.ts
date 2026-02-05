@@ -38,12 +38,14 @@ import type {
 
 export class PlethApiError extends Error {
   readonly code: ApiErrorCode;
+  readonly status?: number;
   readonly details?: unknown;
 
-  constructor(code: ApiErrorCode, message: string, details?: unknown) {
+  constructor(code: ApiErrorCode, message: string, status?: number, details?: unknown) {
     super(message);
     this.name = 'PlethApiError';
     this.code = code;
+    this.status = status;
     this.details = details;
   }
 }
@@ -109,6 +111,7 @@ async function fetchApi<T>(
       const apiError = new PlethApiError(
         errorBody.error.code,
         errorBody.error.message,
+        response.status,
         errorBody.error.details
       );
 
@@ -124,6 +127,7 @@ async function fetchApi<T>(
     const apiError = new PlethApiError(
       'NETWORK_ERROR',
       err instanceof Error ? err.message : 'Network request failed',
+      undefined,
       err
     );
 
