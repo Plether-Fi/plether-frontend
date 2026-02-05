@@ -1,0 +1,103 @@
+cabal-version:      3.0
+name:               plether-api
+version:            0.1.0.0
+synopsis:           Plether DeFi Backend API
+license:            AGPL-3.0-or-later
+license-file:       LICENSE
+author:             Plether
+maintainer:         dev@plether.io
+category:           Web
+build-type:         Simple
+
+common warnings
+    ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates
+                 -Wincomplete-uni-patterns -Wmissing-export-lists
+                 -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
+
+library
+    import:           warnings
+    exposed-modules:
+        Plether.Api
+        Plether.Config
+        Plether.Types
+        Plether.Types.Api
+        Plether.Types.Protocol
+        Plether.Types.User
+        Plether.Types.Quote
+        Plether.Types.Error
+        Plether.Handlers.Protocol
+        Plether.Handlers.User
+        Plether.Handlers.Quote
+        Plether.Ethereum.Client
+        Plether.Ethereum.Multicall
+        Plether.Ethereum.Abi
+        Plether.Ethereum.Contracts.ERC20
+        Plether.Ethereum.Contracts.SyntheticSplitter
+        Plether.Ethereum.Contracts.BasketOracle
+        Plether.Ethereum.Contracts.StakedToken
+        Plether.Ethereum.Contracts.Morpho
+        Plether.Ethereum.Contracts.CurvePool
+        Plether.Ethereum.Contracts.LeverageRouter
+        Plether.Utils.Address
+        Plether.Utils.Numeric
+    build-depends:
+        base >= 4.17 && < 5,
+        scotty >= 0.22,
+        warp >= 3.3,
+        wai >= 3.2,
+        wai-cors >= 0.2,
+        wai-extra >= 3.1,
+        aeson >= 2.1,
+        http-client >= 0.7,
+        http-client-tls >= 0.3,
+        bytestring >= 0.11,
+        text >= 2.0,
+        base16-bytestring >= 1.0,
+        crypton >= 0.34,
+        memory >= 0.18,
+        scientific >= 0.3,
+        mtl >= 2.3,
+        transformers >= 0.6,
+        containers >= 0.6,
+        time >= 1.12,
+        http-types >= 0.12,
+        vector >= 0.13
+    hs-source-dirs:   src
+    default-language: GHC2021
+    default-extensions:
+        OverloadedStrings
+        DeriveGeneric
+        DeriveAnyClass
+        DerivingStrategies
+        GeneralizedNewtypeDeriving
+        LambdaCase
+        RecordWildCards
+        TypeApplications
+        DataKinds
+
+executable plether-api
+    import:           warnings
+    main-is:          Main.hs
+    build-depends:
+        base >= 4.17 && < 5,
+        plether-api,
+        scotty >= 0.22
+    hs-source-dirs:   app
+    default-language: GHC2021
+    default-extensions:
+        OverloadedStrings
+    ghc-options: -threaded -rtsopts -with-rtsopts=-N
+
+test-suite plether-api-test
+    import:           warnings
+    type:             exitcode-stdio-1.0
+    main-is:          Spec.hs
+    build-depends:
+        base >= 4.17 && < 5,
+        plether-api,
+        hspec >= 2.11,
+        aeson >= 2.1
+    hs-source-dirs:   test
+    default-language: GHC2021
+    default-extensions:
+        OverloadedStrings
