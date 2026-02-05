@@ -18,6 +18,7 @@ library
     import:           warnings
     exposed-modules:
         Plether.Api
+        Plether.Cache
         Plether.Config
         Plether.Types
         Plether.Types.Api
@@ -59,6 +60,7 @@ library
         mtl >= 2.3,
         transformers >= 0.6,
         containers >= 0.6,
+        stm >= 2.5,
         time >= 1.12,
         http-types >= 0.12,
         vector >= 0.13

@@ -3,7 +3,14 @@ module Plether.Handlers.Protocol
   , getProtocolConfig
   ) where
 
+import Control.Concurrent.STM (atomically)
 import Data.Time.Clock.POSIX (getPOSIXTime)
+import Plether.Cache
+  ( AppCache (..)
+  , CacheEntry (..)
+  , getCached
+  , setCached
+  )
 import Plether.Config (Addresses (..), Config (..))
 import Plether.Ethereum.Client (EthClient, RpcError (..), ethBlockNumber)
 import qualified Plether.Ethereum.Contracts.BasketOracle as Oracle
@@ -11,11 +18,23 @@ import qualified Plether.Ethereum.Contracts.StakedToken as Staked
 import qualified Plether.Ethereum.Contracts.SyntheticSplitter as Splitter
 import Plether.Types
 
-getProtocolStatus :: EthClient -> Config -> IO (Either ApiError (ApiResponse ProtocolStatus))
-getProtocolStatus client cfg = do
+getProtocolStatus :: AppCache -> EthClient -> Config -> IO (Either ApiError (ApiResponse ProtocolStatus))
+getProtocolStatus cache client cfg = do
+  eBlockNum <- ethBlockNumber client
+  case eBlockNum of
+    Left err -> pure $ Left $ rpcErrorToApiError err
+    Right blockNum -> do
+      mCached <- atomically $ getCached (cacheProtocolStatus cache) blockNum
+      case mCached of
+        Just entry ->
+          pure $ Right $ mkCachedResponse blockNum (cfgChainId cfg) (ceCachedAt entry) False (ceValue entry)
+        Nothing ->
+          fetchAndCacheProtocolStatus cache client cfg blockNum
+
+fetchAndCacheProtocolStatus :: AppCache -> EthClient -> Config -> Integer -> IO (Either ApiError (ApiResponse ProtocolStatus))
+fetchAndCacheProtocolStatus cache client cfg blockNum = do
   let addrs = cfgAddresses cfg
 
-  eBlockNum <- ethBlockNumber client
   eStatus <- Splitter.currentStatus client (addrSyntheticSplitter addrs)
   eCap <- Splitter.getCap client (addrSyntheticSplitter addrs)
   eOracle <- Oracle.latestRoundData client (addrBasketOracle addrs)
@@ -27,8 +46,8 @@ getProtocolStatus client cfg = do
 
   timestamp <- getPOSIXTime
 
-  case (eBlockNum, eStatus, eCap, eOracle, eBearAssets, eBearShares, eBullAssets, eBullShares) of
-    (Right blockNum, Right status, Right cap, Right oracle, Right bearAssets, Right bearShares, Right bullAssets, Right bullShares) -> do
+  case (eStatus, eCap, eOracle, eBearAssets, eBearShares, eBullAssets, eBullShares) of
+    (Right status, Right cap, Right oracle, Right bearAssets, Right bearShares, Right bullAssets, Right bullShares) -> do
       let oraclePrice = Oracle.rdAnswer oracle
           bearPrice = oraclePrice
           bullPrice = cap - oraclePrice
@@ -86,15 +105,15 @@ getProtocolStatus client cfg = do
               , statusTimestamp = timestamp
               }
 
+      atomically $ setCached (cacheProtocolStatus cache) protoStatus blockNum timestamp
       pure $ Right $ mkResponse blockNum (cfgChainId cfg) protoStatus
-    (Left err, _, _, _, _, _, _, _) -> pure $ Left $ rpcErrorToApiError err
-    (_, Left err, _, _, _, _, _, _) -> pure $ Left $ rpcErrorToApiError err
-    (_, _, Left err, _, _, _, _, _) -> pure $ Left $ rpcErrorToApiError err
-    (_, _, _, Left err, _, _, _, _) -> pure $ Left $ rpcErrorToApiError err
-    (_, _, _, _, Left err, _, _, _) -> pure $ Left $ rpcErrorToApiError err
-    (_, _, _, _, _, Left err, _, _) -> pure $ Left $ rpcErrorToApiError err
-    (_, _, _, _, _, _, Left err, _) -> pure $ Left $ rpcErrorToApiError err
-    (_, _, _, _, _, _, _, Left err) -> pure $ Left $ rpcErrorToApiError err
+    (Left err, _, _, _, _, _, _) -> pure $ Left $ rpcErrorToApiError err
+    (_, Left err, _, _, _, _, _) -> pure $ Left $ rpcErrorToApiError err
+    (_, _, Left err, _, _, _, _) -> pure $ Left $ rpcErrorToApiError err
+    (_, _, _, Left err, _, _, _) -> pure $ Left $ rpcErrorToApiError err
+    (_, _, _, _, Left err, _, _) -> pure $ Left $ rpcErrorToApiError err
+    (_, _, _, _, _, Left err, _) -> pure $ Left $ rpcErrorToApiError err
+    (_, _, _, _, _, _, Left err) -> pure $ Left $ rpcErrorToApiError err
   where
     wad = 10 ^ (18 :: Integer)
 

@@ -1,6 +1,7 @@
 module Main (main) where
 
 import Plether.Api (app)
+import Plether.Cache (newAppCache)
 import Plether.Config (Config (..), loadConfig)
 import Plether.Ethereum.Client (newClient)
 import Web.Scotty (scotty)
@@ -40,4 +41,5 @@ main = do
       putStrLn ""
 
       client <- newClient (cfgRpcUrl cfg)
-      scotty (cfgPort cfg) (app client cfg)
+      cache <- newAppCache
+      scotty (cfgPort cfg) (app cache client cfg)

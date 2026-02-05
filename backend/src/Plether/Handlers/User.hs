@@ -5,20 +5,41 @@ module Plether.Handlers.User
   , getUserAllowances
   ) where
 
+import Control.Concurrent.STM (atomically)
 import Data.Text (Text)
+import Data.Time.Clock.POSIX (getPOSIXTime)
+import Plether.Cache
+  ( AppCache (..)
+  , CacheEntry (..)
+  , evictStale
+  , getCachedFor
+  , setCachedFor
+  )
 import Plether.Config (Addresses (..), Config (..))
 import Plether.Ethereum.Client (EthClient, RpcError (..), ethBlockNumber)
 import qualified Plether.Ethereum.Contracts.ERC20 as ERC20
 import qualified Plether.Ethereum.Contracts.StakedToken as Staked
 import Plether.Types
 
-getUserDashboard :: EthClient -> Config -> Text -> IO (Either ApiError (ApiResponse UserDashboard))
-getUserDashboard client cfg userAddr = do
-  eBalances <- getUserBalancesRaw client cfg userAddr
+getUserDashboard :: AppCache -> EthClient -> Config -> Text -> IO (Either ApiError (ApiResponse UserDashboard))
+getUserDashboard cache client cfg userAddr = do
   eBlockNum <- ethBlockNumber client
+  case eBlockNum of
+    Left err -> pure $ Left $ rpcErrorToApiError err
+    Right blockNum -> do
+      mCached <- atomically $ getCachedFor (cacheUserDashboards cache) userAddr blockNum
+      case mCached of
+        Just entry ->
+          pure $ Right $ mkCachedResponse blockNum (cfgChainId cfg) (ceCachedAt entry) False (ceValue entry)
+        Nothing ->
+          fetchAndCacheDashboard cache client cfg userAddr blockNum
 
-  case (eBalances, eBlockNum) of
-    (Right balances, Right blockNum) -> do
+fetchAndCacheDashboard :: AppCache -> EthClient -> Config -> Text -> Integer -> IO (Either ApiError (ApiResponse UserDashboard))
+fetchAndCacheDashboard cache client cfg userAddr blockNum = do
+  eBalances <- getUserBalancesRaw client cfg userAddr
+  case eBalances of
+    Left err -> pure $ Left err
+    Right balances -> do
       let dashboard =
             UserDashboard
               { dashBalances = balances
@@ -33,9 +54,11 @@ getUserDashboard client cfg userAddr = do
                     , lendPosBull = Nothing
                     }
               }
+      timestamp <- getPOSIXTime
+      atomically $ do
+        setCachedFor (cacheUserDashboards cache) userAddr dashboard blockNum timestamp
+        evictStale blockNum (cacheUserDashboards cache)
       pure $ Right $ mkResponse blockNum (cfgChainId cfg) dashboard
-    (Left err, _) -> pure $ Left err
-    (_, Left err) -> pure $ Left $ rpcErrorToApiError err
 
 getUserBalances :: EthClient -> Config -> Text -> IO (Either ApiError (ApiResponse UserBalances))
 getUserBalances client cfg userAddr = do
@@ -112,11 +135,22 @@ getUserPositions client cfg _userAddr = do
       pure $ Right $ mkResponse blockNum (cfgChainId cfg) positions
     Left err -> pure $ Left $ rpcErrorToApiError err
 
-getUserAllowances :: EthClient -> Config -> Text -> IO (Either ApiError (ApiResponse UserAllowances))
-getUserAllowances client cfg userAddr = do
-  let addrs = cfgAddresses cfg
-
+getUserAllowances :: AppCache -> EthClient -> Config -> Text -> IO (Either ApiError (ApiResponse UserAllowances))
+getUserAllowances cache client cfg userAddr = do
   eBlockNum <- ethBlockNumber client
+  case eBlockNum of
+    Left err -> pure $ Left $ rpcErrorToApiError err
+    Right blockNum -> do
+      mCached <- atomically $ getCachedFor (cacheUserAllowances cache) userAddr blockNum
+      case mCached of
+        Just entry ->
+          pure $ Right $ mkCachedResponse blockNum (cfgChainId cfg) (ceCachedAt entry) False (ceValue entry)
+        Nothing ->
+          fetchAndCacheAllowances cache client cfg userAddr blockNum
+
+fetchAndCacheAllowances :: AppCache -> EthClient -> Config -> Text -> Integer -> IO (Either ApiError (ApiResponse UserAllowances))
+fetchAndCacheAllowances cache client cfg userAddr blockNum = do
+  let addrs = cfgAddresses cfg
 
   eUsdcSplitter <- ERC20.allowance client (addrUsdc addrs) userAddr (addrSyntheticSplitter addrs)
   eUsdcZap <- ERC20.allowance client (addrUsdc addrs) userAddr (addrZapRouter addrs)
@@ -130,8 +164,7 @@ getUserAllowances client cfg userAddr = do
   eBullStaking <- ERC20.allowance client (addrDxyBull addrs) userAddr (addrStakingBull addrs)
   eBullLeverage <- ERC20.allowance client (addrDxyBull addrs) userAddr (addrBullLeverageRouter addrs)
 
-  case ( eBlockNum
-       , eUsdcSplitter
+  case ( eUsdcSplitter
        , eUsdcZap
        , eBearSplitter
        , eBearStaking
@@ -141,8 +174,7 @@ getUserAllowances client cfg userAddr = do
        , eBullStaking
        , eBullLeverage
        ) of
-    ( Right blockNum
-      , Right usdcSplitter
+    ( Right usdcSplitter
       , Right usdcZap
       , Right bearSplitter
       , Right bearStaking
@@ -175,17 +207,20 @@ getUserAllowances client cfg userAddr = do
                       , bullAllowLeverageRouter = bullLeverage
                       }
                 }
+        timestamp <- getPOSIXTime
+        atomically $ do
+          setCachedFor (cacheUserAllowances cache) userAddr allowances blockNum timestamp
+          evictStale blockNum (cacheUserAllowances cache)
         pure $ Right $ mkResponse blockNum (cfgChainId cfg) allowances
-    (Left err, _, _, _, _, _, _, _, _, _) -> pure $ Left $ rpcErrorToApiError err
-    (_, Left err, _, _, _, _, _, _, _, _) -> pure $ Left $ rpcErrorToApiError err
-    (_, _, Left err, _, _, _, _, _, _, _) -> pure $ Left $ rpcErrorToApiError err
-    (_, _, _, Left err, _, _, _, _, _, _) -> pure $ Left $ rpcErrorToApiError err
-    (_, _, _, _, Left err, _, _, _, _, _) -> pure $ Left $ rpcErrorToApiError err
-    (_, _, _, _, _, Left err, _, _, _, _) -> pure $ Left $ rpcErrorToApiError err
-    (_, _, _, _, _, _, Left err, _, _, _) -> pure $ Left $ rpcErrorToApiError err
-    (_, _, _, _, _, _, _, Left err, _, _) -> pure $ Left $ rpcErrorToApiError err
-    (_, _, _, _, _, _, _, _, Left err, _) -> pure $ Left $ rpcErrorToApiError err
-    (_, _, _, _, _, _, _, _, _, Left err) -> pure $ Left $ rpcErrorToApiError err
+    (Left err, _, _, _, _, _, _, _, _) -> pure $ Left $ rpcErrorToApiError err
+    (_, Left err, _, _, _, _, _, _, _) -> pure $ Left $ rpcErrorToApiError err
+    (_, _, Left err, _, _, _, _, _, _) -> pure $ Left $ rpcErrorToApiError err
+    (_, _, _, Left err, _, _, _, _, _) -> pure $ Left $ rpcErrorToApiError err
+    (_, _, _, _, Left err, _, _, _, _) -> pure $ Left $ rpcErrorToApiError err
+    (_, _, _, _, _, Left err, _, _, _) -> pure $ Left $ rpcErrorToApiError err
+    (_, _, _, _, _, _, Left err, _, _) -> pure $ Left $ rpcErrorToApiError err
+    (_, _, _, _, _, _, _, Left err, _) -> pure $ Left $ rpcErrorToApiError err
+    (_, _, _, _, _, _, _, _, Left err) -> pure $ Left $ rpcErrorToApiError err
 
 rpcErrorToApiError :: RpcError -> ApiError
 rpcErrorToApiError = \case

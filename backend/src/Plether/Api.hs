@@ -8,7 +8,6 @@ import qualified Data.ByteString
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding
-import qualified Data.Text.Lazy as TL
 import Network.HTTP.Types.Status (status200, status400)
 import Network.Wai (Middleware)
 import Network.Wai.Middleware.Cors
@@ -16,6 +15,7 @@ import Network.Wai.Middleware.Cors
   , cors
   , simpleCorsResourcePolicy
   )
+import Plether.Cache (AppCache)
 import Plether.Config (Config (..))
 import Plether.Ethereum.Client (EthClient)
 import Plether.Handlers.Protocol (getProtocolConfig, getProtocolStatus)
@@ -47,12 +47,12 @@ import Web.Scotty
   , status
   )
 
-app :: EthClient -> Config -> ScottyM ()
-app client cfg = do
+app :: AppCache -> EthClient -> Config -> ScottyM ()
+app cache client cfg = do
   middleware $ corsMiddleware cfg
 
   get "/api/protocol/status" $ do
-    result <- liftIO $ getProtocolStatus client cfg
+    result <- liftIO $ getProtocolStatus cache client cfg
     handleResult result
 
   get "/api/protocol/config" $ do
@@ -65,7 +65,7 @@ app client cfg = do
     addr <- pathParam "address"
     if isValidAddress addr
       then do
-        result <- liftIO $ getUserDashboard client cfg addr
+        result <- liftIO $ getUserDashboard cache client cfg addr
         handleResult result
       else handleError $ E.invalidAddress addr
 
@@ -89,7 +89,7 @@ app client cfg = do
     addr <- pathParam "address"
     if isValidAddress addr
       then do
-        result <- liftIO $ getUserAllowances client cfg addr
+        result <- liftIO $ getUserAllowances cache client cfg addr
         handleResult result
       else handleError $ E.invalidAddress addr
 
