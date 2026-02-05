@@ -1,40 +1,50 @@
 # Plether
 
-[![Tests](https://github.com/plether-fi/plether-frontend/actions/workflows/test.yml/badge.svg)](https://github.com/plether-fi/plether-frontend/actions/workflows/test.yml)
-[![Storybook](https://img.shields.io/badge/storybook-deployed-ff4785)](https://plether-fi.github.io/plether-frontend/)
+[![Tests](https://github.com/Plether-Fi/plether-app/actions/workflows/test.yml/badge.svg)](https://github.com/Plether-Fi/plether-app/actions/workflows/test.yml)
 [![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue)](LICENSE)
 
-DeFi frontend for trading plDXY-BEAR and plDXY-BULL tokens on Ethereum.
+DeFi protocol for trading plDXY-BEAR and plDXY-BULL synthetic tokens on Ethereum.
 
-## Tech Stack
+## Repository Structure
 
-- React 19 + TypeScript + Vite
-- wagmi + viem + Web3Modal
-- Tailwind CSS v4
-- Zustand + TanStack Query
-
-## Development
-
-```bash
-npm install
-npm run dev        # Dev server at http://localhost:5173
-npm run build      # TypeScript check + production build
-npm run lint       # ESLint
-npm test           # Unit tests
-npm run anvil      # Start Anvil fork (port 8546, requires SEPOLIA_RPC_URL)
-npm run test:integration  # Integration tests (requires Anvil)
-npm run storybook  # Component explorer at http://localhost:6006
+```
+apps/
+├── frontend/    # React web application
+└── backend/     # Haskell/Scotty API server
 ```
 
-## Storybook
+## Quick Start
 
-https://plether-fi.github.io/plether-frontend/
+### Frontend
+
+```bash
+cd apps/frontend
+npm install
+npm run dev          # http://localhost:5173
+```
+
+### Backend
+
+```bash
+cd apps/backend
+cp .env.example .env
+# Edit .env with your RPC_URL
+cabal build
+cabal run plether-api   # http://localhost:3001
+```
+
+## Documentation
+
+- [Frontend README](apps/frontend/README.md) - React app setup, testing, Storybook
+- [Backend README](apps/backend/README.md) - API endpoints, caching, configuration
 
 ## Networks
 
-- Mainnet (chainId 1)
-- Sepolia (chainId 11155111)
-- Anvil local fork (chainId 31337) via `npm run anvil`
+| Network | Chain ID | Description |
+|---------|----------|-------------|
+| Mainnet | 1 | Production |
+| Sepolia | 11155111 | Testnet |
+| Anvil | 31337 | Local development |
 
 ## License
 
