@@ -7,6 +7,7 @@ Haskell/Scotty backend API for the Plether DeFi protocol. Aggregates on-chain da
 - GHC 9.4+
 - Cabal 3.0+
 - Ethereum RPC endpoint (Alchemy, Infura, etc.)
+- PostgreSQL 14+ (optional, for transaction history)
 
 ## Quick Start
 
@@ -26,6 +27,23 @@ cabal run plether-api
 
 Server starts at `http://localhost:3001`.
 
+## Database Setup (Optional)
+
+PostgreSQL is required for transaction history. Without it, history endpoints return 503.
+
+```bash
+# Create database
+createdb plether
+
+# Initialize schema
+psql plether < schema.sql
+
+# Add DATABASE_URL to .env
+echo 'DATABASE_URL=postgresql://localhost/plether' >> .env
+```
+
+The indexer runs automatically on startup and polls for new blocks every 12 seconds.
+
 ## Configuration
 
 | Variable | Required | Default | Description |
@@ -34,6 +52,8 @@ Server starts at `http://localhost:3001`.
 | `CHAIN_ID` | No | `11155111` | Chain ID (1=mainnet, 11155111=sepolia, 31337=local) |
 | `PORT` | No | `3001` | Server port |
 | `CORS_ORIGINS` | No | `http://localhost:5173` | Space-separated allowed origins |
+| `DATABASE_URL` | No | - | PostgreSQL connection string (enables history) |
+| `INDEXER_START_BLOCK` | No | `0` | Block to start indexing from |
 
 ## API Endpoints
 
@@ -62,6 +82,16 @@ Server starts at `http://localhost:3001`.
 | `GET /api/quotes/zap?direction=&amount=` | Zap quote (buy/sell) |
 | `GET /api/quotes/trade?from=&amount=` | Trade quote (usdc/bear) |
 | `GET /api/quotes/leverage?side=&principal=&leverage=` | Leverage quote |
+
+### History (requires PostgreSQL)
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/user/:address/history` | Transaction history |
+| `GET /api/user/:address/history/leverage` | Leverage positions only |
+| `GET /api/user/:address/history/lending` | Lending activity only |
+
+Query params: `page`, `limit`, `type` (mint/burn/swap/etc.), `side` (bear/bull)
 
 ## Response Format
 
@@ -113,6 +143,10 @@ apps/backend/
 │   ├── Api.hs            # Scotty routes
 │   ├── Cache.hs          # STM caching
 │   ├── Config.hs         # Environment config
+│   ├── Database.hs       # PostgreSQL connection pool
+│   ├── Database/         # Schema & queries
+│   ├── Indexer.hs        # Event indexer runner
+│   ├── Indexer/          # Event parsing & contracts
 │   ├── Types/            # API types
 │   ├── Handlers/         # Route handlers
 │   ├── Ethereum/         # RPC client & contracts
@@ -120,6 +154,7 @@ apps/backend/
 ├── config/
 │   ├── addresses.mainnet.json
 │   └── addresses.sepolia.json
+├── schema.sql            # Database schema
 └── test/
     └── Spec.hs
 ```
