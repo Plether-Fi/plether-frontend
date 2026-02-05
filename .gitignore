@@ -47,3 +47,6 @@ screenshots/
 
 # Vite cache
 .vite/
+
+# Task files
+tasks/
