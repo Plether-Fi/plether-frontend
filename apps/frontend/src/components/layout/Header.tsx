@@ -13,7 +13,7 @@ export function Header() {
   const location = useLocation()
 
   return (
-    <header className="border-b border-cyber-border-glow/30 bg-cyber-surface-dark py-4 sticky top-0 z-50 shadow-lg shadow-cyber-border-glow/10">
+    <header className="border-b border-cyber-border-glow/30 bg-cyber-surface-dark py-4 sticky top-0 z-50 will-change-transform shadow-lg shadow-cyber-border-glow/10">
       <div className="max-w-7xl mx-auto px-6 lg:px-8 flex items-center justify-between">
         <div className="flex items-center gap-10">
           <Link to="/" className="flex items-center gap-2">
