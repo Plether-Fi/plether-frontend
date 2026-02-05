@@ -1,5 +1,6 @@
 import { type ChangeEvent } from 'react'
 import { formatAmount, formatUsd } from '../utils/formatters'
+import { TokenLabel } from './ui'
 
 interface TokenInputProps {
   value: string
@@ -71,20 +72,21 @@ export function TokenInput({
             <button
               onClick={handleMax}
               disabled={disabled}
-              className="text-xs font-semibold text-cyber-neon-green hover:text-cyber-neon-green/80 px-2 py-1 bg-cyber-neon-green/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="text-xs font-semibold text-cyber-text-secondary hover:text-cyber-text-primary px-2 py-1 bg-cyber-text-secondary/10 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               MAX
             </button>
           )}
-          <span className="text-cyber-text-secondary font-medium">{token.symbol}</span>
+          <TokenLabel token={token.symbol} />
         </div>
       </div>
 
       {balance !== undefined && (
         <div className="flex justify-between mt-2 text-sm">
           <span className="text-cyber-text-secondary">{balanceLabel}</span>
-          <span className="text-cyber-text-primary">
-            {token.symbol === 'USDC' ? formatUsd(balance) : formatAmount(balance, token.decimals)} {token.symbol}
+          <span className="text-cyber-text-primary flex items-center gap-1.5">
+            {token.symbol === 'USDC' ? formatUsd(balance) : formatAmount(balance, token.decimals)}
+            <TokenLabel token={token.symbol} />
           </span>
         </div>
       )}
