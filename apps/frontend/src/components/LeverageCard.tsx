@@ -95,17 +95,15 @@ export function LeverageCard({ usdcBalance, refetchBalances, onPositionOpened }:
   const needsUsdcApproval = collateralBigInt > 0n && usdcAllowance < collateralBigInt
   const insufficientBalance = collateralBigInt > usdcBalance
 
-  useEffect(() => {
-    if (currentTx?.status === 'success') {
-      refetchBalances?.()
-      onPositionOpened?.()
-      void refetchAuthorization()
-      void refetchUsdcAllowance()
-      setCollateralAmount('')
-      setTargetLeverage(2)
-      setTrackedTxId(null)
-    }
-  }, [currentTx?.status, refetchBalances, onPositionOpened, refetchAuthorization, refetchUsdcAllowance])
+  const handleOpenSuccess = useCallback(() => {
+    refetchBalances?.()
+    onPositionOpened?.()
+    void refetchAuthorization()
+    void refetchUsdcAllowance()
+    setCollateralAmount('')
+    setTargetLeverage(2)
+    setTrackedTxId(null)
+  }, [refetchBalances, onPositionOpened, refetchAuthorization, refetchUsdcAllowance])
 
   const handleOpenPosition = useCallback(() => {
     if (collateralBigInt <= 0n) return
@@ -114,8 +112,8 @@ export function LeverageCard({ usdcBalance, refetchBalances, onPositionOpened }:
 
     void transactionManager.executeOpenLeverage(selectedSide, collateralBigInt, contractLeverage, slippageBps, {
       onRetry: handleOpenPosition,
-    })
-  }, [collateralBigInt, selectedSide, contractLeverage, slippage])
+    }).then(handleOpenSuccess)
+  }, [collateralBigInt, selectedSide, contractLeverage, slippage, handleOpenSuccess])
 
   const getButtonText = () => {
     if (isRunning) return 'Processing...'

@@ -90,13 +90,11 @@ export function TradeCard({ usdcBalance, bearBalance, bullBalance, refetchBalanc
 
   const insufficientBalance = inputAmountBigInt > inputBalance
 
-  useEffect(() => {
-    if (currentTx?.status === 'success') {
-      refetchBalances?.()
-      void refetchAllowance()
-      setInputAmount('')
-    }
-  }, [currentTx?.status, refetchBalances, refetchAllowance])
+  const handleSwapSuccess = () => {
+    refetchBalances?.()
+    void refetchAllowance()
+    setInputAmount('')
+  }
 
   const proceedWithSwap = () => {
     const slippageBps = BigInt(Math.floor(slippage * 100))
@@ -105,16 +103,16 @@ export function TradeCard({ usdcBalance, bearBalance, bullBalance, refetchBalanc
     if (isBearTrade) {
       void transactionManager.executeCurveSwap(mode, inputAmountBigInt, minAmountOut, {
         onRetry: proceedWithSwap,
-      })
+      }).then(handleSwapSuccess)
     } else {
       if (mode === 'buy') {
         void transactionManager.executeZapBuy(inputAmountBigInt, minAmountOut, slippageBps, {
           onRetry: proceedWithSwap,
-        })
+        }).then(handleSwapSuccess)
       } else {
         void transactionManager.executeZapSell(inputAmountBigInt, minAmountOut, {
           onRetry: proceedWithSwap,
-        })
+        }).then(handleSwapSuccess)
       }
     }
   }
