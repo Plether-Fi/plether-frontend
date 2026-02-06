@@ -161,15 +161,13 @@ export function useAvailableToBorrow(side: 'BEAR' | 'BULL') {
     ? (borrowShares * totalBorrowAssets) / totalBorrowShares
     : 0n
 
-  // Collateral USD value: collateral * oraclePrice / 10^39
-  // oraclePrice is 1e24 scale (36 + 6 loan dec - 18 collateral dec), collateral is 21 effective dec
+  // Collateral USD value: collateral(21 dec) * oraclePrice(1e24 scale) / 10^39
   // Result: 21 + 24 - 39 = 6 decimals (USDC)
   const collateralUsd = price > 0n
     ? (collateral * price) / 10n ** 39n
     : 0n
 
-  // Morpho max borrow: collateral * oraclePrice * lltv / 10^57
-  // lltv is 1e18 scale, so 39 + 18 = 57
+  // Max borrow: collateral * oraclePrice * lltv(18 dec) / 10^57
   const maxBorrow = lltv > 0n && price > 0n
     ? (collateral * price * lltv) / 10n ** 57n
     : 0n

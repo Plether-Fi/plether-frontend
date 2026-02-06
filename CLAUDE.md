@@ -117,6 +117,25 @@ Error types are defined as TaggedErrors in `apps/frontend/src/utils/errors.ts`:
 - **Networks**: Mainnet (1), Sepolia (11155111), Anvil local fork (31337)
 - **Slippage**: Max 1% (protocol limit), stored in settingsStore
 
+### DeFi Math — Decimal/Scale Rules
+
+**Never trust code comments about scales. Always verify against actual on-chain values.**
+
+When writing formulas with token amounts, oracle prices, or protocol values:
+
+1. **Query the actual value** via RPC (`eth_call`) to determine its magnitude empirically
+2. **Label each operand's decimals**: e.g., `collateral(18) * oraclePrice(36) * lltv(18)`
+3. **Compute the divisor**: `divisor = sum_of_input_decimals - desired_output_decimals`
+   - Example: `18 + 36 - 6 = 48` → divide by `10^48` to get USDC (6 dec)
+4. **Sanity check**: plug in real values and verify the output is plausible
+
+Reference scales for this project:
+| Value | Scale | How to verify |
+|-------|-------|---------------|
+| ERC20 amount | `decimals()` (USDC=6, tokens=18) | `balanceOf()` |
+| Morpho oracle price | 10^36 | `price()` on the oracle |
+| Morpho LLTV | 10^18 | `marketParams.lltv` |
+
 ### Contract Reference
 
 See `API.md` for the complete protocol API reference including all contract functions, parameters, and error types.
