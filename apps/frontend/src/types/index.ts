@@ -51,8 +51,10 @@ export type TransactionType =
   | 'stake_bull'
   | 'unstake_bear'
   | 'unstake_bull'
-  | 'leverage_open'
-  | 'leverage_close'
+  | 'leverage_open_bear'
+  | 'leverage_open_bull'
+  | 'leverage_close_bear'
+  | 'leverage_close_bull'
   | 'leverage_adjust'
   | 'morpho_supply'
   | 'morpho_withdraw'
@@ -66,6 +68,8 @@ export interface HistoricalTransaction {
   timestamp: number
   amount: bigint
   tokenSymbol: TokenSymbol
+  secondaryAmount?: bigint
+  secondarySymbol?: TokenSymbol
   status: 'success' | 'failed'
 }
 

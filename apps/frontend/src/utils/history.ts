@@ -20,8 +20,10 @@ export function mapApiTypeToLocal(tx: Transaction): LocalTxType {
       return tx.side === 'bear' ? 'stake_bear' : 'stake_bull'
     case 'unstake':
       return tx.side === 'bear' ? 'unstake_bear' : 'unstake_bull'
-    case 'leverage_open': return 'leverage_open'
-    case 'leverage_close': return 'leverage_close'
+    case 'leverage_open':
+      return tx.side === 'bear' ? 'leverage_open_bear' : 'leverage_open_bull'
+    case 'leverage_close':
+      return tx.side === 'bear' ? 'leverage_close_bear' : 'leverage_close_bull'
     case 'collateral_add':
     case 'collateral_remove':
       return 'leverage_adjust'
@@ -49,7 +51,14 @@ export function toBigInt(val: unknown): bigint {
   return 0n
 }
 
-export function getAmountDisplay(tx: Transaction): { amount: bigint; tokenSymbol: TokenSymbol } {
+type AmountDisplay = {
+  amount: bigint
+  tokenSymbol: TokenSymbol
+  secondaryAmount?: bigint
+  secondarySymbol?: TokenSymbol
+}
+
+export function getAmountDisplay(tx: Transaction): AmountDisplay {
   const data = tx.data as unknown as Record<string, unknown>
   const sideToken = (tx.side === 'bear' ? 'plDXY-BEAR' : 'plDXY-BULL') satisfies TokenSymbol
 
@@ -58,14 +67,14 @@ export function getAmountDisplay(tx: Transaction): { amount: bigint; tokenSymbol
     case 'burn':
       return { amount: toBigInt(data.amount), tokenSymbol: 'Pairs' }
     case 'zap_buy':
-      return { amount: toBigInt(data.tokensOut), tokenSymbol: 'plDXY-BULL' }
+      return { amount: toBigInt(data.tokensOut), tokenSymbol: 'plDXY-BULL', secondaryAmount: toBigInt(data.usdcIn), secondarySymbol: 'USDC' }
     case 'zap_sell':
-      return { amount: toBigInt(data.amountOut), tokenSymbol: 'USDC' }
+      return { amount: toBigInt(data.amountOut), tokenSymbol: 'USDC', secondaryAmount: toBigInt(data.amountIn), secondarySymbol: 'plDXY-BULL' }
     case 'swap': {
       const soldId = Number(data.soldId ?? -1)
       return soldId === CURVE_USDC_INDEX
-        ? { amount: toBigInt(data.tokensBought), tokenSymbol: 'plDXY-BEAR' }
-        : { amount: toBigInt(data.tokensBought), tokenSymbol: 'USDC' }
+        ? { amount: toBigInt(data.tokensBought), tokenSymbol: 'plDXY-BEAR', secondaryAmount: toBigInt(data.tokensSold), secondarySymbol: 'USDC' }
+        : { amount: toBigInt(data.tokensBought), tokenSymbol: 'USDC', secondaryAmount: toBigInt(data.tokensSold), secondarySymbol: 'plDXY-BEAR' }
     }
     case 'stake':
     case 'unstake':
@@ -92,7 +101,7 @@ export function getAmountDisplay(tx: Transaction): { amount: bigint; tokenSymbol
 }
 
 export function transformTransaction(tx: Transaction): HistoricalTransaction {
-  const { amount, tokenSymbol } = getAmountDisplay(tx)
+  const { amount, tokenSymbol, secondaryAmount, secondarySymbol } = getAmountDisplay(tx)
   return {
     id: tx.id,
     hash: tx.hash,
@@ -100,6 +109,7 @@ export function transformTransaction(tx: Transaction): HistoricalTransaction {
     timestamp: tx.timestamp,
     amount,
     tokenSymbol,
+    ...(secondaryAmount != null && { secondaryAmount, secondarySymbol }),
     status: tx.status,
   }
 }

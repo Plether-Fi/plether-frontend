@@ -8,7 +8,7 @@ const transactionTypes: TransactionType[] = [
   'swap_buy_bull', 'swap_sell_bull',
   'stake_bear', 'stake_bull',
   'unstake_bear', 'unstake_bull',
-  'leverage_open', 'leverage_close', 'leverage_adjust',
+  'leverage_open_bear', 'leverage_open_bull', 'leverage_close_bear', 'leverage_close_bull', 'leverage_adjust',
   'morpho_supply', 'morpho_withdraw', 'morpho_borrow', 'morpho_repay',
 ]
 
@@ -96,7 +96,7 @@ export const StakeBear: Story = {
 
 export const LeverageOpen: Story = {
   args: {
-    type: 'leverage_open',
+    type: 'leverage_open_bear',
     amount: 5000,
     tokenSymbol: 'USDC',
   },
@@ -126,7 +126,7 @@ export const TransactionList: Story = {
       <TransactionRow transaction={argsToTransaction({ type: 'swap_buy_bear', amount: 1000, tokenSymbol: 'plDXY-BEAR' }, '1')} />
       <TransactionRow transaction={argsToTransaction({ type: 'swap_buy_bull', amount: 500, tokenSymbol: 'plDXY-BULL' }, '2')} />
       <TransactionRow transaction={argsToTransaction({ type: 'stake_bear', amount: 250, tokenSymbol: 'plDXY-BEAR' }, '3')} />
-      <TransactionRow transaction={argsToTransaction({ type: 'leverage_open', amount: 5000, tokenSymbol: 'USDC' }, '4')} />
+      <TransactionRow transaction={argsToTransaction({ type: 'leverage_open_bear', amount: 5000, tokenSymbol: 'USDC' }, '4')} />
       <TransactionRow transaction={argsToTransaction({ type: 'mint', amount: 10000, tokenSymbol: 'USDC' }, '5')} />
     </div>
   ),

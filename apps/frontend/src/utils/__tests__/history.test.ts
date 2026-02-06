@@ -56,43 +56,43 @@ describe('getAmountDisplay', () => {
     })
   })
 
-  describe('zap_buy — tokensOut in 18 decimals', () => {
-    it('uses tokensOut field', () => {
+  describe('zap_buy — tokensOut + usdcIn', () => {
+    it('primary is tokens received, secondary is USDC cost', () => {
       const result = getAmountDisplay(makeTx({
         type: 'zap_buy',
         side: 'bull',
         data: { usdcIn: '10000000', tokensOut: '2000000000000000000', maxSlippageBps: '100', actualSwapOut: '1900000000000000000' } as never,
       }))
-      expect(result).toEqual({ amount: 2000000000000000000n, tokenSymbol: 'plDXY-BULL' })
+      expect(result).toEqual({ amount: 2000000000000000000n, tokenSymbol: 'plDXY-BULL', secondaryAmount: 10000000n, secondarySymbol: 'USDC' })
     })
   })
 
-  describe('zap_sell — amountOut in USDC 6 decimals', () => {
-    it('uses amountOut field', () => {
+  describe('zap_sell — amountOut + amountIn', () => {
+    it('primary is USDC received, secondary is tokens sold', () => {
       const result = getAmountDisplay(makeTx({
         type: 'zap_sell',
         side: 'bull',
         data: { amountIn: '1000000000000000000', amountOut: '5000000' } as never,
       }))
-      expect(result).toEqual({ amount: 5000000n, tokenSymbol: 'USDC' })
+      expect(result).toEqual({ amount: 5000000n, tokenSymbol: 'USDC', secondaryAmount: 1000000000000000000n, secondarySymbol: 'plDXY-BULL' })
     })
   })
 
   describe('swap — Curve pool USDC(0)/BEAR(1)', () => {
-    it('buy BEAR (soldId=0): shows BEAR amount received', () => {
+    it('buy BEAR (soldId=0): primary BEAR, secondary USDC', () => {
       const result = getAmountDisplay(makeTx({
         type: 'swap',
         data: { soldId: '0', tokensSold: '5000000', boughtId: '1', tokensBought: '4000000000000000000', fee: '10', packedPriceScale: '1' } as never,
       }))
-      expect(result).toEqual({ amount: 4000000000000000000n, tokenSymbol: 'plDXY-BEAR' })
+      expect(result).toEqual({ amount: 4000000000000000000n, tokenSymbol: 'plDXY-BEAR', secondaryAmount: 5000000n, secondarySymbol: 'USDC' })
     })
 
-    it('sell BEAR (soldId=1): shows USDC amount received', () => {
+    it('sell BEAR (soldId=1): primary USDC, secondary BEAR', () => {
       const result = getAmountDisplay(makeTx({
         type: 'swap',
         data: { soldId: '1', tokensSold: '3000000000000000000', boughtId: '0', tokensBought: '4000000', fee: '10', packedPriceScale: '1' } as never,
       }))
-      expect(result).toEqual({ amount: 4000000n, tokenSymbol: 'USDC' })
+      expect(result).toEqual({ amount: 4000000n, tokenSymbol: 'USDC', secondaryAmount: 3000000000000000000n, secondarySymbol: 'plDXY-BEAR' })
     })
   })
 
@@ -192,9 +192,11 @@ describe('mapApiTypeToLocal', () => {
     expect(mapApiTypeToLocal(makeTx({ type: 'unstake', side: 'bull', data: {} as never }))).toBe('unstake_bull')
   })
 
-  it('maps leverage types', () => {
-    expect(mapApiTypeToLocal(makeTx({ type: 'leverage_open', data: {} as never }))).toBe('leverage_open')
-    expect(mapApiTypeToLocal(makeTx({ type: 'leverage_close', data: {} as never }))).toBe('leverage_close')
+  it('maps leverage types with side', () => {
+    expect(mapApiTypeToLocal(makeTx({ type: 'leverage_open', side: 'bear', data: {} as never }))).toBe('leverage_open_bear')
+    expect(mapApiTypeToLocal(makeTx({ type: 'leverage_open', side: 'bull', data: {} as never }))).toBe('leverage_open_bull')
+    expect(mapApiTypeToLocal(makeTx({ type: 'leverage_close', side: 'bear', data: {} as never }))).toBe('leverage_close_bear')
+    expect(mapApiTypeToLocal(makeTx({ type: 'leverage_close', side: 'bull', data: {} as never }))).toBe('leverage_close_bull')
     expect(mapApiTypeToLocal(makeTx({ type: 'collateral_add', data: {} as never }))).toBe('leverage_adjust')
     expect(mapApiTypeToLocal(makeTx({ type: 'collateral_remove', data: {} as never }))).toBe('leverage_adjust')
   })
@@ -235,7 +237,7 @@ describe('transformTransaction', () => {
     })
   })
 
-  it('zap_buy maps to swap_buy_bull with correct amount', () => {
+  it('zap_buy includes secondary USDC amount', () => {
     const result = transformTransaction(makeTx({
       type: 'zap_buy',
       side: 'bull',
@@ -244,6 +246,8 @@ describe('transformTransaction', () => {
     expect(result.type).toBe('swap_buy_bull')
     expect(result.tokenSymbol).toBe('plDXY-BULL')
     expect(result.amount).toBe(2000000000000000000n)
+    expect(result.secondaryAmount).toBe(10000000n)
+    expect(result.secondarySymbol).toBe('USDC')
   })
 
   it('lending_supply maps to morpho_supply', () => {

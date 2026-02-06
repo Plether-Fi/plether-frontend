@@ -14,8 +14,10 @@ const typeLabels: Record<TransactionType, string> = {
   stake_bull: 'Stake plDXY-BULL',
   unstake_bear: 'Unstake plDXY-BEAR',
   unstake_bull: 'Unstake plDXY-BULL',
-  leverage_open: 'Open Leverage',
-  leverage_close: 'Close Leverage',
+  leverage_open_bear: 'Open BEAR Leverage',
+  leverage_open_bull: 'Open BULL Leverage',
+  leverage_close_bear: 'Close BEAR Leverage',
+  leverage_close_bull: 'Close BULL Leverage',
   leverage_adjust: 'Adjust Leverage',
   morpho_supply: 'Supply to Morpho',
   morpho_withdraw: 'Withdraw from Morpho',
@@ -34,8 +36,10 @@ const typeIcons: Record<TransactionType, string> = {
   stake_bull: 'lock',
   unstake_bear: 'lock_open',
   unstake_bull: 'lock_open',
-  leverage_open: 'trending_up',
-  leverage_close: 'trending_down',
+  leverage_open_bear: 'trending_up',
+  leverage_open_bull: 'trending_up',
+  leverage_close_bear: 'trending_down',
+  leverage_close_bull: 'trending_down',
   leverage_adjust: 'tune',
   morpho_supply: 'savings',
   morpho_withdraw: 'output',
@@ -43,13 +47,20 @@ const typeIcons: Record<TransactionType, string> = {
   morpho_repay: 'paid',
 }
 
-function getTypeColor(type: TransactionType): string {
+function getIconColor(type: TransactionType): string {
   if (type.includes('bear')) return 'text-cyber-electric-fuchsia'
   if (type.includes('bull')) return 'text-cyber-neon-green'
   if (type === 'mint') return 'text-cyber-neon-green'
   if (type === 'burn') return 'text-cyber-warning-text'
-  if (type.includes('leverage')) return 'text-cyber-bright-blue'
   if (type.includes('morpho')) return 'text-cyber-electric-fuchsia'
+  return 'text-cyber-text-primary'
+}
+
+function getLabelColor(type: TransactionType): string {
+  if (type.includes('buy') || type.includes('mint') || type.includes('stake_') || type.includes('open') || type === 'morpho_supply' || type === 'morpho_repay')
+    return 'text-cyber-neon-green'
+  if (type.includes('sell') || type.includes('burn') || type.includes('unstake') || type.includes('close') || type === 'morpho_withdraw' || type === 'morpho_borrow')
+    return 'text-cyber-electric-fuchsia'
   return 'text-cyber-text-primary'
 }
 
@@ -63,6 +74,11 @@ function getIconBg(type: TransactionType): string {
   return 'bg-cyber-surface-light'
 }
 
+function formatTokenLabel(tokenSymbol: string, amount: bigint): string {
+  if (tokenSymbol === 'Pairs' && amount === 1000000000000000000n) return 'Pair'
+  return tokenSymbol
+}
+
 export interface TransactionRowProps {
   transaction: HistoricalTransaction
 }
@@ -73,15 +89,15 @@ export function TransactionRow({ transaction }: TransactionRowProps) {
   const decimals = transaction.tokenSymbol === 'USDC' ? 6 : 18
 
   return (
-    <div className="flex items-center justify-between px-6 py-4 hover:bg-cyber-surface-light/50 transition-colors">
+    <div className="grid grid-cols-[1fr_7rem_7rem_14rem_5rem] items-center gap-x-4 px-6 py-4 hover:bg-cyber-surface-light/50 transition-colors">
       <div className="flex items-center gap-4">
         <div className={`w-10 h-10 ${getIconBg(transaction.type)} flex items-center justify-center`}>
-          <span className={`material-symbols-outlined ${getTypeColor(transaction.type)}`}>
+          <span className={`material-symbols-outlined ${getIconColor(transaction.type)}`}>
             {typeIcons[transaction.type]}
           </span>
         </div>
         <div>
-          <p className={`font-semibold ${getTypeColor(transaction.type)}`}>
+          <p className={`font-semibold ${getLabelColor(transaction.type)}`}>
             {typeLabels[transaction.type]}
           </p>
           <p className="text-sm text-cyber-text-secondary">
@@ -90,20 +106,37 @@ export function TransactionRow({ transaction }: TransactionRowProps) {
         </div>
       </div>
 
-      <div className="text-right">
+      <div className="text-right tabular-nums">
         <p className="text-cyber-text-primary font-medium">
-          {formatAmount(transaction.amount, decimals)} {transaction.tokenSymbol === 'Pairs' && transaction.amount === 1000000000000000000n ? 'Pair' : transaction.tokenSymbol}
+          {formatAmount(transaction.amount, decimals)}
         </p>
-        <a
-          href={getExplorerTxUrl(chainId, transaction.hash)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-sm text-cyber-bright-blue hover:text-cyber-bright-blue/80 inline-flex items-center gap-1"
-        >
-          {truncatedHash}
-          <span className="material-symbols-outlined text-sm">open_in_new</span>
-        </a>
+        {transaction.secondaryAmount != null && transaction.secondarySymbol && (
+          <p className="text-xs text-cyber-text-secondary">
+            {formatAmount(transaction.secondaryAmount, transaction.secondarySymbol === 'USDC' ? 6 : 18)}
+          </p>
+        )}
       </div>
+
+      <div>
+        <p className="text-cyber-text-primary font-medium">
+          {formatTokenLabel(transaction.tokenSymbol, transaction.amount)}
+        </p>
+        {transaction.secondaryAmount != null && transaction.secondarySymbol && (
+          <p className="text-xs text-cyber-text-secondary">
+            {transaction.secondarySymbol}
+          </p>
+        )}
+      </div>
+
+      <a
+        href={getExplorerTxUrl(chainId, transaction.hash)}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-sm text-cyber-bright-blue hover:text-cyber-bright-blue/80 inline-flex items-center gap-1"
+      >
+        {truncatedHash}
+        <span className="material-symbols-outlined text-sm">open_in_new</span>
+      </a>
 
       <div className={`
         px-3 py-1 rounded-full text-xs font-semibold
