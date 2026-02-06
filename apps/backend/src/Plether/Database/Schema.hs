@@ -101,7 +101,7 @@ insertTransaction conn txHash blockNum timestamp userAddr txType side status txD
     insertQuery = "INSERT INTO transactions \
       \(tx_hash, block_number, timestamp, user_address, tx_type, side, status, data) \
       \VALUES (?, ?, ?, ?, ?, ?, ?, ?) \
-      \ON CONFLICT (tx_hash) DO NOTHING"
+      \ON CONFLICT (tx_hash, tx_type) DO NOTHING"
 
 getTransactionsByUser
   :: Connection
