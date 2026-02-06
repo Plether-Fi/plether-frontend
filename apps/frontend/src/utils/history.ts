@@ -51,7 +51,7 @@ export function toBigInt(val: unknown): bigint {
   return 0n
 }
 
-type AmountDisplay = {
+interface AmountDisplay {
   amount: bigint
   tokenSymbol: TokenSymbol
   secondaryAmount?: bigint
