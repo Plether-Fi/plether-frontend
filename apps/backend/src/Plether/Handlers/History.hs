@@ -71,7 +71,7 @@ getLendingHistory
   -> IO (Either ApiError (ApiResponse TransactionHistory))
 getLendingHistory pool client cfg userAddr params =
   getHistory pool client cfg userAddr params
-    { hpTxTypes = ["supply", "withdraw", "borrow", "repay"]
+    { hpTxTypes = ["lending_supply", "lending_withdraw", "lending_borrow", "lending_repay"]
     }
 
 rowToTransaction :: TransactionRow -> Transaction
@@ -99,10 +99,10 @@ textToTxType' = \case
   "unstake" -> TxUnstake
   "leverage_open" -> TxLeverageOpen
   "leverage_close" -> TxLeverageClose
-  "supply" -> TxSupply
-  "withdraw" -> TxWithdraw
-  "borrow" -> TxBorrow
-  "repay" -> TxRepay
+  "lending_supply" -> TxSupply
+  "lending_withdraw" -> TxWithdraw
+  "lending_borrow" -> TxBorrow
+  "lending_repay" -> TxRepay
   _ -> TxMint
 
 textToSide :: Maybe Text -> Maybe TransactionSide

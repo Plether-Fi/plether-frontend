@@ -42,10 +42,10 @@ instance ToJSON TransactionType where
     TxUnstake -> "unstake"
     TxLeverageOpen -> "leverage_open"
     TxLeverageClose -> "leverage_close"
-    TxSupply -> "supply"
-    TxWithdraw -> "withdraw"
-    TxBorrow -> "borrow"
-    TxRepay -> "repay"
+    TxSupply -> "lending_supply"
+    TxWithdraw -> "lending_withdraw"
+    TxBorrow -> "lending_borrow"
+    TxRepay -> "lending_repay"
 
 instance FromJSON TransactionType where
   parseJSON = withText "TransactionType" $ \case
@@ -58,10 +58,10 @@ instance FromJSON TransactionType where
     "unstake" -> pure TxUnstake
     "leverage_open" -> pure TxLeverageOpen
     "leverage_close" -> pure TxLeverageClose
-    "supply" -> pure TxSupply
-    "withdraw" -> pure TxWithdraw
-    "borrow" -> pure TxBorrow
-    "repay" -> pure TxRepay
+    "lending_supply" -> pure TxSupply
+    "lending_withdraw" -> pure TxWithdraw
+    "lending_borrow" -> pure TxBorrow
+    "lending_repay" -> pure TxRepay
     other -> fail $ "Unknown transaction type: " <> T.unpack other
 
 txTypeToText :: TransactionType -> Text
@@ -75,10 +75,10 @@ txTypeToText = \case
   TxUnstake -> "unstake"
   TxLeverageOpen -> "leverage_open"
   TxLeverageClose -> "leverage_close"
-  TxSupply -> "supply"
-  TxWithdraw -> "withdraw"
-  TxBorrow -> "borrow"
-  TxRepay -> "repay"
+  TxSupply -> "lending_supply"
+  TxWithdraw -> "lending_withdraw"
+  TxBorrow -> "lending_borrow"
+  TxRepay -> "lending_repay"
 
 textToTxType :: Text -> Maybe TransactionType
 textToTxType = \case
@@ -91,10 +91,10 @@ textToTxType = \case
   "unstake" -> Just TxUnstake
   "leverage_open" -> Just TxLeverageOpen
   "leverage_close" -> Just TxLeverageClose
-  "supply" -> Just TxSupply
-  "withdraw" -> Just TxWithdraw
-  "borrow" -> Just TxBorrow
-  "repay" -> Just TxRepay
+  "lending_supply" -> Just TxSupply
+  "lending_withdraw" -> Just TxWithdraw
+  "lending_borrow" -> Just TxBorrow
+  "lending_repay" -> Just TxRepay
   _ -> Nothing
 
 data TransactionSide = SideBear | SideBull
