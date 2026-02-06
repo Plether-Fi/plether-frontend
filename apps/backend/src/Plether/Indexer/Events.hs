@@ -47,12 +47,12 @@ parseByTopic topic log bearContracts bullContracts morphoMarkets
   | topic == esTopic mintEvent = parseMintBurnEvent log "mint" Nothing
   | topic == esTopic burnEvent = parseMintBurnEvent log "burn" Nothing
   | topic == esTopic tokenExchangeEvent = parseTokenExchangeEvent log
-  | topic == esTopic zapMintEvent = parseZapEvent log "zap_buy" (Just "bull")
-  | topic == esTopic zapBurnEvent = parseZapEvent log "zap_sell" (Just "bull")
+  | topic == esTopic zapMintEvent = parseZapMintEvent log
+  | topic == esTopic zapBurnEvent = parseZapBurnEvent log
   | topic == esTopic stakingDepositEvent = parseStakingEvent log "stake" bearContracts bullContracts
   | topic == esTopic stakingWithdrawEvent = parseUnstakeEvent log bearContracts bullContracts
-  | topic == esTopic positionOpenedEvent = parseLeverageOpenEvent log bearContracts bullContracts
-  | topic == esTopic positionClosedEvent = parseLeverageCloseEvent log bearContracts bullContracts
+  | topic == esTopic leverageOpenedEvent = parseLeverageOpenEvent log bearContracts bullContracts
+  | topic == esTopic leverageClosedEvent = parseLeverageCloseEvent log bearContracts bullContracts
   | topic == esTopic morphoSupplyEvent = parseMorphoSupplyRepayEvent log "lending_supply" morphoMarkets
   | topic == esTopic morphoWithdrawEvent = parseMorphoWithdrawBorrowEvent log "lending_withdraw" morphoMarkets
   | topic == esTopic morphoBorrowEvent = parseMorphoWithdrawBorrowEvent log "lending_borrow" morphoMarkets
@@ -62,21 +62,20 @@ parseByTopic topic log bearContracts bullContracts morphoMarkets
 parseMintBurnEvent :: EventLog -> Text -> Maybe Text -> Maybe ParsedEvent
 parseMintBurnEvent log txType side = do
   userAddr <- getIndexedAddress (elTopics log) 1
-  let (amount1, amount2) = decodeUint256Pair (elData log)
+  let amount = decodeUint256Single (elData log)
   Just $ ParsedEvent
     { peUserAddress = userAddr
     , peTxType = txType
     , peSide = side
     , peData = object
-        [ "usdcAmount" .= amount1
-        , "pairAmount" .= amount2
+        [ "amount" .= amount
         ]
     }
 
 parseTokenExchangeEvent :: EventLog -> Maybe ParsedEvent
 parseTokenExchangeEvent log = do
   buyer <- getIndexedAddress (elTopics log) 1
-  let (soldId, tokensSold, boughtId, tokensBought) = decodeUint256Quad (elData log)
+  let (soldId, tokensSold, boughtId, tokensBought, fee, packedPriceScale) = decodeUint256Sextuple (elData log)
   Just $ ParsedEvent
     { peUserAddress = buyer
     , peTxType = "swap"
@@ -86,17 +85,35 @@ parseTokenExchangeEvent log = do
         , "tokensSold" .= tokensSold
         , "boughtId" .= boughtId
         , "tokensBought" .= tokensBought
+        , "fee" .= fee
+        , "packedPriceScale" .= packedPriceScale
         ]
     }
 
-parseZapEvent :: EventLog -> Text -> Maybe Text -> Maybe ParsedEvent
-parseZapEvent log txType side = do
+parseZapMintEvent :: EventLog -> Maybe ParsedEvent
+parseZapMintEvent log = do
+  userAddr <- getIndexedAddress (elTopics log) 1
+  let (usdcIn, tokensOut, maxSlippageBps, actualSwapOut) = decodeUint256Quad (elData log)
+  Just $ ParsedEvent
+    { peUserAddress = userAddr
+    , peTxType = "zap_buy"
+    , peSide = Just "bull"
+    , peData = object
+        [ "usdcIn" .= usdcIn
+        , "tokensOut" .= tokensOut
+        , "maxSlippageBps" .= maxSlippageBps
+        , "actualSwapOut" .= actualSwapOut
+        ]
+    }
+
+parseZapBurnEvent :: EventLog -> Maybe ParsedEvent
+parseZapBurnEvent log = do
   userAddr <- getIndexedAddress (elTopics log) 1
   let (amountIn, amountOut) = decodeUint256Pair (elData log)
   Just $ ParsedEvent
     { peUserAddress = userAddr
-    , peTxType = txType
-    , peSide = side
+    , peTxType = "zap_sell"
+    , peSide = Just "bull"
     , peData = object
         [ "amountIn" .= amountIn
         , "amountOut" .= amountOut
@@ -136,7 +153,7 @@ parseUnstakeEvent log bearContracts bullContracts = do
 parseLeverageOpenEvent :: EventLog -> [Text] -> [Text] -> Maybe ParsedEvent
 parseLeverageOpenEvent log bearContracts bullContracts = do
   userAddr <- getIndexedAddress (elTopics log) 1
-  let (principal, leverage, positionSize, debt) = decodeUint256Quad (elData log)
+  let (principal, leverage, loanAmount, tokensReceived, debtIncurred, maxSlippageBps) = decodeUint256Sextuple (elData log)
       side = determineSide (elAddress log) bearContracts bullContracts
   Just $ ParsedEvent
     { peUserAddress = userAddr
@@ -145,23 +162,27 @@ parseLeverageOpenEvent log bearContracts bullContracts = do
     , peData = object
         [ "principal" .= principal
         , "leverage" .= leverage
-        , "positionSize" .= positionSize
-        , "debt" .= debt
+        , "loanAmount" .= loanAmount
+        , "tokensReceived" .= tokensReceived
+        , "debtIncurred" .= debtIncurred
+        , "maxSlippageBps" .= maxSlippageBps
         ]
     }
 
 parseLeverageCloseEvent :: EventLog -> [Text] -> [Text] -> Maybe ParsedEvent
 parseLeverageCloseEvent log bearContracts bullContracts = do
   userAddr <- getIndexedAddress (elTopics log) 1
-  let (collateralReturned, debtRepaid) = decodeUint256Pair (elData log)
+  let (debtRepaid, collateralWithdrawn, usdcReturned, maxSlippageBps) = decodeUint256Quad (elData log)
       side = determineSide (elAddress log) bearContracts bullContracts
   Just $ ParsedEvent
     { peUserAddress = userAddr
     , peTxType = "leverage_close"
     , peSide = side
     , peData = object
-        [ "collateralReturned" .= collateralReturned
-        , "debtRepaid" .= debtRepaid
+        [ "debtRepaid" .= debtRepaid
+        , "collateralWithdrawn" .= collateralWithdrawn
+        , "usdcReturned" .= usdcReturned
+        , "maxSlippageBps" .= maxSlippageBps
         ]
     }
 
@@ -218,6 +239,9 @@ getIndexedAddress topics idx
   | idx < length topics = Just $ "0x" <> T.drop 24 (bytesToHex (topics !! idx))
   | otherwise = Nothing
 
+decodeUint256Single :: ByteString -> Integer
+decodeUint256Single bs = bytesToInteger (BS.take 32 bs)
+
 decodeUint256Pair :: ByteString -> (Integer, Integer)
 decodeUint256Pair bs =
   ( bytesToInteger (BS.take 32 bs)
@@ -236,6 +260,16 @@ decodeUint256Quad bs =
   , bytesToInteger (BS.take 32 (BS.drop 32 bs))
   , bytesToInteger (BS.take 32 (BS.drop 64 bs))
   , bytesToInteger (BS.take 32 (BS.drop 96 bs))
+  )
+
+decodeUint256Sextuple :: ByteString -> (Integer, Integer, Integer, Integer, Integer, Integer)
+decodeUint256Sextuple bs =
+  ( bytesToInteger (BS.take 32 bs)
+  , bytesToInteger (BS.take 32 (BS.drop 32 bs))
+  , bytesToInteger (BS.take 32 (BS.drop 64 bs))
+  , bytesToInteger (BS.take 32 (BS.drop 96 bs))
+  , bytesToInteger (BS.take 32 (BS.drop 128 bs))
+  , bytesToInteger (BS.take 32 (BS.drop 160 bs))
   )
 
 bytesToInteger :: ByteString -> Integer

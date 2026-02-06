@@ -20,12 +20,12 @@ spec = do
     it "returns Nothing for empty topics" $
       parseEventLog (emptyLog []) [] [] noMorphoMarkets `shouldSatisfy` isNothing
 
-    it "parses Mint event" $ do
+    it "parses Minted event" $ do
       let log = mkLog (esTopic mintEvent)
             [ esTopic mintEvent
             , padAddress "0x1234567890123456789012345678901234567890"
             ]
-            (encodeUint256 1000000 <> encodeUint256 2000000)
+            (encodeUint256 1000000)
       let result = parseEventLog log [] [] noMorphoMarkets
       result `shouldSatisfy` isJust
       case result of
@@ -34,12 +34,12 @@ spec = do
           T.toLower (peUserAddress pe) `shouldBe` "0x1234567890123456789012345678901234567890"
         Nothing -> expectationFailure "Expected Just"
 
-    it "parses Burn event" $ do
+    it "parses Burned event" $ do
       let log = mkLog (esTopic burnEvent)
             [ esTopic burnEvent
             , padAddress "0xabcdef0123456789abcdef0123456789abcdef01"
             ]
-            (encodeUint256 500000 <> encodeUint256 1000000)
+            (encodeUint256 500000)
       let result = parseEventLog log [] [] noMorphoMarkets
       case result of
         Just pe -> do
@@ -52,7 +52,7 @@ spec = do
             [ esTopic tokenExchangeEvent
             , padAddress "0x1111111111111111111111111111111111111111"
             ]
-            (encodeUint256 0 <> encodeUint256 1000 <> encodeUint256 1 <> encodeUint256 990)
+            (encodeUint256 0 <> encodeUint256 1000 <> encodeUint256 1 <> encodeUint256 990 <> encodeUint256 10 <> encodeUint256 999)
       let result = parseEventLog log [] [] noMorphoMarkets
       case result of
         Just pe -> peTxType pe `shouldBe` "swap"
@@ -63,7 +63,7 @@ spec = do
             [ esTopic zapMintEvent
             , padAddress "0x2222222222222222222222222222222222222222"
             ]
-            (encodeUint256 100 <> encodeUint256 200)
+            (encodeUint256 100 <> encodeUint256 200 <> encodeUint256 50 <> encodeUint256 195)
       let result = parseEventLog log [] [] noMorphoMarkets
       case result of
         Just pe -> do
@@ -130,13 +130,13 @@ spec = do
           peSide pe `shouldBe` Just "bear"
         Nothing -> expectationFailure "Expected Just"
 
-    it "parses PositionOpened event" $ do
+    it "parses LeverageOpened event" $ do
       let bullContract = "0xbull000000000000000000000000000000000000"
-          log = mkLogWithAddress bullContract (esTopic positionOpenedEvent)
-            [ esTopic positionOpenedEvent
+          log = mkLogWithAddress bullContract (esTopic leverageOpenedEvent)
+            [ esTopic leverageOpenedEvent
             , padAddress "0x0000000000000000000000000000000000aa0001"
             ]
-            (encodeUint256 1000 <> encodeUint256 200 <> encodeUint256 2000 <> encodeUint256 1000)
+            (encodeUint256 1000 <> encodeUint256 200 <> encodeUint256 2000 <> encodeUint256 1500 <> encodeUint256 1000 <> encodeUint256 50)
       let result = parseEventLog log [] [bullContract] noMorphoMarkets
       case result of
         Just pe -> do
@@ -144,13 +144,13 @@ spec = do
           peSide pe `shouldBe` Just "bull"
         Nothing -> expectationFailure "Expected Just"
 
-    it "parses PositionClosed event" $ do
+    it "parses LeverageClosed event" $ do
       let bearContract = "0xbear000000000000000000000000000000000000"
-          log = mkLogWithAddress bearContract (esTopic positionClosedEvent)
-            [ esTopic positionClosedEvent
+          log = mkLogWithAddress bearContract (esTopic leverageClosedEvent)
+            [ esTopic leverageClosedEvent
             , padAddress "0x0000000000000000000000000000000000aa0001"
             ]
-            (encodeUint256 1500 <> encodeUint256 1000)
+            (encodeUint256 1500 <> encodeUint256 1000 <> encodeUint256 800 <> encodeUint256 50)
       let result = parseEventLog log [bearContract] [] noMorphoMarkets
       case result of
         Just pe -> do
@@ -290,7 +290,7 @@ spec = do
             [ esTopic mintEvent
             , padAddress "0x1234567890123456789012345678901234567890"
             ]
-            (encodeUint256 1000000 <> encodeUint256 2000000)
+            (encodeUint256 1000000)
       let result = parseEventLog log [] [] noMorphoMarkets
       case result of
         Just pe -> do

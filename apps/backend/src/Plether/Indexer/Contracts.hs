@@ -8,8 +8,8 @@ module Plether.Indexer.Contracts
   , zapBurnEvent
   , stakingDepositEvent
   , stakingWithdrawEvent
-  , positionOpenedEvent
-  , positionClosedEvent
+  , leverageOpenedEvent
+  , leverageClosedEvent
   , morphoSupplyEvent
   , morphoWithdrawEvent
   , morphoBorrowEvent
@@ -20,10 +20,7 @@ module Plether.Indexer.Contracts
 import Crypto.Hash (Digest, Keccak_256, hash)
 import Data.ByteArray (convert)
 import Data.ByteString (ByteString)
-import qualified Data.ByteString as BS
-import qualified Data.ByteString.Base16 as B16
 import Data.Text (Text)
-import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 
 data EventSignature = EventSignature
@@ -45,16 +42,16 @@ eventTopic = keccak256Text
 
 mintEvent :: EventSignature
 mintEvent = EventSignature
-  { esName = "Mint"
-  , esTopic = eventTopic "Mint(address,uint256,uint256)"
+  { esName = "Minted"
+  , esTopic = eventTopic "Minted(address,uint256)"
   , esTxType = "mint"
   , esSide = Nothing
   }
 
 burnEvent :: EventSignature
 burnEvent = EventSignature
-  { esName = "Burn"
-  , esTopic = eventTopic "Burn(address,uint256,uint256)"
+  { esName = "Burned"
+  , esTopic = eventTopic "Burned(address,uint256)"
   , esTxType = "burn"
   , esSide = Nothing
   }
@@ -62,7 +59,7 @@ burnEvent = EventSignature
 tokenExchangeEvent :: EventSignature
 tokenExchangeEvent = EventSignature
   { esName = "TokenExchange"
-  , esTopic = eventTopic "TokenExchange(address,uint256,uint256,uint256,uint256)"
+  , esTopic = eventTopic "TokenExchange(address,uint256,uint256,uint256,uint256,uint256,uint256)"
   , esTxType = "swap"
   , esSide = Nothing
   }
@@ -70,7 +67,7 @@ tokenExchangeEvent = EventSignature
 zapMintEvent :: EventSignature
 zapMintEvent = EventSignature
   { esName = "ZapMint"
-  , esTopic = eventTopic "ZapMint(address,uint256,uint256)"
+  , esTopic = eventTopic "ZapMint(address,uint256,uint256,uint256,uint256)"
   , esTxType = "zap_buy"
   , esSide = Just "bull"
   }
@@ -99,18 +96,18 @@ stakingWithdrawEvent = EventSignature
   , esSide = Nothing
   }
 
-positionOpenedEvent :: EventSignature
-positionOpenedEvent = EventSignature
-  { esName = "PositionOpened"
-  , esTopic = eventTopic "PositionOpened(address,uint256,uint256,uint256,uint256)"
+leverageOpenedEvent :: EventSignature
+leverageOpenedEvent = EventSignature
+  { esName = "LeverageOpened"
+  , esTopic = eventTopic "LeverageOpened(address,uint256,uint256,uint256,uint256,uint256,uint256)"
   , esTxType = "leverage_open"
   , esSide = Nothing
   }
 
-positionClosedEvent :: EventSignature
-positionClosedEvent = EventSignature
-  { esName = "PositionClosed"
-  , esTopic = eventTopic "PositionClosed(address,uint256,uint256)"
+leverageClosedEvent :: EventSignature
+leverageClosedEvent = EventSignature
+  { esName = "LeverageClosed"
+  , esTopic = eventTopic "LeverageClosed(address,uint256,uint256,uint256,uint256)"
   , esTxType = "leverage_close"
   , esSide = Nothing
   }
@@ -156,8 +153,8 @@ allEventSignatures =
   , zapBurnEvent
   , stakingDepositEvent
   , stakingWithdrawEvent
-  , positionOpenedEvent
-  , positionClosedEvent
+  , leverageOpenedEvent
+  , leverageClosedEvent
   , morphoSupplyEvent
   , morphoWithdrawEvent
   , morphoBorrowEvent

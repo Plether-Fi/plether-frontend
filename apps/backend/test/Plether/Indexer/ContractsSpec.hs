@@ -8,18 +8,18 @@ import Plether.Indexer.Contracts
 spec :: Spec
 spec = do
   describe "event topic signatures" $ do
-    it "Mint topic is keccak256 of signature" $
-      esTopic mintEvent `shouldBe` keccak256Text "Mint(address,uint256,uint256)"
+    it "Minted topic is keccak256 of signature" $
+      esTopic mintEvent `shouldBe` keccak256Text "Minted(address,uint256)"
 
-    it "Burn topic is keccak256 of signature" $
-      esTopic burnEvent `shouldBe` keccak256Text "Burn(address,uint256,uint256)"
+    it "Burned topic is keccak256 of signature" $
+      esTopic burnEvent `shouldBe` keccak256Text "Burned(address,uint256)"
 
     it "TokenExchange topic is keccak256 of signature" $
       esTopic tokenExchangeEvent `shouldBe`
-        keccak256Text "TokenExchange(address,uint256,uint256,uint256,uint256)"
+        keccak256Text "TokenExchange(address,uint256,uint256,uint256,uint256,uint256,uint256)"
 
     it "ZapMint topic is keccak256 of signature" $
-      esTopic zapMintEvent `shouldBe` keccak256Text "ZapMint(address,uint256,uint256)"
+      esTopic zapMintEvent `shouldBe` keccak256Text "ZapMint(address,uint256,uint256,uint256,uint256)"
 
     it "ZapBurn topic is keccak256 of signature" $
       esTopic zapBurnEvent `shouldBe` keccak256Text "ZapBurn(address,uint256,uint256)"
@@ -32,13 +32,13 @@ spec = do
       esTopic stakingWithdrawEvent `shouldBe`
         keccak256Text "Withdraw(address,address,address,uint256,uint256)"
 
-    it "PositionOpened topic is keccak256 of signature" $
-      esTopic positionOpenedEvent `shouldBe`
-        keccak256Text "PositionOpened(address,uint256,uint256,uint256,uint256)"
+    it "LeverageOpened topic is keccak256 of signature" $
+      esTopic leverageOpenedEvent `shouldBe`
+        keccak256Text "LeverageOpened(address,uint256,uint256,uint256,uint256,uint256,uint256)"
 
-    it "PositionClosed topic is keccak256 of signature" $
-      esTopic positionClosedEvent `shouldBe`
-        keccak256Text "PositionClosed(address,uint256,uint256)"
+    it "LeverageClosed topic is keccak256 of signature" $
+      esTopic leverageClosedEvent `shouldBe`
+        keccak256Text "LeverageClosed(address,uint256,uint256,uint256,uint256)"
 
     it "Morpho Supply topic is keccak256 of signature" $
       esTopic morphoSupplyEvent `shouldBe`
@@ -78,11 +78,11 @@ spec = do
     it "stakingWithdrawEvent topic is 32 bytes" $
       BS.length (esTopic stakingWithdrawEvent) `shouldBe` 32
 
-    it "positionOpenedEvent topic is 32 bytes" $
-      BS.length (esTopic positionOpenedEvent) `shouldBe` 32
+    it "leverageOpenedEvent topic is 32 bytes" $
+      BS.length (esTopic leverageOpenedEvent) `shouldBe` 32
 
-    it "positionClosedEvent topic is 32 bytes" $
-      BS.length (esTopic positionClosedEvent) `shouldBe` 32
+    it "leverageClosedEvent topic is 32 bytes" $
+      BS.length (esTopic leverageClosedEvent) `shouldBe` 32
 
     it "morphoSupplyEvent topic is 32 bytes" $
       BS.length (esTopic morphoSupplyEvent) `shouldBe` 32
@@ -98,12 +98,12 @@ spec = do
 
   describe "event metadata" $ do
     it "mintEvent has correct name and txType" $ do
-      esName mintEvent `shouldBe` "Mint"
+      esName mintEvent `shouldBe` "Minted"
       esTxType mintEvent `shouldBe` "mint"
       esSide mintEvent `shouldBe` Nothing
 
     it "burnEvent has correct name and txType" $ do
-      esName burnEvent `shouldBe` "Burn"
+      esName burnEvent `shouldBe` "Burned"
       esTxType burnEvent `shouldBe` "burn"
       esSide burnEvent `shouldBe` Nothing
 
@@ -130,13 +130,13 @@ spec = do
       esName stakingWithdrawEvent `shouldBe` "Withdraw"
       esTxType stakingWithdrawEvent `shouldBe` "unstake"
 
-    it "positionOpenedEvent has correct metadata" $ do
-      esName positionOpenedEvent `shouldBe` "PositionOpened"
-      esTxType positionOpenedEvent `shouldBe` "leverage_open"
+    it "leverageOpenedEvent has correct metadata" $ do
+      esName leverageOpenedEvent `shouldBe` "LeverageOpened"
+      esTxType leverageOpenedEvent `shouldBe` "leverage_open"
 
-    it "positionClosedEvent has correct metadata" $ do
-      esName positionClosedEvent `shouldBe` "PositionClosed"
-      esTxType positionClosedEvent `shouldBe` "leverage_close"
+    it "leverageClosedEvent has correct metadata" $ do
+      esName leverageClosedEvent `shouldBe` "LeverageClosed"
+      esTxType leverageClosedEvent `shouldBe` "leverage_close"
 
     it "morphoSupplyEvent has correct metadata" $ do
       esName morphoSupplyEvent `shouldBe` "MorphoSupply"
