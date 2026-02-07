@@ -314,8 +314,7 @@ class TransactionManager {
 
     const prerequisites: Prerequisite[] = []
     if (!hasAllowance) {
-      const maxApproval = 2n ** 256n - 1n
-      prerequisites.push(this.makeApprovalPrerequisite(`Approve plDXY-${side}`, tokenAddress, stakingAddress, maxApproval))
+      prerequisites.push(this.makeApprovalPrerequisite(`Approve plDXY-${side}`, tokenAddress, stakingAddress, amount))
     }
 
     await this.executeOperation(ctx, {
@@ -574,6 +573,6 @@ class TransactionManager {
 
 export const transactionManager = new TransactionManager()
 
-if (typeof window !== 'undefined') {
+if (import.meta.env.DEV) {
   (window as unknown as { __txManager: TransactionManager }).__txManager = transactionManager
 }
