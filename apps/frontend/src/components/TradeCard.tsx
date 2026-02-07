@@ -3,7 +3,7 @@ import { useAccount } from 'wagmi'
 import { parseUnits } from 'viem'
 import { TokenInput } from './TokenInput'
 import { InfoTooltip, OutputDisplay, Modal, Button } from './ui'
-import { useCurveQuote, useZapQuote } from '../hooks'
+import { useTradeQuote, useZapQuote as useZapQuoteApi } from '../api'
 import { useTransactionStore } from '../stores/transactionStore'
 import { transactionManager } from '../services/transactionManager'
 import { getAddresses, DEFAULT_CHAIN_ID } from '../contracts/addresses'
@@ -60,19 +60,20 @@ export function TradeCard({ usdcBalance, bearBalance, bullBalance, refetchBalanc
   const inputDecimals = mode === 'buy' ? 6 : 18
   const inputAmountBigInt = inputAmount ? parseUnits(inputAmount, inputDecimals) : 0n
 
-  const { amountOut: curveAmountOut, priceImpact: curvePriceImpact, isLoading: curveQuoteLoading } = useCurveQuote(
-    mode === 'buy' ? 'USDC' : 'BEAR',
-    isBearTrade ? inputAmountBigInt : 0n
-  )
+  const bearQuoteAmount = isBearTrade && inputAmountBigInt > 0n ? inputAmountBigInt.toString() : undefined
+  const bearQuoteFrom = mode === 'buy' ? 'usdc' as const : 'bear' as const
+  const { data: bearQuoteData, isLoading: bearQuoteLoading } = useTradeQuote(bearQuoteFrom, bearQuoteAmount)
 
-  const { amountOut: zapAmountOut, priceImpact: zapPriceImpact, isLoading: zapQuoteLoading } = useZapQuote(
-    mode,
-    !isBearTrade ? inputAmountBigInt : 0n
-  )
+  const bullQuoteAmount = !isBearTrade && inputAmountBigInt > 0n ? inputAmountBigInt.toString() : undefined
+  const { data: bullQuoteData, isLoading: bullQuoteLoading } = useZapQuoteApi(mode, bullQuoteAmount)
 
-  const quoteAmountOut = isBearTrade ? curveAmountOut : zapAmountOut
-  const priceImpact = isBearTrade ? curvePriceImpact : zapPriceImpact
-  const isQuoteLoading = isBearTrade ? curveQuoteLoading : zapQuoteLoading
+  const quoteAmountOut = isBearTrade
+    ? BigInt(bearQuoteData?.data.amountOut ?? '0')
+    : BigInt(bullQuoteData?.data.output?.amount ?? '0')
+  const priceImpact = isBearTrade
+    ? Number(bearQuoteData?.data.priceImpact ?? '0')
+    : Number(bullQuoteData?.data.priceImpact ?? '0')
+  const isQuoteLoading = isBearTrade ? bearQuoteLoading : bullQuoteLoading
 
   useEffect(() => {
     if (priceImpact > 1) {

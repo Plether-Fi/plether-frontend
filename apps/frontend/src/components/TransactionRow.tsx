@@ -1,6 +1,7 @@
 import { useChainId } from 'wagmi'
 import { formatAmount, formatDate } from '../utils/formatters'
 import { getExplorerTxUrl } from '../utils/explorer'
+import { TokenLabel } from './ui/TokenLabel'
 import type { HistoricalTransaction, TransactionType } from '../types'
 
 const typeLabels: Record<TransactionType, string> = {
@@ -56,14 +57,6 @@ function getIconColor(type: TransactionType): string {
   return 'text-cyber-text-primary'
 }
 
-function getLabelColor(type: TransactionType): string {
-  if (type.includes('buy') || type.includes('mint') || type.includes('stake_') || type.includes('open') || type === 'morpho_supply' || type === 'morpho_repay')
-    return 'text-cyber-neon-green'
-  if (type.includes('sell') || type.includes('burn') || type.includes('unstake') || type.includes('close') || type === 'morpho_withdraw' || type === 'morpho_borrow')
-    return 'text-cyber-electric-fuchsia'
-  return 'text-cyber-text-primary'
-}
-
 function getIconBg(type: TransactionType): string {
   if (type.includes('bear')) return 'bg-cyber-electric-fuchsia/20'
   if (type.includes('bull')) return 'bg-cyber-neon-green/20'
@@ -97,7 +90,7 @@ export function TransactionRow({ transaction }: TransactionRowProps) {
           </span>
         </div>
         <div>
-          <p className={`font-semibold ${getLabelColor(transaction.type)}`}>
+          <p className="font-semibold text-cyber-text-primary">
             {typeLabels[transaction.type]}
           </p>
           <p className="text-sm text-cyber-text-secondary">
@@ -117,14 +110,12 @@ export function TransactionRow({ transaction }: TransactionRowProps) {
         )}
       </div>
 
-      <div>
-        <p className="text-cyber-text-primary font-medium">
-          {formatTokenLabel(transaction.tokenSymbol, transaction.amount)}
-        </p>
+      <div className="space-y-1">
+        <TokenLabel token={formatTokenLabel(transaction.tokenSymbol, transaction.amount)} />
         {transaction.secondaryAmount != null && transaction.secondarySymbol && (
-          <p className="text-xs text-cyber-text-secondary">
-            {transaction.secondarySymbol}
-          </p>
+          <div>
+            <TokenLabel token={transaction.secondarySymbol} />
+          </div>
         )}
       </div>
 
