@@ -12,7 +12,7 @@ import Plether.Cache
   , setCached
   )
 import Data.Text (Text, pack)
-import Plether.Config (Addresses (..), Config (..))
+import Plether.Config (Addresses (..), Config (..), currentAddresses)
 import Plether.Ethereum.Client (EthClient, ethBlockNumber)
 import qualified Plether.Ethereum.Contracts.BasketOracle as Oracle
 import qualified Plether.Ethereum.Contracts.Morpho as Morpho
@@ -38,7 +38,7 @@ getProtocolStatus cache client cfg = do
 
 fetchAndCacheProtocolStatus :: AppCache -> EthClient -> Config -> Integer -> IO (Either ApiError (ApiResponse ProtocolStatus))
 fetchAndCacheProtocolStatus cache client cfg blockNum = do
-  let addrs = cfgAddresses cfg
+  let addrs = currentAddresses (cfgDeployments cfg)
 
   eStatus <- Splitter.currentStatus client (addrSyntheticSplitter addrs)
   eCap <- Splitter.getCap client (addrSyntheticSplitter addrs)
@@ -123,7 +123,7 @@ fetchAndCacheProtocolStatus cache client cfg blockNum = do
 
 getApyInfo :: EthClient -> Config -> IO (Either ApiError ApyInfo)
 getApyInfo client cfg = do
-  let addrs = cfgAddresses cfg
+  let addrs = currentAddresses (cfgDeployments cfg)
       morphoAddr = addrMorpho addrs
   eBearApy <- getMarketApy client addrs morphoAddr (addrMorphoMarketBear addrs)
   eBullApy <- getMarketApy client addrs morphoAddr (addrMorphoMarketBull addrs)
@@ -173,7 +173,7 @@ getMarketApy client addrs morphoAddr marketIdHex = do
 
 getProtocolConfig :: EthClient -> Config -> IO (Either ApiError (ApiResponse ProtocolConfig))
 getProtocolConfig client cfg = do
-  let addrs = cfgAddresses cfg
+  let addrs = currentAddresses (cfgDeployments cfg)
       morphoAddr = addrMorpho addrs
       bearMarketBs = hexToByteString (addrMorphoMarketBear addrs)
       bullMarketBs = hexToByteString (addrMorphoMarketBull addrs)

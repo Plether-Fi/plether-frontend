@@ -27,7 +27,8 @@ import Network.HTTP.Client
   , parseRequest
   , responseBody
   )
-import Plether.Config (Addresses (..), Config (..))
+import Data.List (nub)
+import Plether.Config (Addresses (..), Deployment (..))
 import Plether.Utils.Hex (hexToInteger, intToHex)
 import Plether.Database (DbPool, withDb)
 import Plether.Database.Schema (getLastIndexedBlock, insertTransaction, setLastIndexedBlock)
@@ -36,7 +37,7 @@ import Plether.Indexer.Events (EventLog (..), MorphoMarkets (..), ParsedEvent (.
 
 data IndexerConfig = IndexerConfig
   { icRpcUrl :: Text
-  , icAddresses :: Addresses
+  , icDeployments :: [Deployment]
   , icStartBlock :: Integer
   , icBatchSize :: Integer
   , icPollInterval :: Int
@@ -71,18 +72,19 @@ runIndexerLoop manager pool cfg reqIdRef = do
           let endBlock = min (startBlock + icBatchSize cfg - 1) currentBlock
           putStrLn $ "Indexing blocks " <> show startBlock <> " to " <> show endBlock
 
-          let contracts = getContractAddresses (icAddresses cfg)
+          let allAddrs = map deployAddresses (icDeployments cfg)
+              contracts = nub $ concatMap getContractAddresses allAddrs
           eLogs <- getLogs manager (icRpcUrl cfg) reqIdRef contracts startBlock endBlock
           case eLogs of
             Left err -> do
               putStrLn $ "Failed to get logs: " <> T.unpack err
               threadDelay (icPollInterval cfg)
             Right logs -> do
-              let bearContracts = [addrStakingBear (icAddresses cfg), addrLeverageRouter (icAddresses cfg)]
-                  bullContracts = [addrStakingBull (icAddresses cfg), addrBullLeverageRouter (icAddresses cfg)]
+              let bearContracts = nub $ concatMap (\a -> [addrStakingBear a, addrLeverageRouter a]) allAddrs
+                  bullContracts = nub $ concatMap (\a -> [addrStakingBull a, addrBullLeverageRouter a]) allAddrs
                   morphoMarkets = MorphoMarkets
-                    { mmBearMarketId = addrMorphoMarketBear (icAddresses cfg)
-                    , mmBullMarketId = addrMorphoMarketBull (icAddresses cfg)
+                    { mmBearMarketIds = nub $ map addrMorphoMarketBear allAddrs
+                    , mmBullMarketIds = nub $ map addrMorphoMarketBull allAddrs
                     }
 
               forM_ logs $ \log -> do

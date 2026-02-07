@@ -27,17 +27,22 @@ export interface ContractAddresses {
   MORPHO_MARKET_BULL: Address
 }
 
-// Load addresses from JSON files at build time
-const addressModules = import.meta.glob<{ default: ContractAddresses }>(
+type Deployment = ContractAddresses & { RELEASE_DATE: string }
+
+const addressModules = import.meta.glob<Deployment[]>(
   './addresses.*.json',
-  { eager: true }
+  { eager: true, import: 'default' }
 )
 
 function loadAddresses(filename: string): ContractAddresses | null {
-  const module = addressModules[`./${filename}`]
+  const deployments = addressModules[`./${filename}`]
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- module can be undefined at runtime
-  if (!module) return null
-  return module.default
+  if (!deployments) return null
+  const sorted = [...deployments].sort((a, b) =>
+    b.RELEASE_DATE.localeCompare(a.RELEASE_DATE)
+  )
+  const { RELEASE_DATE: _, ...addresses } = sorted[0]
+  return addresses
 }
 
 const MAINNET_ADDRESSES = loadAddresses('addresses.mainnet.json')

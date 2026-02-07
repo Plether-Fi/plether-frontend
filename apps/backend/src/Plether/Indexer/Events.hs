@@ -32,8 +32,8 @@ data ParsedEvent = ParsedEvent
   deriving stock (Show)
 
 data MorphoMarkets = MorphoMarkets
-  { mmBearMarketId :: Text
-  , mmBullMarketId :: Text
+  { mmBearMarketIds :: [Text]
+  , mmBullMarketIds :: [Text]
   }
   deriving stock (Show)
 
@@ -219,11 +219,11 @@ parseMorphoWithdrawBorrowEvent log txType morphoMarkets = do
 determineSideByMarketId :: [ByteString] -> MorphoMarkets -> Maybe Text
 determineSideByMarketId topics morphoMarkets
   | length topics < 2 = Nothing
-  | normalizeAddress (topicToHex (topics !! 1)) == normalizeAddress (mmBearMarketId morphoMarkets) = Just "bear"
-  | normalizeAddress (topicToHex (topics !! 1)) == normalizeAddress (mmBullMarketId morphoMarkets) = Just "bull"
+  | marketId `elem` map normalizeAddress (mmBearMarketIds morphoMarkets) = Just "bear"
+  | marketId `elem` map normalizeAddress (mmBullMarketIds morphoMarkets) = Just "bull"
   | otherwise = Nothing
   where
-    topicToHex bs = "0x" <> bytesToHex bs
+    marketId = normalizeAddress $ "0x" <> bytesToHex (topics !! 1)
 
 determineSide :: Text -> [Text] -> [Text] -> Maybe Text
 determineSide addr bearContracts bullContracts

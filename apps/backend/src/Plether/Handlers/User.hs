@@ -15,7 +15,7 @@ import Plether.Cache
   , getCachedFor
   , setCachedFor
   )
-import Plether.Config (Addresses (..), Config (..))
+import Plether.Config (Addresses (..), Config (..), currentAddresses)
 import Plether.Ethereum.Client (EthClient, ethBlockNumber)
 import qualified Plether.Ethereum.Contracts.BasketOracle as Oracle
 import qualified Plether.Ethereum.Contracts.ERC20 as ERC20
@@ -89,7 +89,7 @@ getUserBalances client cfg userAddr = do
 
 getUserBalancesRaw :: EthClient -> Config -> Text -> IO (Either ApiError UserBalances)
 getUserBalancesRaw client cfg userAddr = do
-  let addrs = cfgAddresses cfg
+  let addrs = currentAddresses (cfgDeployments cfg)
 
   eUsdc <- ERC20.balanceOf client (addrUsdc addrs) userAddr
   eBear <- ERC20.balanceOf client (addrDxyBear addrs) userAddr
@@ -173,7 +173,7 @@ fetchAndCacheAllowances cache client cfg userAddr blockNum = do
 
 getAllowancesRaw :: EthClient -> Config -> Text -> IO (Either ApiError UserAllowances)
 getAllowancesRaw client cfg userAddr = do
-  let addrs = cfgAddresses cfg
+  let addrs = currentAddresses (cfgDeployments cfg)
 
   eUsdcSplitter <- ERC20.allowance client (addrUsdc addrs) userAddr (addrSyntheticSplitter addrs)
   eUsdcZap <- ERC20.allowance client (addrUsdc addrs) userAddr (addrZapRouter addrs)
@@ -237,7 +237,7 @@ getAllowancesRaw client cfg userAddr = do
 -- Leverage positions
 getLeveragePositions :: EthClient -> Config -> Text -> IO (Either ApiError LeveragePositions)
 getLeveragePositions client cfg userAddr = do
-  let addrs = cfgAddresses cfg
+  let addrs = currentAddresses (cfgDeployments cfg)
   eBear <- getLeveragePosition client addrs "BEAR" userAddr
   eBull <- getLeveragePosition client addrs "BULL" userAddr
   case (eBear, eBull) of
@@ -316,7 +316,7 @@ getLeveragePosition client addrs side userAddr = do
 -- Lending positions
 getLendingPositions :: EthClient -> Config -> Text -> IO (Either ApiError LendingPositions)
 getLendingPositions client cfg userAddr = do
-  let addrs = cfgAddresses cfg
+  let addrs = currentAddresses (cfgDeployments cfg)
   eBear <- getLendingPosition client addrs "BEAR" userAddr
   eBull <- getLendingPosition client addrs "BULL" userAddr
   case (eBear, eBull) of
@@ -397,7 +397,7 @@ getLendingPosition client addrs side userAddr = do
 -- Morpho authorization
 getMorphoAuthorization :: EthClient -> Config -> Text -> IO (Either ApiError MorphoAuthorization)
 getMorphoAuthorization client cfg userAddr = do
-  let addrs = cfgAddresses cfg
+  let addrs = currentAddresses (cfgDeployments cfg)
       morphoAddr = addrMorpho addrs
   eBear <- Morpho.isAuthorized client morphoAddr userAddr (addrLeverageRouter addrs)
   eBull <- Morpho.isAuthorized client morphoAddr userAddr (addrBullLeverageRouter addrs)

@@ -5,7 +5,7 @@ import Network.HTTP.Client (newManager)
 import Network.HTTP.Client.TLS (tlsManagerSettings)
 import Plether.Api (app)
 import Plether.Cache (newAppCache)
-import Plether.Config (Config (..), Addresses (..), loadConfig)
+import Plether.Config (Config (..), loadConfig)
 import Plether.Database (DbPool, newDbPool)
 import Plether.Ethereum.Client (newClient)
 import Plether.Indexer (IndexerConfig (..), startIndexer)
@@ -41,7 +41,7 @@ main = do
           manager <- newManager tlsManagerSettings
           let indexerCfg = IndexerConfig
                 { icRpcUrl = cfgRpcUrl cfg
-                , icAddresses = cfgAddresses cfg
+                , icDeployments = cfgDeployments cfg
                 , icStartBlock = cfgIndexerStartBlock cfg
                 , icBatchSize = 10000
                 , icPollInterval = 12000000

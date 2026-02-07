@@ -342,8 +342,8 @@ spec = do
     it "matches bear market ID case-insensitively" $ do
       let bearId = "0xAABBCCDDEEFF00112233445566778899AABBCCDDEEFF00112233445566778899"
           markets = MorphoMarkets
-            { mmBearMarketId = bearId
-            , mmBullMarketId = "0x0000000000000000000000000000000000000000000000000000000000000000"
+            { mmBearMarketIds = [bearId]
+            , mmBullMarketIds = []
             }
           log = mkLog (esTopic morphoSupplyEvent)
             [ esTopic morphoSupplyEvent
@@ -360,8 +360,8 @@ spec = do
     it "matches bull market ID" $ do
       let bullId = "0x1122334455667788990011223344556677889900112233445566778899001122"
           markets = MorphoMarkets
-            { mmBearMarketId = "0x0000000000000000000000000000000000000000000000000000000000000000"
-            , mmBullMarketId = bullId
+            { mmBearMarketIds = []
+            , mmBullMarketIds = [bullId]
             }
           log = mkLog (esTopic morphoRepayEvent)
             [ esTopic morphoRepayEvent
@@ -425,8 +425,8 @@ integerToBytes n = BS.pack $ reverse $ go n
 
 noMorphoMarkets :: MorphoMarkets
 noMorphoMarkets = MorphoMarkets
-  { mmBearMarketId = "0x0000000000000000000000000000000000000000000000000000000000000000"
-  , mmBullMarketId = "0x0000000000000000000000000000000000000000000000000000000000000000"
+  { mmBearMarketIds = []
+  , mmBullMarketIds = []
   }
 
 testBearMarketId :: Text
@@ -437,8 +437,8 @@ testBullMarketId = "0xbbbb000000000000000000000000000000000000000000000000000000
 
 testMorphoMarkets :: MorphoMarkets
 testMorphoMarkets = MorphoMarkets
-  { mmBearMarketId = testBearMarketId
-  , mmBullMarketId = testBullMarketId
+  { mmBearMarketIds = [testBearMarketId]
+  , mmBullMarketIds = [testBullMarketId]
   }
 
 hexToBytes :: Text -> ByteString

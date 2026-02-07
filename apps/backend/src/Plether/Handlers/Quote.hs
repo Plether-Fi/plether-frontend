@@ -7,7 +7,7 @@ module Plether.Handlers.Quote
   ) where
 
 import Data.Text (Text)
-import Plether.Config (Addresses (..), Config (..))
+import Plether.Config (Addresses (..), Config (..), currentAddresses)
 import Plether.Ethereum.Client (EthClient, ethBlockNumber)
 import qualified Plether.Ethereum.Contracts.BasketOracle as Oracle
 import qualified Plether.Ethereum.Contracts.CurvePool as Curve
@@ -29,7 +29,7 @@ calculatePriceImpact actualOutput actualInput refOutput refInput
 
 getMintQuote :: EthClient -> Config -> Integer -> IO (Either ApiError (ApiResponse MintQuote))
 getMintQuote client cfg amount = do
-  let addrs = cfgAddresses cfg
+  let addrs = currentAddresses (cfgDeployments cfg)
 
   eBlockNum <- ethBlockNumber client
   eCap <- Splitter.getCap client (addrSyntheticSplitter addrs)
@@ -56,7 +56,7 @@ getMintQuote client cfg amount = do
 
 getBurnQuote :: EthClient -> Config -> Integer -> IO (Either ApiError (ApiResponse BurnQuote))
 getBurnQuote client cfg amount = do
-  let addrs = cfgAddresses cfg
+  let addrs = currentAddresses (cfgDeployments cfg)
 
   eBlockNum <- ethBlockNumber client
   ePreview <- Splitter.previewBurn client (addrSyntheticSplitter addrs) amount
@@ -77,7 +77,7 @@ getBurnQuote client cfg amount = do
 
 getZapQuote :: EthClient -> Config -> Text -> Integer -> IO (Either ApiError (ApiResponse ZapQuote))
 getZapQuote client cfg direction amount = do
-  let addrs = cfgAddresses cfg
+  let addrs = currentAddresses (cfgDeployments cfg)
       router = addrZapRouter addrs
 
   eBlockNum <- ethBlockNumber client
@@ -141,7 +141,7 @@ getZapQuote client cfg direction amount = do
 
 getTradeQuote :: EthClient -> Config -> Text -> Integer -> IO (Either ApiError (ApiResponse TradeQuote))
 getTradeQuote client cfg from amount = do
-  let addrs = cfgAddresses cfg
+  let addrs = currentAddresses (cfgDeployments cfg)
       pool = addrCurvePool addrs
 
   eBlockNum <- ethBlockNumber client
@@ -182,7 +182,7 @@ getTradeQuote client cfg from amount = do
 
 getLeverageQuote :: EthClient -> Config -> Text -> Integer -> Integer -> IO (Either ApiError (ApiResponse LeverageQuote))
 getLeverageQuote client cfg side principal leverage = do
-  let addrs = cfgAddresses cfg
+  let addrs = currentAddresses (cfgDeployments cfg)
 
   eBlockNum <- ethBlockNumber client
 

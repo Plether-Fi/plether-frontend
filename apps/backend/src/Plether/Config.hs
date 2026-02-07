@@ -1,11 +1,15 @@
 module Plether.Config
   ( Config (..)
   , Addresses (..)
+  , Deployment (..)
   , loadConfig
-  , loadAddresses
+  , loadDeployments
+  , currentAddresses
   ) where
 
-import Data.Aeson (FromJSON (..), eitherDecodeFileStrict, withObject, (.:))
+import Data.Aeson (FromJSON (..), Value (..), eitherDecodeFileStrict, withObject, (.:))
+import Data.List (sortBy)
+import Data.Ord (Down (..), comparing)
 import Data.Text (Text)
 import qualified Data.Text as T
 import GHC.Generics (Generic)
@@ -18,7 +22,7 @@ data Config = Config
   , cfgChainId :: Integer
   , cfgPort :: Int
   , cfgCorsOrigins :: [Text]
-  , cfgAddresses :: Addresses
+  , cfgDeployments :: [Deployment]
   , cfgDatabaseUrl :: Maybe Text
   , cfgIndexerStartBlock :: Integer
   }
@@ -74,8 +78,23 @@ instance FromJSON Addresses where
       <*> v .: "MORPHO_MARKET_BEAR"
       <*> v .: "MORPHO_MARKET_BULL"
 
-loadAddresses :: FilePath -> IO (Either String Addresses)
-loadAddresses = eitherDecodeFileStrict
+data Deployment = Deployment
+  { deployDate :: Text
+  , deployAddresses :: Addresses
+  }
+  deriving stock (Show)
+
+instance FromJSON Deployment where
+  parseJSON = withObject "Deployment" $ \v ->
+    Deployment
+      <$> v .: "RELEASE_DATE"
+      <*> parseJSON (Object v)
+
+currentAddresses :: [Deployment] -> Addresses
+currentAddresses = deployAddresses . head . sortBy (comparing (Down . deployDate))
+
+loadDeployments :: FilePath -> IO (Either String [Deployment])
+loadDeployments = eitherDecodeFileStrict
 
 loadConfig :: IO (Either String Config)
 loadConfig = do
@@ -96,13 +115,13 @@ loadConfig = do
           addressFile = case chainId of
             1 -> "config/addresses.mainnet.json"
             11155111 -> "config/addresses.sepolia.json"
-            31337 -> "config/addresses.local.json"  -- Local Anvil deployment
+            31337 -> "config/addresses.local.json"
             _ -> "config/addresses.sepolia.json"
 
-      eAddresses <- loadAddresses addressFile
-      case eAddresses of
+      eDeployments <- loadDeployments addressFile
+      case eDeployments of
         Left err -> pure $ Left $ "Failed to load addresses: " <> err
-        Right addresses ->
+        Right deployments ->
           pure $
             Right $
               Config
@@ -110,7 +129,7 @@ loadConfig = do
                 , cfgChainId = chainId
                 , cfgPort = port
                 , cfgCorsOrigins = corsOrigins
-                , cfgAddresses = addresses
+                , cfgDeployments = deployments
                 , cfgDatabaseUrl = fmap T.pack mDatabaseUrl
                 , cfgIndexerStartBlock = indexerStartBlock
                 }
