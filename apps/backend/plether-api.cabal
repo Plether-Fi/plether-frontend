@@ -39,6 +39,7 @@ library
         Plether.Ethereum.Contracts.Morpho
         Plether.Ethereum.Contracts.CurvePool
         Plether.Ethereum.Contracts.LeverageRouter
+        Plether.Ethereum.Contracts.ZapRouter
         Plether.Utils.Address
         Plether.Utils.Hex
         Plether.Utils.Numeric

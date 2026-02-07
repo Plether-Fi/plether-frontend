@@ -71,8 +71,8 @@ export function TradeCard({ usdcBalance, bearBalance, bullBalance, refetchBalanc
     ? BigInt(bearQuoteData?.data.amountOut ?? '0')
     : BigInt(bullQuoteData?.data.output?.amount ?? '0')
   const priceImpact = isBearTrade
-    ? Number(bearQuoteData?.data.priceImpact ?? '0')
-    : Number(bullQuoteData?.data.priceImpact ?? '0')
+    ? Number(bearQuoteData?.data.priceImpact ?? '0') / 100
+    : Number(bullQuoteData?.data.priceImpact ?? '0') / 100
   const isQuoteLoading = isBearTrade ? bearQuoteLoading : bullQuoteLoading
 
   useEffect(() => {
