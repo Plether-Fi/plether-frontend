@@ -63,10 +63,8 @@ app cache client cfg mPool = do
     handleResult result
 
   get "/api/protocol/config" $ do
-    result <- liftIO $ getProtocolConfig cfg
-    setHeader "Content-Type" "application/json"
-    status status200
-    json result
+    result <- liftIO $ getProtocolConfig client cfg
+    handleResult result
 
   get "/api/user/:address/dashboard" $ do
     addr <- pathParam "address"
@@ -235,7 +233,7 @@ corsMiddleware cfg = cors $ const $ Just policy
     policy =
       simpleCorsResourcePolicy
         { corsOrigins = Just (map encodeUtf8 origins, True)
-        , corsMethods = ["GET", "POST", "OPTIONS"]
+        , corsMethods = ["GET", "OPTIONS"]
         , corsRequestHeaders = ["Content-Type", "Authorization"]
         }
 

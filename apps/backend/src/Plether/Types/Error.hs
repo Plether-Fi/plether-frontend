@@ -13,6 +13,7 @@ module Plether.Types.Error
   ) where
 
 import Data.Aeson (ToJSON (..), Value, object, (.=))
+import qualified Data.Text as T
 import Data.Text (Text)
 import GHC.Generics (Generic)
 import Plether.Ethereum.Client (RpcError (RpcHttpError, RpcJsonError, RpcNodeError))
@@ -82,6 +83,11 @@ networkError msg = mkError NetworkError $ "Network error: " <> msg
 
 rpcErrorToApiError :: RpcError -> ApiError
 rpcErrorToApiError = \case
-  RpcHttpError msg -> rpcError msg
-  RpcJsonError msg -> rpcError msg
-  RpcNodeError _ msg -> rpcError msg
+  RpcHttpError _ -> networkError "Blockchain node unreachable"
+  RpcJsonError _ -> internalError "Unexpected response from blockchain node"
+  RpcNodeError _ msg -> rpcError $ sanitizeNodeError msg
+
+sanitizeNodeError :: Text -> Text
+sanitizeNodeError msg
+  | T.length msg > 200 = T.take 200 msg <> "..."
+  | otherwise = msg

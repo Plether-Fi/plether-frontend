@@ -2,7 +2,7 @@
 
 CREATE TABLE IF NOT EXISTS transactions (
     id SERIAL PRIMARY KEY,
-    tx_hash VARCHAR(66) NOT NULL UNIQUE,
+    tx_hash VARCHAR(66) NOT NULL,
     block_number BIGINT NOT NULL,
     timestamp BIGINT NOT NULL,
     user_address VARCHAR(42) NOT NULL,
@@ -10,7 +10,8 @@ CREATE TABLE IF NOT EXISTS transactions (
     side VARCHAR(4),
     status VARCHAR(16) NOT NULL DEFAULT 'success',
     data JSONB NOT NULL,
-    created_at TIMESTAMP DEFAULT NOW()
+    created_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE (tx_hash, tx_type)
 );
 
 CREATE INDEX IF NOT EXISTS idx_transactions_user ON transactions(user_address);
