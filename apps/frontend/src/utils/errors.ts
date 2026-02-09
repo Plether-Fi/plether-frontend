@@ -355,11 +355,17 @@ export function parseTransactionError(error: unknown): TransactionError {
     return new ContractRevertError({ reason: 'Transaction reverted' })
   }
 
-  if (message.includes('network') || message.includes('disconnected')) {
+  const lowerMessage = message.toLowerCase()
+
+  if (lowerMessage.includes('transaction receipt') && lowerMessage.includes('could not be found')) {
+    return new TimeoutError()
+  }
+
+  if (lowerMessage.includes('network') || lowerMessage.includes('disconnected')) {
     return new NetworkError({ cause: error })
   }
 
-  if (message.includes('timeout')) {
+  if (lowerMessage.includes('timeout') || lowerMessage.includes('timed out')) {
     return new TimeoutError()
   }
 

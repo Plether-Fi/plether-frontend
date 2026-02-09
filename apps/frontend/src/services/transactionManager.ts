@@ -1,4 +1,4 @@
-import { type Config, getWalletClient, waitForTransactionReceipt, writeContract, readContract } from '@wagmi/core'
+import { type Config, getPublicClient, getWalletClient, waitForTransactionReceipt, writeContract, readContract } from '@wagmi/core'
 import { useTransactionStore, type TransactionType } from '../stores/transactionStore'
 import { useTransactionModal } from '../hooks/useTransactionModal'
 import { type ContractAddresses, getAddresses } from '../contracts/addresses'
@@ -148,7 +148,24 @@ class TransactionManager {
       txStore.updateTransaction(transactionId, { hash })
       txStore.setStepInProgress(transactionId, stepIndex + 1)
 
-      await waitForTransactionReceipt(config, { hash })
+      const receipt = await waitForTransactionReceipt(config, { hash })
+
+      if (receipt.status === 'reverted') {
+        const client = getPublicClient(config)
+        if (client) {
+          const tx = await client.getTransaction({ hash })
+          if (tx.to) {
+            await client.call({
+              to: tx.to,
+              data: tx.input,
+              account: tx.from,
+              value: tx.value,
+              blockNumber: receipt.blockNumber,
+            })
+          }
+        }
+        throw new Error('Transaction reverted')
+      }
 
       operation.status = 'success'
       txStore.setStepSuccess(transactionId, hash)
