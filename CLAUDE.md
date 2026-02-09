@@ -24,6 +24,8 @@ bd sync               # Sync with git
 
 **Do not commit unless explicitly asked.** Wait for the user to request a commit before staging or committing changes.
 
+**Never amend commits.** Always create new commits. Only use `--amend` if the user explicitly asks for it.
+
 ## Session Completion
 
 **When ending a work session**, complete ALL steps below. Work is NOT complete until `git push` succeeds.
