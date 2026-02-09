@@ -46,35 +46,23 @@ fetchAndCacheDashboard cache client cfg userAddr blockNum = do
   case eBalances of
     Left err -> pure $ Left err
     Right balances -> do
-      eLeverage <- getLeveragePositions client cfg userAddr
-      case eLeverage of
-        Left err -> pure $ Left err
-        Right leverage -> do
-          eLending <- getLendingPositions client cfg userAddr
-          case eLending of
-            Left err -> pure $ Left err
-            Right lending -> do
-              eAllowances <- getAllowancesRaw client cfg userAddr
-              case eAllowances of
-                Left err -> pure $ Left err
-                Right allowances -> do
-                  eAuth <- getMorphoAuthorization client cfg userAddr
-                  case eAuth of
-                    Left err -> pure $ Left err
-                    Right authorization -> do
-                      let dashboard =
-                            UserDashboard
-                              { dashBalances = balances
-                              , dashLeverage = leverage
-                              , dashLending = lending
-                              , dashAllowances = allowances
-                              , dashAuthorization = authorization
-                              }
-                      timestamp <- getPOSIXTime
-                      atomically $ do
-                        setCachedFor (cacheUserDashboards cache) userAddr dashboard blockNum timestamp
-                        evictStale blockNum (cacheUserDashboards cache)
-                      pure $ Right $ mkResponse blockNum (cfgChainId cfg) dashboard
+      leverage <- either (const emptyLeverage) id <$> getLeveragePositions client cfg userAddr
+      lending <- either (const emptyLending) id <$> getLendingPositions client cfg userAddr
+      allowances <- either (const emptyAllowances) id <$> getAllowancesRaw client cfg userAddr
+      authorization <- either (const emptyAuth) id <$> getMorphoAuthorization client cfg userAddr
+      let dashboard =
+            UserDashboard
+              { dashBalances = balances
+              , dashLeverage = leverage
+              , dashLending = lending
+              , dashAllowances = allowances
+              , dashAuthorization = authorization
+              }
+      timestamp <- getPOSIXTime
+      atomically $ do
+        setCachedFor (cacheUserDashboards cache) userAddr dashboard blockNum timestamp
+        evictStale blockNum (cacheUserDashboards cache)
+      pure $ Right $ mkResponse blockNum (cfgChainId cfg) dashboard
 
 getUserBalances :: EthClient -> Config -> Text -> IO (Either ApiError (ApiResponse UserBalances))
 getUserBalances client cfg userAddr = do
@@ -135,16 +123,10 @@ getUserPositions client cfg userAddr = do
   case eBlockNum of
     Left err -> pure $ Left $ rpcErrorToApiError err
     Right blockNum -> do
-      eLeverage <- getLeveragePositions client cfg userAddr
-      case eLeverage of
-        Left err -> pure $ Left err
-        Right leverage -> do
-          eLending <- getLendingPositions client cfg userAddr
-          case eLending of
-            Left err -> pure $ Left err
-            Right lending -> do
-              let positions = UserPositions { posLeverage = leverage, posLending = lending }
-              pure $ Right $ mkResponse blockNum (cfgChainId cfg) positions
+      leverage <- either (const emptyLeverage) id <$> getLeveragePositions client cfg userAddr
+      lending <- either (const emptyLending) id <$> getLendingPositions client cfg userAddr
+      let positions = UserPositions { posLeverage = leverage, posLending = lending }
+      pure $ Right $ mkResponse blockNum (cfgChainId cfg) positions
 
 getUserAllowances :: AppCache -> EthClient -> Config -> Text -> IO (Either ApiError (ApiResponse UserAllowances))
 getUserAllowances cache client cfg userAddr = do
@@ -406,3 +388,20 @@ getMorphoAuthorization client cfg userAddr = do
       pure $ Right $ MorphoAuthorization { authBearLeverageRouter = bear, authBullLeverageRouter = bull }
     (Left err, _) -> pure $ Left $ rpcErrorToApiError err
     (_, Left err) -> pure $ Left $ rpcErrorToApiError err
+
+emptyLeverage :: LeveragePositions
+emptyLeverage = LeveragePositions { levPosBear = Nothing, levPosBull = Nothing }
+
+emptyLending :: LendingPositions
+emptyLending = LendingPositions { lendPosBear = Nothing, lendPosBull = Nothing }
+
+emptyAllowances :: UserAllowances
+emptyAllowances =
+  UserAllowances
+    { allowUsdc = UsdcAllowances 0 0 0 0 0 0 0
+    , allowBear = BearAllowances 0 0 0 0
+    , allowBull = BullAllowances 0 0 0 0
+    }
+
+emptyAuth :: MorphoAuthorization
+emptyAuth = MorphoAuthorization { authBearLeverageRouter = False, authBullLeverageRouter = False }
