@@ -1,5 +1,5 @@
 import { useAccount, useDisconnect, useChainId } from 'wagmi'
-import { useWeb3Modal } from '@web3modal/wagmi/react'
+import { useAppKit } from '@reown/appkit/react'
 import { mainnet, sepolia } from 'wagmi/chains'
 import { anvil } from '../../config/wagmi'
 import { formatAddress } from '../../utils/formatters'
@@ -9,7 +9,7 @@ const SUPPORTED_CHAIN_IDS = [mainnet.id, sepolia.id, anvil.id] as const
 export function ConnectButton() {
   const { address, isConnected } = useAccount()
   const { disconnect } = useDisconnect()
-  const { open } = useWeb3Modal()
+  const { open } = useAppKit()
   const chainId = useChainId()
 
   const getNetworkName = () => {

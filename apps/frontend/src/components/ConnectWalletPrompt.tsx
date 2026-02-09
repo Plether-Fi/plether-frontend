@@ -1,11 +1,11 @@
-import { useWeb3Modal } from '@web3modal/wagmi/react'
+import { useAppKit } from '@reown/appkit/react'
 
 export interface ConnectWalletPromptProps {
   description?: string
 }
 
 export function ConnectWalletPrompt({ description }: ConnectWalletPromptProps) {
-  const { open } = useWeb3Modal()
+  const { open } = useAppKit()
 
   return (
     <div className="bg-cyber-surface-dark p-12 text-center border border-cyber-border-glow/30 shadow-lg">

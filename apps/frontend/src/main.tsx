@@ -3,8 +3,8 @@ import { createRoot } from 'react-dom/client'
 import { WagmiProvider } from 'wagmi'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
-import { createWeb3Modal } from '@web3modal/wagmi/react'
-import { config, WALLETCONNECT_PROJECT_ID } from './config/wagmi'
+import { createAppKit } from '@reown/appkit/react'
+import { config, wagmiAdapter, appkitNetworks, WALLETCONNECT_PROJECT_ID } from './config/wagmi'
 import './index.css'
 import App from './App'
 
@@ -22,11 +22,16 @@ const queryClient = new QueryClient({
   },
 })
 
-// Create Web3Modal
-createWeb3Modal({
-  wagmiConfig: config,
+createAppKit({
+  adapters: [wagmiAdapter],
+  networks: appkitNetworks,
   projectId: WALLETCONNECT_PROJECT_ID,
-  enableAnalytics: false,
+  metadata: {
+    name: 'Plether',
+    description: 'plDXY-BEAR and plDXY-BULL trading protocol',
+    url: window.location.origin,
+    icons: [`${window.location.origin}/logo.png`],
+  },
   themeMode: 'dark',
   themeVariables: {
     '--w3m-accent': '#22c55e',
