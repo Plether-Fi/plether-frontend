@@ -1,0 +1,8 @@
+**/node_modules/
+**/dist/
+**/dist-newstyle/
+**/.env
+**/.env.local
+.git/
+opensrc/
+screenshots/

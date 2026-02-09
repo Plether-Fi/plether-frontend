@@ -61,9 +61,17 @@ export interface PlethApiConfig {
   onError?: (error: PlethApiError) => void;
 }
 
+function deriveWsUrl(baseUrl: string): string {
+  if (baseUrl.startsWith('http')) return baseUrl.replace(/^http/, 'ws');
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  return `${proto}//${location.host}${baseUrl}`;
+}
+
+const BASE_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3001/api';
+
 const DEFAULT_CONFIG: Required<Omit<PlethApiConfig, 'onError'>> = {
-  baseUrl: (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3001',
-  wsUrl: (import.meta.env.VITE_WS_URL as string | undefined) ?? 'ws://localhost:3001',
+  baseUrl: BASE_URL,
+  wsUrl: deriveWsUrl(BASE_URL),
   timeout: 30000,
 };
 
@@ -157,11 +165,11 @@ export class PlethApiClient {
   // ===========================================================================
 
   async getProtocolStatus(): Promise<Result<ApiResponse<ProtocolStatus>, PlethApiError>> {
-    return fetchApi<ProtocolStatus>(this.config, '/api/protocol/status');
+    return fetchApi<ProtocolStatus>(this.config, '/protocol/status');
   }
 
   async getProtocolConfig(): Promise<Result<ApiResponse<ProtocolConfig>, PlethApiError>> {
-    return fetchApi<ProtocolConfig>(this.config, '/api/protocol/config');
+    return fetchApi<ProtocolConfig>(this.config, '/protocol/config');
   }
 
   // ===========================================================================
@@ -171,19 +179,19 @@ export class PlethApiClient {
   async getUserDashboard(
     address: string
   ): Promise<Result<ApiResponse<UserDashboard>, PlethApiError>> {
-    return fetchApi<UserDashboard>(this.config, `/api/user/${address}/dashboard`);
+    return fetchApi<UserDashboard>(this.config, `/user/${address}/dashboard`);
   }
 
   async getUserBalances(
     address: string
   ): Promise<Result<ApiResponse<UserBalances>, PlethApiError>> {
-    return fetchApi<UserBalances>(this.config, `/api/user/${address}/balances`);
+    return fetchApi<UserBalances>(this.config, `/user/${address}/balances`);
   }
 
   async getUserPositions(
     address: string
   ): Promise<Result<ApiResponse<UserPositions>, PlethApiError>> {
-    return fetchApi<UserPositions>(this.config, `/api/user/${address}/positions`);
+    return fetchApi<UserPositions>(this.config, `/user/${address}/positions`);
   }
 
   async getUserAllowances(
@@ -195,7 +203,7 @@ export class PlethApiClient {
       searchParams.set('spenders', params.spenders.join(','));
     }
     const query = searchParams.toString();
-    const path = `/api/user/${address}/allowances${query ? `?${query}` : ''}`;
+    const path = `/user/${address}/allowances${query ? `?${query}` : ''}`;
     return fetchApi<UserAllowances>(this.config, path);
   }
 
@@ -204,11 +212,11 @@ export class PlethApiClient {
   // ===========================================================================
 
   async getMintQuote(amount: string): Promise<Result<ApiResponse<MintQuote>, PlethApiError>> {
-    return fetchApi<MintQuote>(this.config, `/api/quotes/mint?amount=${amount}`);
+    return fetchApi<MintQuote>(this.config, `/quotes/mint?amount=${amount}`);
   }
 
   async getBurnQuote(amount: string): Promise<Result<ApiResponse<BurnQuote>, PlethApiError>> {
-    return fetchApi<BurnQuote>(this.config, `/api/quotes/burn?amount=${amount}`);
+    return fetchApi<BurnQuote>(this.config, `/quotes/burn?amount=${amount}`);
   }
 
   async getZapQuote(
@@ -217,7 +225,7 @@ export class PlethApiClient {
   ): Promise<Result<ApiResponse<ZapQuote>, PlethApiError>> {
     return fetchApi<ZapQuote>(
       this.config,
-      `/api/quotes/zap?direction=${direction}&amount=${amount}`
+      `/quotes/zap?direction=${direction}&amount=${amount}`
     );
   }
 
@@ -225,7 +233,7 @@ export class PlethApiClient {
     from: TradeFrom,
     amount: string
   ): Promise<Result<ApiResponse<TradeQuote>, PlethApiError>> {
-    return fetchApi<TradeQuote>(this.config, `/api/quotes/trade?from=${from}&amount=${amount}`);
+    return fetchApi<TradeQuote>(this.config, `/quotes/trade?from=${from}&amount=${amount}`);
   }
 
   async getLeverageQuote(
@@ -235,7 +243,7 @@ export class PlethApiClient {
   ): Promise<Result<ApiResponse<LeverageQuote>, PlethApiError>> {
     return fetchApi<LeverageQuote>(
       this.config,
-      `/api/quotes/leverage?side=${side}&principal=${principal}&leverage=${leverage}`
+      `/quotes/leverage?side=${side}&principal=${principal}&leverage=${leverage}`
     );
   }
 
@@ -253,7 +261,7 @@ export class PlethApiClient {
     if (params?.type) searchParams.set('type', params.type);
     if (params?.side) searchParams.set('side', params.side);
     const query = searchParams.toString();
-    const path = `/api/user/${address}/history${query ? `?${query}` : ''}`;
+    const path = `/user/${address}/history${query ? `?${query}` : ''}`;
     return fetchApi<TransactionHistory>(this.config, path);
   }
 
@@ -266,7 +274,7 @@ export class PlethApiClient {
     if (params?.limit) searchParams.set('limit', String(params.limit));
     if (params?.side) searchParams.set('side', params.side);
     const query = searchParams.toString();
-    const path = `/api/user/${address}/history/leverage${query ? `?${query}` : ''}`;
+    const path = `/user/${address}/history/leverage${query ? `?${query}` : ''}`;
     return fetchApi<TransactionHistory>(this.config, path);
   }
 
@@ -279,7 +287,7 @@ export class PlethApiClient {
     if (params?.limit) searchParams.set('limit', String(params.limit));
     if (params?.side) searchParams.set('side', params.side);
     const query = searchParams.toString();
-    const path = `/api/user/${address}/history/lending${query ? `?${query}` : ''}`;
+    const path = `/user/${address}/history/lending${query ? `?${query}` : ''}`;
     return fetchApi<TransactionHistory>(this.config, path);
   }
 
@@ -296,7 +304,7 @@ export class PlethApiClient {
     }
 
     const wsUrl = this.config.wsUrl ?? DEFAULT_CONFIG.wsUrl;
-    const url = address ? `${wsUrl}/api/ws?address=${address}` : `${wsUrl}/api/ws`;
+    const url = address ? `${wsUrl}/ws?address=${address}` : `${wsUrl}/ws`;
 
     this.ws = new WebSocket(url);
 
