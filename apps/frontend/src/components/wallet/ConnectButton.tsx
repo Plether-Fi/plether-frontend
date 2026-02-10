@@ -40,7 +40,7 @@ export function ConnectButton() {
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-4">
       {/* Network badge */}
       <span className={`
         px-2 py-0.5 text-xs font-medium border
@@ -48,7 +48,9 @@ export function ConnectButton() {
           ? 'bg-cyber-electric-fuchsia/20 text-cyber-electric-fuchsia border-cyber-electric-fuchsia/30'
           : chainId === sepolia.id
             ? 'bg-cyber-warning-bg text-cyber-warning-text border-cyber-warning-text/30'
-            : 'bg-cyber-surface-light text-cyber-text-secondary border-cyber-border-glow/30'
+            : chainId === mainnet.id
+              ? 'bg-cyber-neon-green/20 text-cyber-neon-green border-cyber-neon-green/30 shadow-sm shadow-cyber-neon-green/10'
+              : 'bg-cyber-surface-light text-cyber-text-secondary border-cyber-border-glow/30'
         }
       `}>
         {isWrongNetwork ? 'Wrong Network' : getNetworkName()}
