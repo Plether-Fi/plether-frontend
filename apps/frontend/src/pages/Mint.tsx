@@ -5,7 +5,7 @@ import { formatAmount, formatUsd } from '../utils/formatters'
 import { getMinBalance } from '../utils/mint'
 import { Alert, TokenIcon } from '../components/ui'
 import { TokenInput } from '../components/TokenInput'
-import { useUserDashboard, useMintQuote, useBurnQuote, apiQueryKeys } from '../api'
+import { useUserDashboard, useProtocolStatus, useMintQuote, useBurnQuote, apiQueryKeys } from '../api'
 import { useQueryClient } from '@tanstack/react-query'
 import { useTransactionStore } from '../stores/transactionStore'
 import { transactionManager } from '../services/transactionManager'
@@ -28,6 +28,9 @@ export function Mint() {
 
   const [mode, setMode] = useState<MintMode>('mint')
   const [inputAmount, setInputAmount] = useState('')
+
+  const { data: protocolData } = useProtocolStatus()
+  const isProtocolActive = protocolData?.data.status === 'ACTIVE'
 
   const { data: dashboardData } = useUserDashboard(address)
   const balances = dashboardData?.data.balances
@@ -123,7 +126,8 @@ export function Mint() {
     ? usdcRequired > usdcBalance
     : pairAmountBigInt > minBalance
 
-  const isActionDisabled = !inputAmount || parseFloat(inputAmount) <= 0 || isRunning || insufficientBalance
+  const isPaused = !isProtocolActive && mode === 'mint'
+  const isActionDisabled = !inputAmount || parseFloat(inputAmount) <= 0 || isRunning || insufficientBalance || isPaused
 
   return (
     <div className="space-y-10 max-w-xl mx-auto">
@@ -131,6 +135,12 @@ export function Mint() {
         <h1 className="text-3xl font-semibold text-cyber-text-primary mb-1">Mint & Redeem</h1>
         <p className="text-cyber-text-secondary font-light">Create or redeem plDXY-BEAR + plDXY-BULL pairs</p>
       </div>
+
+      {!isProtocolActive && protocolData && mode === 'mint' && (
+        <Alert variant="warning" icon="warning">
+          Protocol is currently {protocolData.data.status.toLowerCase()}. Minting is disabled.
+        </Alert>
+      )}
 
       <div className="bg-cyber-surface-dark border border-cyber-border-glow/30 shadow-lg shadow-cyber-border-glow/10 overflow-hidden">
         <div className="flex border-b border-cyber-border-glow/30">
