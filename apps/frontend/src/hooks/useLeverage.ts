@@ -265,14 +265,12 @@ export function useAdjustCollateral(side: 'BEAR' | 'BULL', onSuccessCallback?: (
     query: { enabled: !!address && !!addresses },
   })
 
-  const { data: usdcEip712Domain } = useReadContract({
+  const { data: usdcName } = useReadContract({
     address: addresses?.USDC,
     abi: ERC20_ABI,
-    functionName: 'eip712Domain',
+    functionName: 'name',
     query: { enabled: !!addresses },
   })
-  const usdcName = usdcEip712Domain?.[1]
-  const usdcVersion = usdcEip712Domain?.[2]
 
   const [isSigningPermit, setIsSigningPermit] = useState(false)
   const [isConfirming, setIsConfirming] = useState(false)
@@ -288,7 +286,7 @@ export function useAdjustCollateral(side: 'BEAR' | 'BULL', onSuccessCallback?: (
     usdcAmount: bigint,
     maxSlippageBps: bigint,
   ): Promise<Result<`0x${string}`, LeverageError>> => {
-    if (!routerAddress || !address || !chainId || !addresses || usdcNonce === undefined || !usdcName || !usdcVersion) {
+    if (!routerAddress || !address || !chainId || !addresses || usdcNonce === undefined || !usdcName) {
       return Result.err(new NotConnectedError())
     }
 
@@ -321,7 +319,7 @@ export function useAdjustCollateral(side: 'BEAR' | 'BULL', onSuccessCallback?: (
         const signature = await signTypedDataAsync({
           domain: {
             name: usdcName,
-            version: usdcVersion,
+            version: '2',
             chainId,
             verifyingContract: addresses.USDC,
           },
@@ -374,7 +372,7 @@ export function useAdjustCollateral(side: 'BEAR' | 'BULL', onSuccessCallback?: (
         return txError
       },
     })
-  }, [routerAddress, address, chainId, addresses, usdcNonce, usdcName, usdcVersion, addTransaction, setStepInProgress, setStepSuccess, setStepError, txModal, signTypedDataAsync, writeContractAsync, publicClient])
+  }, [routerAddress, address, chainId, addresses, usdcNonce, usdcName, addTransaction, setStepInProgress, setStepSuccess, setStepError, txModal, signTypedDataAsync, writeContractAsync, publicClient])
 
   const removeCollateral = useCallback(async (
     collateralToWithdraw: bigint,
