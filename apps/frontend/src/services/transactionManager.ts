@@ -471,6 +471,36 @@ class TransactionManager {
     })
   }
 
+  private async adjustBurnAmount(
+    splitterAddress: `0x${string}`,
+    pairAmount: bigint,
+    config: Config,
+  ): Promise<bigint> {
+    const USDC_MULTIPLIER = 10n ** 12n
+
+    const [cap, previewResult] = await Promise.all([
+      readContract(config, {
+        address: splitterAddress,
+        abi: PLETH_CORE_ABI,
+        functionName: 'CAP',
+      }),
+      readContract(config, {
+        address: splitterAddress,
+        abi: PLETH_CORE_ABI,
+        functionName: 'previewBurn',
+        args: [pairAmount],
+      }),
+    ])
+
+    const theoreticalRefund = (pairAmount * cap) / USDC_MULTIPLIER
+    const [usdcToReturn] = previewResult
+
+    if (usdcToReturn < theoreticalRefund) {
+      return pairAmount - 1n
+    }
+    return pairAmount
+  }
+
   async executeRedeem(
     pairAmount: bigint,
     options?: { onRetry?: () => void }
@@ -479,16 +509,18 @@ class TransactionManager {
     const ctx = await this.getOperationContext(operationKey)
     if (!ctx) return
 
-    const { addresses, address } = ctx
-    const hasBearAllowance = await this.checkAllowance(addresses.DXY_BEAR, addresses.SYNTHETIC_SPLITTER, address, pairAmount)
-    const hasBullAllowance = await this.checkAllowance(addresses.DXY_BULL, addresses.SYNTHETIC_SPLITTER, address, pairAmount)
+    const { config, addresses, address } = ctx
+    const adjustedAmount = await this.adjustBurnAmount(addresses.SYNTHETIC_SPLITTER, pairAmount, config)
+
+    const hasBearAllowance = await this.checkAllowance(addresses.DXY_BEAR, addresses.SYNTHETIC_SPLITTER, address, adjustedAmount)
+    const hasBullAllowance = await this.checkAllowance(addresses.DXY_BULL, addresses.SYNTHETIC_SPLITTER, address, adjustedAmount)
 
     const prerequisites: Prerequisite[] = []
     if (!hasBearAllowance) {
-      prerequisites.push(this.makeApprovalPrerequisite('Approve plDXY-BEAR', addresses.DXY_BEAR, addresses.SYNTHETIC_SPLITTER, pairAmount))
+      prerequisites.push(this.makeApprovalPrerequisite('Approve plDXY-BEAR', addresses.DXY_BEAR, addresses.SYNTHETIC_SPLITTER, adjustedAmount))
     }
     if (!hasBullAllowance) {
-      prerequisites.push(this.makeApprovalPrerequisite('Approve plDXY-BULL', addresses.DXY_BULL, addresses.SYNTHETIC_SPLITTER, pairAmount))
+      prerequisites.push(this.makeApprovalPrerequisite('Approve plDXY-BULL', addresses.DXY_BULL, addresses.SYNTHETIC_SPLITTER, adjustedAmount))
     }
 
     await this.executeOperation(ctx, {
@@ -502,7 +534,7 @@ class TransactionManager {
           address: addresses.SYNTHETIC_SPLITTER,
           abi: PLETH_CORE_ABI,
           functionName: 'burn',
-          args: [pairAmount],
+          args: [adjustedAmount],
         }),
       },
       onRetry: options?.onRetry ?? (() => void this.executeRedeem(pairAmount, options)),
