@@ -236,7 +236,7 @@ class TransactionManager {
   ): Promise<{ v: number; r: `0x${string}`; s: `0x${string}`; deadline: bigint }> {
     const { config, chainId, address } = ctx
 
-    const [nonce, name] = await Promise.all([
+    const [nonce, name, version] = await Promise.all([
       readContract(config, {
         address: tokenAddress,
         abi: ERC20_ABI,
@@ -248,13 +248,18 @@ class TransactionManager {
         abi: ERC20_ABI,
         functionName: 'name',
       }),
+      readContract(config, {
+        address: tokenAddress,
+        abi: ERC20_ABI,
+        functionName: 'eip712Domain',
+      }).then(d => d[2], () => '2'),
     ])
     const deadline = getDeadline(60)
 
     const signature = await signTypedData(config, {
       domain: {
         name,
-        version: '2',
+        version,
         chainId,
         verifyingContract: tokenAddress,
       },
