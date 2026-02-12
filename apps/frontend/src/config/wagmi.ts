@@ -29,8 +29,8 @@ export const config = createConfig({
     walletConnect({ projectId: WALLETCONNECT_PROJECT_ID, metadata, showQrModal: false }),
   ],
   transports: {
-    [mainnet.id]: http(),
-    [sepolia.id]: http(),
+    [mainnet.id]: http('https://eth-mainnet.g.alchemy.com/v2/7RXotrWbfzbfZZvA4ARaZ'),
+    [sepolia.id]: http('https://eth-sepolia.g.alchemy.com/v2/7RXotrWbfzbfZZvA4ARaZ'),
     [anvil.id]: http('http://127.0.0.1:8545'),
   },
 })

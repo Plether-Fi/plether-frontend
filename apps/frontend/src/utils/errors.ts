@@ -220,6 +220,21 @@ export type TransactionError =
   | TimeoutError
   | UnknownTransactionError
 
+function extractHttpDetails(error: unknown): string | null {
+  if (!error || typeof error !== 'object') return null
+  const err = error as { url?: string; status?: number; cause?: unknown }
+  if (err.url) {
+    const host = safeParseHost(err.url)
+    return `${host} responded ${String(err.status ?? '?')}`
+  }
+  if (err.cause) return extractHttpDetails(err.cause)
+  return null
+}
+
+function safeParseHost(url: string): string {
+  try { return new URL(url).host } catch { return url }
+}
+
 function extractMessage(error: unknown): string {
   if (!error) return 'Transaction failed'
 
@@ -235,8 +250,11 @@ function extractMessage(error: unknown): string {
   else if (errorObj.message) msg = errorObj.message
   else if (typeof error === 'string') msg = error
 
-  if (msg.length > 100) {
-    return msg.slice(0, 100) + '...'
+  const httpDetail = extractHttpDetails(error)
+  if (httpDetail) msg += ` (${httpDetail})`
+
+  if (msg.length > 200) {
+    return msg.slice(0, 200) + '...'
   }
   return msg
 }

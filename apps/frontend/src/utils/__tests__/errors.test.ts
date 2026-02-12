@@ -187,11 +187,11 @@ describe('parseTransactionError', () => {
       expect(error.message).toBe('Simple string error')
     })
 
-    it('truncates long messages to 100 characters', () => {
-      const longMessage = 'A'.repeat(150)
+    it('truncates long messages to 200 characters', () => {
+      const longMessage = 'A'.repeat(250)
       const error = parseTransactionError({ message: longMessage })
-      expect(error.message.length).toBe(103)
-      expect(error.message).toBe('A'.repeat(100) + '...')
+      expect(error.message.length).toBe(203)
+      expect(error.message).toBe('A'.repeat(200) + '...')
     })
 
     it('returns default message for empty error object', () => {
