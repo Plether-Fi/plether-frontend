@@ -40,12 +40,14 @@ function argsToMarkets(args: YieldCardArgs): { bearMarket: MarketData; bullMarke
   return {
     bearMarket: {
       suppliedAmount: toUsdBigint(args.bearSupplied),
+      suppliedShares: 0n,
       borrowedAmount: toUsdBigint(args.bearBorrowed),
       availableToBorrow: toUsdBigint(args.bearAvailable),
       collateral: toUsdBigint(args.bearCollateral),
     },
     bullMarket: {
       suppliedAmount: toUsdBigint(args.bullSupplied),
+      suppliedShares: 0n,
       borrowedAmount: toUsdBigint(args.bullBorrowed),
       availableToBorrow: toUsdBigint(args.bullAvailable),
       collateral: toUsdBigint(args.bullCollateral),

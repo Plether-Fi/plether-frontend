@@ -222,12 +222,14 @@ export function Dashboard() {
                 <YieldCard
                   bearMarket={{
                     suppliedAmount: bearLending ? BigInt(bearLending.supplied) : 0n,
+                    suppliedShares: bearLending ? BigInt(bearLending.suppliedShares) : 0n,
                     borrowedAmount: bearLending ? BigInt(bearLending.borrowed) : 0n,
                     availableToBorrow: bearLending ? BigInt(bearLending.availableToBorrow) : 0n,
                     collateral: bearLending ? BigInt(bearLending.collateral) : 0n,
                   }}
                   bullMarket={{
                     suppliedAmount: bullLending ? BigInt(bullLending.supplied) : 0n,
+                    suppliedShares: bullLending ? BigInt(bullLending.suppliedShares) : 0n,
                     borrowedAmount: bullLending ? BigInt(bullLending.borrowed) : 0n,
                     availableToBorrow: bullLending ? BigInt(bullLending.availableToBorrow) : 0n,
                     collateral: bullLending ? BigInt(bullLending.collateral) : 0n,

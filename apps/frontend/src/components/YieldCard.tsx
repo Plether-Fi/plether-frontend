@@ -15,6 +15,7 @@ type MarketSide = 'BEAR' | 'BULL'
 
 export interface MarketData {
   suppliedAmount: bigint
+  suppliedShares: bigint
   borrowedAmount: bigint
   availableToBorrow: bigint
   collateral: bigint
@@ -96,13 +97,16 @@ function MarketColumn({ side, market, usdcBalance, onSuccess }: MarketColumnProp
         }),
       })
     } else {
+      const isMax = supplyBigInt >= market.suppliedAmount && market.suppliedShares > 0n
       steps.push({
         label: 'Withdraw USDC',
         action: () => writeContractAsync({
           address: morphoAddress,
           abi: MORPHO_ABI,
           functionName: 'withdraw',
-          args: [marketParams, supplyBigInt, 0n, address, address],
+          args: isMax
+            ? [marketParams, 0n, market.suppliedShares, address, address]
+            : [marketParams, supplyBigInt, 0n, address, address],
         }),
       })
     }
